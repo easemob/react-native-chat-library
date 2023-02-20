@@ -47,6 +47,7 @@ export { default as BottomSheet } from './components/BottomSheet';
 export { default as Button } from './components/Button';
 export { default as CheckButton } from './components/CheckButton';
 export { default as ContentState } from './components/ContentState';
+export { DefaultAvatar } from './components/DefaultAvatars';
 export { default as DialogBox } from './components/DialogBox';
 export { default as Divider } from './components/Divider';
 export {
@@ -64,6 +65,8 @@ export {
 } from './components/EqualHeightList';
 export { LocalIcon, LocalIconName, VectorIcon } from './components/Icon';
 export { default as Image } from './components/Image';
+export { ListItemSeparator as DefaultListItemSeparator } from './components/ListItemSeparator';
+export { ListSearchHeader as DefaultListSearchHeader } from './components/ListSearchHeader';
 export { default as Loading } from './components/Loading';
 export { default as LoadingButton } from './components/LoadingButton';
 export { default as LoadingRN } from './components/LoadingRN';

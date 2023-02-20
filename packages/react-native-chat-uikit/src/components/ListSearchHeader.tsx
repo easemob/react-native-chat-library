@@ -1,15 +1,16 @@
 import * as React from 'react';
 import { TextInput as RNTextInput, View } from 'react-native';
-import { createStyleSheet, SearchBar } from 'react-native-chat-uikit';
 
-import { useAppI18nContext } from '../contexts/AppI18nContext';
+import { useI18nContext } from '../contexts';
+import createStyleSheet from '../styles/createStyleSheet';
+import SearchBar from './SearchBar';
 
 export interface ListSearchHeaderProps {
   autoFocus: boolean;
   onChangeText?: (text: string) => void;
 }
 export const ListSearchHeader = (props: ListSearchHeaderProps) => {
-  const { search } = useAppI18nContext();
+  const { search } = useI18nContext();
   const searchRef = React.useRef<RNTextInput>(null);
   const [searchValue, setSearchValue] = React.useState('');
   const enableCancel = false;

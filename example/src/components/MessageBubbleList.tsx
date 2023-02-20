@@ -10,6 +10,7 @@ import {
 import { ChatMessage, ChatMessageType } from 'react-native-chat-sdk';
 import {
   createStyleSheet,
+  DefaultAvatar,
   DynamicHeightList,
   DynamicHeightListRef,
   getScaleFactor,
@@ -23,7 +24,6 @@ import {
 } from 'react-native-chat-uikit';
 
 import { ChatEvent, ChatEventType } from '../events';
-import { DefaultAvatar } from './DefaultAvatars';
 
 export type MessageItemStateType =
   | 'unreaded'
@@ -482,7 +482,7 @@ const MessageBubbleList = (
             if (item) {
               for (const i of list) {
                 if (item.key === i.key) {
-                  console.log('test:updateData:333:', item, i);
+                  // console.log('test:updateData:333:', item, i);
                   if (i.isSender) item.isSender = i.isSender;
                   if (i.sender) item.sender = i.sender;
                   if (i.state) item.state = i.state;

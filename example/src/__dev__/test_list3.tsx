@@ -12,6 +12,7 @@ import {
   autoFocus,
   Button,
   createStyleSheet,
+  DefaultAvatar,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
@@ -23,7 +24,6 @@ import {
 } from 'react-native-chat-uikit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import { COUNTRY } from './const';
 

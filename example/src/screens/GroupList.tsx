@@ -6,6 +6,8 @@ import {
   autoFocus,
   Blank,
   createStyleSheet,
+  DefaultAvatar,
+  DefaultListSearchHeader,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
@@ -19,10 +21,7 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// import { COUNTRY } from '../__dev__/const';
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import { ListItemSeparator } from '../components/ListItemSeparator';
-import { ListSearchHeader } from '../components/ListSearchHeader';
 import { GroupInfoEvent, GroupInfoEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
@@ -400,10 +399,10 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
       style={useStyleSheet().safe}
       edges={['right', 'left']}
     >
-      <ListSearchHeader
+      <DefaultListSearchHeader
         autoFocus={autoFocus()}
         onChangeText={(text) => {
-          console.log('test:ListSearchHeader:onChangeText:', Text);
+          console.log('test:DefaultListSearchHeader:onChangeText:', Text);
           deferredSearch(text);
         }}
       />

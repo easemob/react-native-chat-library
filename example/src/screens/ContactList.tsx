@@ -36,6 +36,8 @@ import {
   Button,
   CheckButton,
   createStyleSheet,
+  DefaultAvatar,
+  DefaultListSearchHeader,
   DialogContextProvider,
   EqualHeightList,
   EqualHeightListItemComponent,
@@ -53,10 +55,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import { CreateGroupSettings } from '../components/CreateGroupSettings';
-// import { COUNTRY } from '../__dev__/const';
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import { ListItemSeparator } from '../components/ListItemSeparator';
-import { ListSearchHeader } from '../components/ListSearchHeader';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import {
@@ -1828,7 +1827,7 @@ export function ContactListScreenInternal({
 
   return (
     <>
-      <ListSearchHeader
+      <DefaultListSearchHeader
         autoFocus={autoFocus()}
         onChangeText={(text) => {
           queueTask(() => {

@@ -14,23 +14,23 @@ import {
   Blank,
   Button,
   createStyleSheet,
+  DefaultAvatar,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
   EqualHeightListRef,
   getScaleFactor,
   LocalIcon,
+  NotificationMessageDescriptionType,
 } from 'react-native-chat-uikit';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import { ListItemSeparator } from '../components/ListItemSeparator';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
-import type { NotificationMessageDescriptionType } from '../types';
 
 type Props = MaterialTopTabScreenProps<RootParamsList>;
 

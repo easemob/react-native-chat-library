@@ -1,12 +1,10 @@
 import React from 'react';
-import { View } from 'react-native';
-import {
-  Avatar,
-  ICON_ASSETS,
-  Image,
-  LocalIconName,
-  timestamp,
-} from 'react-native-chat-uikit';
+import { Image, View } from 'react-native';
+
+import { ICON_ASSETS } from '../../assets/icons';
+import { timestamp } from '../utils/generator';
+import Avatar from './Avatar';
+import type { LocalIconName } from './Icon';
 
 const AVATAR_ASSETS = [
   'agora_avatar_1',

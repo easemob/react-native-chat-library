@@ -5,6 +5,7 @@ import {
   Blank,
   Button,
   createStyleSheet,
+  DefaultAvatar,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
@@ -17,7 +18,6 @@ import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COUNTRY } from '../__dev__/const';
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import { ListItemSeparator } from '../components/ListItemSeparator';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
