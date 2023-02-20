@@ -6,6 +6,7 @@ import {
   Button,
   createStyleSheet,
   DefaultAvatar,
+  DefaultListItemSeparator,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
@@ -18,7 +19,6 @@ import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COUNTRY } from '../__dev__/const';
-import { ListItemSeparator } from '../components/ListItemSeparator';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
@@ -270,7 +270,7 @@ export default function SearchScreen({
               borderRadius: 8,
             },
           }}
-          ItemSeparatorComponent={ListItemSeparator}
+          ItemSeparatorComponent={DefaultListItemSeparator}
           onRefresh={(type) => {
             if (type === 'started') {
               const en = 'aaa';

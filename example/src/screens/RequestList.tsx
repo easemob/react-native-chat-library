@@ -15,6 +15,7 @@ import {
   Button,
   createStyleSheet,
   DefaultAvatar,
+  DefaultListItemSeparator,
   EqualHeightList,
   EqualHeightListItemComponent,
   EqualHeightListItemData,
@@ -26,7 +27,6 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ListItemSeparator } from '../components/ListItemSeparator';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
@@ -615,7 +615,7 @@ export default function RequestListScreen(_props: Props): JSX.Element {
               borderRadius: sf(8),
             },
           }}
-          ItemSeparatorComponent={ListItemSeparator}
+          ItemSeparatorComponent={DefaultListItemSeparator}
           onRefresh={(type) => {
             if (type === 'started') {
               initList();

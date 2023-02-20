@@ -7,6 +7,7 @@ import {
   Blank,
   createStyleSheet,
   DefaultAvatar,
+  DefaultListItemSeparator,
   DefaultListSearchHeader,
   EqualHeightList,
   EqualHeightListItemComponent,
@@ -21,7 +22,6 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ListItemSeparator } from '../components/ListItemSeparator';
 import { GroupInfoEvent, GroupInfoEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
@@ -427,7 +427,7 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
               borderRadius: 8,
             },
           }}
-          ItemSeparatorComponent={ListItemSeparator}
+          ItemSeparatorComponent={DefaultListItemSeparator}
           onRefresh={(type) => {
             if (type === 'started') {
               initList();

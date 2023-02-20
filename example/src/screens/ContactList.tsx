@@ -37,6 +37,7 @@ import {
   CheckButton,
   createStyleSheet,
   DefaultAvatar,
+  DefaultListItemSeparator,
   DefaultListSearchHeader,
   DialogContextProvider,
   EqualHeightList,
@@ -55,7 +56,6 @@ import {
 } from 'react-native-chat-uikit';
 
 import { CreateGroupSettings } from '../components/CreateGroupSettings';
-import { ListItemSeparator } from '../components/ListItemSeparator';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import {
@@ -1868,7 +1868,7 @@ export function ContactListScreenInternal({
               top: _calculateAlphabetHeight(),
             },
           }}
-          ItemSeparatorComponent={ListItemSeparator}
+          ItemSeparatorComponent={DefaultListItemSeparator}
           onRefresh={(refreshType) => {
             console.log('test:onRefresh:', refreshType);
             if (refreshType === 'started') {
