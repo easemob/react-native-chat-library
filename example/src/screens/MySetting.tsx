@@ -73,8 +73,8 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   const ms = Services.ms;
   const bounces = false;
   const memberCount = 5;
-  const name = 'NickName';
-  const id = 'Agora ID: xx';
+  const [name, setName] = React.useState('NickName');
+  const [id, setId] = React.useState('Agora ID: xx');
   const sdkVersion = 'AgoraChat v1.0.0';
   const uiVersion = 'AgoraChat v1.0.0';
   const urlName = 'agora.io';
@@ -146,6 +146,43 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         console.log('test:error:', error);
       });
   };
+
+  const initList = React.useCallback(() => {
+    client.userManager
+      .fetchOwnInfo()
+      .then((result) => {
+        console.log('test:result:', result);
+        if (result) {
+          setId(result.userId);
+          if (result.nickName) setName(result.nickName);
+        }
+      })
+      .catch((error) => {
+        console.warn('test:error:', error);
+      });
+  }, [client.userManager]);
+
+  const addListeners = React.useCallback(() => {
+    return () => {};
+  }, []);
+
+  React.useEffect(() => {
+    const load = () => {
+      console.log('test:load:', MySettingScreen.name);
+      const unsubscribe = addListeners();
+      initList();
+      return {
+        unsubscribe: unsubscribe,
+      };
+    };
+    const unload = (params: { unsubscribe: () => void }) => {
+      console.log('test:unload:', MySettingScreen.name);
+      params.unsubscribe();
+    };
+
+    const res = load();
+    return () => unload(res);
+  }, [addListeners, initList]);
 
   return (
     <SafeAreaView
@@ -278,31 +315,33 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
             <Text style={styles.listItemText4}>{urlName}</Text>
           </TouchableOpacity>
         </Pressable>
-        <Pressable onPress={() => {}} style={styles.listItem}>
-          <TouchableOpacity
-            onPress={() => {
-              alert.openAlert({
-                title: 'Sure to delete all messages',
-                buttons: [
-                  {
-                    text: 'Cancel',
-                    onPress: () => {},
-                  },
-                  {
-                    text: 'Confirm',
-                    onPress: () => {
-                      removeAllMessage();
+        {__DEV__ ? (
+          <Pressable onPress={() => {}} style={styles.listItem}>
+            <TouchableOpacity
+              onPress={() => {
+                alert.openAlert({
+                  title: 'Sure to delete all messages',
+                  buttons: [
+                    {
+                      text: 'Cancel',
+                      onPress: () => {},
                     },
-                  },
-                ],
-              });
-            }}
-          >
-            <Text style={[styles.listItemText1, { color: 'red' }]}>
-              Delete All Messages
-            </Text>
-          </TouchableOpacity>
-        </Pressable>
+                    {
+                      text: 'Confirm',
+                      onPress: () => {
+                        removeAllMessage();
+                      },
+                    },
+                  ],
+                });
+              }}
+            >
+              <Text style={[styles.listItemText1, { color: 'red' }]}>
+                Delete All Messages
+              </Text>
+            </TouchableOpacity>
+          </Pressable>
+        ) : null}
         <Intervallum content={settings.logins} />
         <Pressable onPress={() => {}} style={styles.listItem}>
           <TouchableOpacity
