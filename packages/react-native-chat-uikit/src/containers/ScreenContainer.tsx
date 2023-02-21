@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { Text, ViewProps } from 'react-native';
-import { createStyleSheetP } from 'react-native-chat-uikit';
 import { Edge, SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -10,6 +9,7 @@ import {
   ToastContextProvider,
   useThemeContext,
 } from '../contexts';
+import { createStyleSheetP } from '../styles/createStyleSheet';
 
 export interface ScreenContainerProps extends ViewProps {
   children?: React.ReactNode;

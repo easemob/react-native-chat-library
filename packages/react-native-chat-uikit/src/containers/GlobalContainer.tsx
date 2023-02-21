@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { Text } from 'react-native';
 import { ChatOptions } from 'react-native-chat-sdk';
-import { once } from 'react-native-chat-uikit';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -24,6 +23,7 @@ import type {
   NotificationService,
   PermissionService,
 } from '../services';
+import { once } from '../utils/function';
 
 const TIMEOUT = 3000;
 
