@@ -1,3 +1,4 @@
+export { default as ChatFragment } from './Chat';
 export {
   type ItemDataType as ConversationListItemDataType,
   default as ConversationListFragment,

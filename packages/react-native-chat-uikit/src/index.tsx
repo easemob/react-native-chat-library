@@ -63,6 +63,7 @@ export {
   EqualHeightListRef,
   ListHeaderProps,
 } from './components/EqualHeightList';
+export { FaceList } from './components/FaceList';
 export { LocalIcon, LocalIconName, VectorIcon } from './components/Icon';
 export { default as Image } from './components/Image';
 export { ListItemSeparator as DefaultListItemSeparator } from './components/ListItemSeparator';
@@ -71,6 +72,16 @@ export { default as Loading } from './components/Loading';
 export { default as LoadingButton } from './components/LoadingButton';
 export { default as LoadingRN } from './components/LoadingRN';
 export { default as MenuBar } from './components/MenuBar';
+export {
+  default as DefaultMessageBubbleList,
+  MessageBubbleListProps as DefaultMessageBubbleListProps,
+  MessageBubbleListRef as DefaultMessageBubbleListRef,
+  ImageMessageItemType,
+  MessageItemStateType,
+  MessageItemType,
+  TextMessageItemType,
+  VoiceMessageItemType,
+} from './components/MessageBubbleList';
 export { default as Modal } from './components/Modal';
 export { default as Prompt } from './components/Prompt';
 export { default as RadioButton } from './components/RadioButton';

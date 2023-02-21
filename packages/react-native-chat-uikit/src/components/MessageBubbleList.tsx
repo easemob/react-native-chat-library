@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   DeviceEventEmitter,
+  Image,
   ListRenderItem,
   ListRenderItemInfo,
   Text,
@@ -8,26 +9,22 @@ import {
   View,
 } from 'react-native';
 import { ChatMessage, ChatMessageType } from 'react-native-chat-sdk';
-import {
-  createStyleSheet,
-  DefaultAvatar,
-  DynamicHeightList,
-  DynamicHeightListRef,
-  getScaleFactor,
-  Image,
-  Loading,
-  LocalIcon,
-  LocalIconName,
-  seqId,
-  timestamp,
-  wait,
-} from 'react-native-chat-uikit';
 
-import { ChatEvent, ChatEventType } from '../events';
+import { type ChatEventType, ChatEvent } from '../fragments';
+import { getScaleFactor } from '../styles/createScaleFactor';
+import createStyleSheet from '../styles/createStyleSheet';
+import { wait } from '../utils/function';
+import { seqId, timestamp } from '../utils/generator';
+import { DefaultAvatar } from './DefaultAvatars';
+import DynamicHeightList, {
+  type DynamicHeightListRef,
+} from './DynamicHeightList';
+import { type LocalIconName, LocalIcon } from './Icon';
+import Loading from './Loading';
 
 export type MessageItemStateType =
-  | 'unreaded'
-  | 'readed'
+  | 'unread'
+  | 'read'
   | 'arrived'
   | 'played'
   | 'sending'
@@ -115,7 +112,7 @@ const convertState = (state?: MessageItemStateType): LocalIconName => {
   let r = 'sent' as LocalIconName;
   switch (state) {
     case 'arrived':
-      r = 'readed';
+      r = 'read';
       break;
     case 'failed':
       r = 'ex_mark';
@@ -370,17 +367,17 @@ const MessageRenderItem: ListRenderItem<MessageItemType> = (
     </View>
   );
 };
-export type MessageListRef = {
+export type MessageBubbleListRef = {
   scrollToEnd: () => void;
   scrollToTop: () => void;
   addMessage: (msg: MessageItemType[]) => void;
 };
-type MessageBubbleListProps = {
+export type MessageBubbleListProps = {
   onPressed?: () => void;
 };
 const MessageBubbleList = (
   props: MessageBubbleListProps,
-  ref?: React.Ref<MessageListRef>
+  ref?: React.Ref<MessageBubbleListRef>
 ): JSX.Element => {
   console.log('test:MessageBubbleList:');
   const { onPressed } = props;
@@ -656,6 +653,6 @@ const styles = createStyleSheet({
   },
 });
 
-export default React.forwardRef<MessageListRef, MessageBubbleListProps>(
+export default React.forwardRef<MessageBubbleListRef, MessageBubbleListProps>(
   MessageBubbleList
 );

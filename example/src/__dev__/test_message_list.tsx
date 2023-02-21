@@ -1,20 +1,20 @@
 import * as React from 'react';
 import { View } from 'react-native';
 import { ChatMessageType } from 'react-native-chat-sdk';
-import { seqId, timestamp } from 'react-native-chat-uikit';
-import { Button } from 'react-native-paper';
-
 import {
-  default as MessageBubbleList,
-  MessageListRef,
+  DefaultMessageBubbleList,
+  DefaultMessageBubbleListRef,
+  seqId,
   TextMessageItemType,
-} from '../components/MessageBubbleList';
+  timestamp,
+} from 'react-native-chat-uikit';
+import { Button } from 'react-native-paper';
 
 export default function TestMessageList() {
   React.useEffect(() => {}, []);
-  const ref = React.useRef<MessageListRef>(null);
+  const ref = React.useRef<DefaultMessageBubbleListRef>(null);
 
-  const MessageListM = React.memo(MessageBubbleList);
+  const MessageListM = React.memo(DefaultMessageBubbleList);
 
   return (
     <View

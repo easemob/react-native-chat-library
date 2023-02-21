@@ -1063,13 +1063,13 @@ export const ICON_ASSETS = {
       return require('./icons/Global/plus_in_circle.png');
     }
   },
-  'readed': (size: string) => {
+  'read': (size: string) => {
     if (size === '3x') {
-      return require('./icons/Global/readed_3x.png');
+      return require('./icons/Global/read_3x.png');
     } else if (size === '2x') {
-      return require('./icons/Global/readed_2x.png');
+      return require('./icons/Global/read_2x.png');
     } else {
-      return require('./icons/Global/readed.png');
+      return require('./icons/Global/read.png');
     }
   },
   'request_reject': (size: string) => {
