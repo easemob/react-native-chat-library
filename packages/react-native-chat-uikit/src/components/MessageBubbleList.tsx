@@ -108,7 +108,6 @@ export interface VoiceMessageItemType extends MessageItemType {
 // };
 
 const convertState = (state?: MessageItemStateType): LocalIconName => {
-  console.log('test:state:', state);
   let r = 'sent' as LocalIconName;
   switch (state) {
     case 'arrived':
@@ -140,7 +139,6 @@ const TextMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     const sf = getScaleFactor();
     const { item } = info;
     const msg = item as TextMessageItemType;
-    // console.log('test:TextMessageRenderItem:', msg);
     return (
       <View
         style={[
@@ -236,12 +234,8 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
             }}
             resizeMode="cover"
             style={{ height: sf(200), borderRadius: sf(10) }}
-            onLoad={(_) => {
-              // console.log(e);
-            }}
-            onError={(_) => {
-              // console.log(e);
-            }}
+            onLoad={(_) => {}}
+            onError={(_) => {}}
           />
         </View>
         <View
@@ -339,7 +333,6 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
 const MessageRenderItem: ListRenderItem<MessageItemType> = (
   info: ListRenderItemInfo<MessageItemType>
 ): React.ReactElement | null => {
-  // console.log('test:MessageRenderItem:', info.index);
   const { item } = info;
   let MessageItem: ListRenderItem<MessageItemType>;
   if (item.type === ChatMessageType.TXT) {
@@ -379,7 +372,6 @@ const MessageBubbleList = (
   props: MessageBubbleListProps,
   ref?: React.Ref<MessageBubbleListRef>
 ): JSX.Element => {
-  console.log('test:MessageBubbleList:');
   const { onPressed } = props;
   const enableRefresh = true;
   const [refreshing, setRefreshing] = React.useState(false);
@@ -407,12 +399,9 @@ const MessageBubbleList = (
     setLoading(false);
   }
 
-  // console.log('test:MessageBubbleList:length:', items.length);
-
   const updateDataInternal = React.useCallback(
     (data: MessageItemType[]) => {
       if (data === data1) {
-        console.log('test:data1');
         for (let index = 0; index < data1.length; index++) {
           const element = data1[index] as MessageItemType;
           data2[index] = element;
@@ -420,7 +409,6 @@ const MessageBubbleList = (
         data2.splice(data1.length, data2.length);
         setItems(data2);
       } else if (data === data2) {
-        console.log('test:data2');
         for (let index = 0; index < data2.length; index++) {
           const element = data2[index] as MessageItemType;
           data1[index] = element;
@@ -442,7 +430,6 @@ const MessageBubbleList = (
       type: 'add' | 'update-all' | 'update-part';
       items: MessageItemType[];
     }) => {
-      // console.log('test:updateData:111:', type, list, items);
       switch (type) {
         case 'add':
           items.push(...list);
@@ -465,7 +452,6 @@ const MessageBubbleList = (
           // for (const item of items) {
           //   for (const i of list) {
           //     if (item.key === i.key) {
-          //       console.log('test:updateData:333:', item, i);
           //       if (i.isSender) item.isSender = i.isSender;
           //       if (i.sender) item.sender = i.sender;
           //       if (i.state) item.state = i.state;
@@ -479,7 +465,6 @@ const MessageBubbleList = (
             if (item) {
               for (const i of list) {
                 if (item.key === i.key) {
-                  // console.log('test:updateData:333:', item, i);
                   if (i.isSender) item.isSender = i.isSender;
                   if (i.sender) item.sender = i.sender;
                   if (i.state) item.state = i.state;
@@ -490,7 +475,6 @@ const MessageBubbleList = (
               }
             }
           }
-          // console.log('test:updateData:222:', items);
           // setItems([...items]);
           break;
         default:
@@ -509,7 +493,6 @@ const MessageBubbleList = (
       },
       scrollToTop: () => {},
       addMessage: (msgs: MessageItemType[]) => {
-        // console.log('test:addMessage:', msgs.length);
         updateData({ type: 'add', items: msgs });
       },
     }),
@@ -520,7 +503,6 @@ const MessageBubbleList = (
 
   const addListeners = React.useCallback(() => {
     const sub1 = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-      // console.log('test:ChatEvent:MessageBubbleList:', event);
       const eventType = event.type as ChatEventType;
       switch (eventType) {
         case 'msg_state':
@@ -567,7 +549,6 @@ const MessageBubbleList = (
   }, [updateData]);
 
   React.useEffect(() => {
-    console.log('test:useEffect:', addListeners, initList);
     const load = () => {
       console.log('test:load:', MessageBubbleList.name);
       const unsubscribe = addListeners();

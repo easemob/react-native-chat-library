@@ -22,7 +22,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
-import { type AlertEvent, type ChatEventType, ChatEvent } from '../events';
+import { type ChatEventType, ChatEvent } from '../events';
 import type { RootParamsList, RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
@@ -34,7 +34,6 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 
 const InvisiblePlaceholder = React.memo(() => {
-  console.log('test:InvisiblePlaceholder:');
   const sheet = useBottomSheet();
   const toast = useToastContext();
   const alert = useAlert();
@@ -47,103 +46,87 @@ const InvisiblePlaceholder = React.memo(() => {
   const navigation = useNavigation<NavigationProp>();
 
   React.useEffect(() => {
-    console.log('test:load:InvisiblePlaceholder:');
     const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
       // console.log('test:ChatEvent:Chat:', event);
       switch (event.type as ChatEventType) {
         case 'enable_voice':
-          {
-            const eventParams = event.params;
-            const eventType = eventParams.type as AlertEvent;
-            console.log('test:state:', eventParams, eventType);
-            state.showState({
-              children: (
-                <View
-                  style={{
-                    height: sf(100),
-                    width: sf(161),
-                    borderRadius: sf(16),
-                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View style={{ flexDirection: 'row' }}>
-                    <LocalIcon name="mic" size={sf(40)} />
-                    <LocalIcon name="volume8" size={sf(40)} />
-                  </View>
-                  <Text style={{ color: 'white' }}>{chat.voiceState}</Text>
+          state.showState({
+            children: (
+              <View
+                style={{
+                  height: sf(100),
+                  width: sf(161),
+                  borderRadius: sf(16),
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ flexDirection: 'row' }}>
+                  <LocalIcon name="mic" size={sf(40)} />
+                  <LocalIcon name="volume8" size={sf(40)} />
                 </View>
-              ),
-            });
-          }
+                <Text style={{ color: 'white' }}>{chat.voiceState}</Text>
+              </View>
+            ),
+          });
           break;
         case 'disable_voice':
-          {
-            const eventParams = event.params;
-            const eventType = eventParams.type as AlertEvent;
-            console.log('test:state:', eventParams, eventType);
-            state.hideState();
-          }
+          state.hideState();
           break;
         case 'open_input_extension':
-          {
-            const eventParams = event.params;
-            console.log('test:state:', eventParams);
-            sheet.openSheet({
-              sheetItems: [
-                {
-                  iconColor: theme.colors.primary,
-                  title: 'Camera',
-                  titleColor: 'black',
-                  onPress: () => {
-                    ms.openCamera({})
-                      .then((result) => {
-                        console.log('test:result:', result);
-                      })
-                      .catch((error) => {
-                        console.warn('error:', error);
-                      });
-                  },
+          sheet.openSheet({
+            sheetItems: [
+              {
+                iconColor: theme.colors.primary,
+                title: 'Camera',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openCamera({})
+                    .then((result) => {
+                      console.log('test:result:', result);
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
                 },
-                {
-                  iconColor: theme.colors.primary,
-                  title: 'Album',
-                  titleColor: 'black',
-                  onPress: () => {
-                    ms.openMediaLibrary({ selectionLimit: 1 })
-                      .then((result) => {
-                        console.log('test:result:', result);
-                      })
-                      .catch((error) => {
-                        console.warn('error:', error);
-                      });
-                  },
+              },
+              {
+                iconColor: theme.colors.primary,
+                title: 'Album',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openMediaLibrary({ selectionLimit: 1 })
+                    .then((result) => {
+                      console.log('test:result:', result);
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
                 },
-                {
-                  iconColor: theme.colors.primary,
-                  title: 'Files',
-                  titleColor: 'black',
-                  onPress: () => {
-                    ms.openDocument({})
-                      .then((result) => {
-                        console.log('test:result:', result);
-                      })
-                      .catch((error) => {
-                        console.warn('error:', error);
-                      });
-                  },
+              },
+              {
+                iconColor: theme.colors.primary,
+                title: 'Files',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openDocument({})
+                    .then((result) => {
+                      console.log('test:result:', result);
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
                 },
-              ],
-            });
-          }
+              },
+            ],
+          });
           break;
         default:
           break;
       }
     });
     return () => {
-      console.log('test:unload:InvisiblePlaceholder:');
       sub.remove();
     };
   }, [
@@ -190,15 +173,11 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
         messageBubbleList={{
           MessageBubbleListP: DefaultMessageBubbleList,
           MessageBubbleListPropsP: {
-            onPressed: () => {
-              console.log('test:onPressed:MessageBubbleListPropsP:');
-            },
+            onPressed: () => {},
           } as DefaultMessageBubbleListProps,
           MessageBubbleListRefP: messageBubbleListRefP as any,
         }}
-        onFace={() => {
-          console.log('test:onFace:111:');
-        }}
+        onFace={() => {}}
       />
       <FragmentContainer>
         <InvisiblePlaceholder />
