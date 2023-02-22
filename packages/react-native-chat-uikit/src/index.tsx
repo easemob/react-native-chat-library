@@ -125,6 +125,7 @@ export * from './types';
 export { darkPalette, lightPalette } from './utils/defaultColorPalette';
 export { default as defaultHeaderHeight } from './utils/defaultHeaderHeight';
 export {
+  getDateTimePoint,
   messageTimestamp,
   truncateContent,
   truncatedBadgeCount,

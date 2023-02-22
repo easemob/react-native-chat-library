@@ -50,7 +50,12 @@ import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
 import { timeoutTask } from '../utils/function';
 import { seqId, timestamp } from '../utils/generator';
-import { type ChatEventType, ChatEvent } from './types';
+import {
+  type ChatEventType,
+  ChatEvent,
+  ConversationListEvent,
+  ConversationListEventType,
+} from './types';
 
 type BaseType = {
   chatId: string;
@@ -498,6 +503,37 @@ const Content = React.memo(
       onFace?.(value);
     };
 
+    const createConversationIfNotExisted = React.useCallback(() => {
+      DeviceEventEmitter.emit(ConversationListEvent, {
+        type: 'create_conversation' as ConversationListEventType,
+        params: {
+          convId: chatId,
+          convType: chatType as number as ChatConversationType,
+        },
+      });
+    }, [chatId, chatType]);
+
+    const clearRead = React.useCallback(() => {
+      client.chatManager
+        .markAllMessagesAsRead(
+          chatId,
+          chatType as number as ChatConversationType
+        )
+        .then((result) => {
+          console.log('test:result', result);
+          DeviceEventEmitter.emit(ConversationListEvent, {
+            type: 'conversation_read' as ConversationListEventType,
+            params: {
+              convId: chatId,
+              convType: chatType as number as ChatConversationType,
+            },
+          });
+        })
+        .catch((error) => {
+          console.warn('test:error', error);
+        });
+    }, [chatId, chatType, client.chatManager]);
+
     React.useEffect(() => {
       const subscription1 = Keyboard.addListener('keyboardWillHide', (_) => {
         setIsInputRef.current(false);
@@ -580,6 +616,8 @@ const Content = React.memo(
       const load = () => {
         const unsubscribe = addListeners();
         initList();
+        createConversationIfNotExisted();
+        clearRead();
         return {
           unsubscribe: unsubscribe,
         };
@@ -590,7 +628,7 @@ const Content = React.memo(
 
       const res = load();
       return () => unload(res);
-    }, [addListeners, initList]);
+    }, [createConversationIfNotExisted, addListeners, initList, clearRead]);
 
     const MessageBubbleListM = React.memo(() =>
       messageBubbleList ? (

@@ -72,7 +72,9 @@ const Item: ItemComponent = (props) => {
           <Text style={{ maxWidth: screenWidth * 0.5 }} numberOfLines={1}>
             {item.convId}
           </Text>
-          <Text numberOfLines={1}>{item.convContent}</Text>
+          <Text style={{ maxWidth: screenWidth * 0.6 }} numberOfLines={1}>
+            {item.convContent}
+          </Text>
         </View>
         <View
           style={{
@@ -81,8 +83,14 @@ const Item: ItemComponent = (props) => {
             flexGrow: 1,
           }}
         >
-          <Text>MM:HH:MM</Text>
-          <Badge count={10} badgeColor="rgba(255, 20, 204, 1)" size="default" />
+          <Text>{messageTimestamp(item.timestamp)}</Text>
+          {item.count > 0 ? (
+            <Badge
+              count={item.count}
+              badgeColor="rgba(255, 20, 204, 1)"
+              size="default"
+            />
+          ) : null}
         </View>
       </View>
       <View
@@ -275,6 +283,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       type: 'init' | 'add' | 'search' | 'del-one' | 'update-one';
       items: ItemDataType[];
     }) => {
+      console.log('test:manualRefresh:', params.type, params.items.length);
       if (params.type === 'init') {
         data.length = 0;
         listRef.current?.manualRefresh([
@@ -399,13 +408,22 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     [getContent, manualRefresh, onLongPress, onPress, removeConversation, sf]
   );
 
-  const getConvIfNot = React.useCallback(
-    async (convId: string, convType: ChatConversationType) => {
+  const getConv = React.useCallback(
+    (convId: string) => {
       for (const item of data) {
         if (item.convId === convId) {
           return item;
         }
       }
+      return undefined;
+    },
+    [data]
+  );
+
+  const getConvIfNot = React.useCallback(
+    async (convId: string, convType: ChatConversationType) => {
+      const conv = getConv(convId);
+      if (conv) return conv;
       try {
         const conv = await client.chatManager.getConversation(
           convId,
@@ -438,7 +456,19 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         return undefined;
       }
     },
-    [client.chatManager, data, getConvCount, standardizedData]
+    [client.chatManager, getConv, getConvCount, standardizedData]
+  );
+
+  const duplicateCheck = React.useCallback(
+    (id: string) => {
+      for (const item of data) {
+        if (item.convId === id) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [data]
   );
 
   const addListeners = React.useCallback(() => {
@@ -450,12 +480,37 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           case 'create_conversation':
             {
               const eventParams = event.params;
+              if (duplicateCheck(eventParams.convId)) {
+                return;
+              }
               manualRefresh({
                 type: 'add',
                 items: [
                   standardizedData({
-                    ...eventParams,
-                  }),
+                    key: eventParams.convId,
+                    convId: eventParams.convId,
+                    convType: eventParams.convType,
+                    lastMsg: undefined,
+                    count: 0,
+                  } as ItemDataType),
+                ],
+              });
+            }
+            break;
+          case 'conversation_read':
+            {
+              const eventParams = event.params;
+              const conv = getConv(eventParams.convId);
+              if (conv === undefined) {
+                return;
+              }
+              manualRefresh({
+                type: 'update-one',
+                items: [
+                  standardizedData({
+                    ...conv,
+                    count: 0,
+                  } as ItemDataType),
                 ],
               });
             }
@@ -468,6 +523,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     const msgListener: ChatMessageEventListener = {
       onMessagesReceived: async (messages: ChatMessage[]): Promise<void> => {
         /// todo: !!! 10000 message count ???
+        console.log('test:onMessagesReceived:', messages.length);
         for (const msg of messages) {
           const convId = getConvId(msg);
           const convType = msg.chatType as number as ChatConversationType;
@@ -475,6 +531,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           if (conv === undefined) {
             await getConvIfNot(convId, convType);
           }
+          const count = getConvCount(convId, msg);
           manualRefresh({
             type: 'update-one',
             items: [
@@ -483,7 +540,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
                 convId: convId,
                 convType: convType,
                 lastMsg: msg,
-                count: getConvCount(convId, msg),
+                count: count,
               } as ItemDataType),
             ],
           });
@@ -493,7 +550,8 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       onCmdMessagesReceived: (_: ChatMessage[]): void => {},
 
       onMessagesRead: async (messages: ChatMessage[]): Promise<void> => {
-        /// todo: !!! 10000 message count ???
+        /// todo: !!! 10000 message count ???\
+        console.log('test:onMessagesRead:', messages.length);
         for (const msg of messages) {
           const convId = getConvId(msg);
           const convType = msg.chatType as number as ChatConversationType;
@@ -547,6 +605,8 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     };
   }, [
     client.chatManager,
+    duplicateCheck,
+    getConv,
     getConvCount,
     getConvId,
     getConvIfNot,
@@ -558,20 +618,31 @@ export default function ConversationListFragment(props: Props): JSX.Element {
   const initList = React.useCallback(() => {
     client.chatManager
       .getAllConversations()
-      .then((result) => {
+      .then(async (result) => {
         if (result) {
-          const r = result.map((value) => {
+          const r = result.map(async (value) => {
+            const msg = await client.chatManager.getLatestMessage(
+              value.convId,
+              value.convType
+            );
+            const count = await client.chatManager.getConversationUnreadCount(
+              value.convId,
+              value.convType
+            );
             return standardizedData({
               key: value.convId,
               convId: value.convId,
               convType: value.convType,
-              timestamp: timestamp(),
-              lastMsg: undefined,
+              lastMsg: msg,
               convContent: '',
-              count: 0,
+              count: count,
             } as ItemDataType);
           });
-          manualRefresh({ type: 'init', items: r });
+          const rr = [] as ItemDataType[];
+          for (const item of r) {
+            rr.push(await item);
+          }
+          manualRefresh({ type: 'init', items: rr });
         }
       })
       .catch((error) => {

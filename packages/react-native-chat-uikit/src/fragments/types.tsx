@@ -41,7 +41,8 @@ export type ConversationListEventType =
   | PressEvent
   | MessageEvent
   | ConversationEvent
-  | 'create_conversation';
+  | 'create_conversation'
+  | 'conversation_read';
 
 export const ChatEvent = 'ChatEvent';
 export type ChatEventType =

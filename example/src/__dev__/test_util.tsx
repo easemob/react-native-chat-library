@@ -59,6 +59,89 @@ function test4(): void {
 export default function TestUtil() {
   React.useEffect(() => {}, []);
 
+  const getDatePoint = () => {
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    // console.log('test:', day, month, year);
+    const yesterdayEnd = new Date(year, month, day, 0);
+    const yesterMonthEnd = new Date(year, month, 1);
+    const yesterYearEnd = new Date(year, 0);
+    // console.log(
+    //   'test:now:',
+    //   now,
+    //   'yesterday:',
+    //   yesterdayEnd,
+    //   'yesterMonth:',
+    //   yesterMonthEnd,
+    //   'yesterYear:',
+    //   yesterYearEnd
+    // );
+    // console.log(
+    //   'test:now:',
+    //   now.toLocaleString(),
+    //   'yesterday:',
+    //   yesterdayEnd.toLocaleString(),
+    //   'yesterMonth:',
+    //   yesterMonthEnd.toLocaleString(),
+    //   'yesterYear:',
+    //   yesterYearEnd.toLocaleString()
+    // );
+
+    return {
+      now: now,
+      yesterday: yesterdayEnd,
+      yesterMonth: yesterMonthEnd,
+      yesterYear: yesterYearEnd,
+    };
+  };
+
+  const formatDate = (date: Date) => {
+    const r = getDatePoint();
+    if (date < r.yesterYear) {
+      return `${date.getFullYear()}`;
+      // return 'long long ago'; // by year, for example: 2023
+    } else if (r.yesterYear <= date && date < r.yesterMonth) {
+      return `${date.getMonth() + 1}/${date.getDate()}`;
+      // return 'yester year'; // by month, for example: 11 month
+    } else if (r.yesterMonth <= date && date < r.yesterday) {
+      return `yesterday`;
+      // return 'yester month'; // by day, for example: 3 month 2 day
+    } else if (r.yesterday <= date && date < r.now) {
+      return `${date.getHours()}:${date.getMinutes()}`;
+      // return 'yester day'; // by time, for example: 12:34
+    } else {
+      return date.toLocaleString();
+    }
+  };
+
+  const test5 = () => {
+    // now is 2023-02-22T06:59:08.622Z
+    const r = getDatePoint();
+    const isNowDay = new Date(new Date().setHours(1));
+    const isYesterday = new Date(new Date().setDate(21));
+    const isYesterMonth = new Date(new Date().setMonth(0));
+    const isYesterYear = new Date(new Date().setFullYear(2022));
+    console.log(
+      'test:',
+      r,
+      '======',
+      isNowDay.toLocaleString(),
+      '======',
+      isYesterday.toLocaleString(),
+      '======',
+      isYesterMonth.toLocaleString(),
+      '======',
+      isYesterYear.toLocaleString()
+    );
+
+    console.log('test:1:', formatDate(isNowDay));
+    console.log('test:2:', formatDate(isYesterday));
+    console.log('test:3:', formatDate(isYesterMonth));
+    console.log('test:4:', formatDate(isYesterYear));
+  };
+
   return (
     <View style={{ marginTop: 100 }}>
       <View>
@@ -84,6 +167,7 @@ export default function TestUtil() {
           title="messageTimestamp"
           onPress={() => {
             console.log('test:messageTimestamp:', messageTimestamp(new Date()));
+            test5();
           }}
         >
           messageTimestamp

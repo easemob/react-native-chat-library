@@ -1284,8 +1284,8 @@ export function ContactListScreenInternal({
   const duplicateCheck = React.useCallback(
     (id: string) => {
       console.log('test:useCallback:duplicateCheck:');
-      for (const item in data) {
-        if (item.includes(id)) {
+      for (const item of data) {
+        if (item.contactID === id) {
           return true;
         }
       }
