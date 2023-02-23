@@ -55,7 +55,7 @@ export interface ImageMessageItemType extends MessageItemType {
   height?: number;
 }
 export interface VoiceMessageItemType extends MessageItemType {
-  length: number;
+  duration: number;
   localPath?: string;
   remoteUrl?: string;
 }
@@ -100,7 +100,7 @@ export interface VoiceMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: false,
 //   key: seqId('ml').toString(),
-//   length: 45,
+//   duration: 45,
 //   type: ChatMessageType.VOICE,
 // };
 // const voice2: VoiceMessageItemType = {
@@ -108,7 +108,7 @@ export interface VoiceMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: true,
 //   key: seqId('ml').toString(),
-//   length: 45,
+//   duration: 45,
 //   type: ChatMessageType.VOICE,
 // };
 
@@ -295,11 +295,11 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     const { item } = info;
     const { width } = useWindowDimensions();
     const msg = item as VoiceMessageItemType;
-    const _width = (length: number) => {
-      if (length < 0) {
+    const _width = (duration: number) => {
+      if (duration < 0) {
         throw new Error('The voice length cannot be less than 0.');
       }
-      return width * 0.7 * (1 / 60) * (length > 60 ? 60 : length);
+      return width * 0.7 * (1 / 60) * (duration > 60 ? 60 : duration);
     };
     return (
       <View
@@ -307,7 +307,7 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
           styles.container,
           {
             flexDirection: msg.isSender ? 'row-reverse' : 'row',
-            width: _width(msg.length ?? 1),
+            width: _width(msg.duration ?? 1),
           },
         ]}
       >
@@ -348,7 +348,7 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
               },
             ]}
           >
-            {msg.length.toString() + "'"}
+            {msg.duration.toString() + "'"}
           </Text>
         </View>
         <View

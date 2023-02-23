@@ -126,7 +126,7 @@ export class MediaServiceImplement implements MediaService {
         options.onPosition?.(e.currentPosition);
       });
       const uri = await recorder.startRecorder(options.url, options.audio);
-      options.onSaved?.(uri.replace(/file:\/\//, ''));
+      options.onSaved?.(uri.replace('file:///', ''));
       return true;
     } catch (error) {
       console.warn('startRecordAudio:', error);

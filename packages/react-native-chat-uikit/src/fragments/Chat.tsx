@@ -13,6 +13,14 @@ import {
   View,
 } from 'react-native';
 import {
+  type AudioSet,
+  AudioEncoderAndroidType,
+  AudioSourceAndroidType,
+  AVEncoderAudioQualityIOSType,
+  AVEncodingOption,
+  AVModeIOSOption,
+} from 'react-native-audio-recorder-player';
+import {
   ChatConversationType,
   ChatError,
   ChatGroupMessageAck,
@@ -28,6 +36,7 @@ import {
   ChatMessageType,
   ChatSearchDirection,
   ChatTextMessageBody,
+  ChatVoiceMessageBody,
 } from 'react-native-chat-sdk';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moji from 'twemoji';
@@ -91,7 +100,8 @@ type ContentType = BaseType & {
 };
 
 const Input = React.memo((props: InputType) => {
-  const { onFace, onSendTextMessage, onInit, inputRef, ...others } = props;
+  const { onFace, onSendTextMessage, onInit, inputRef, chatId, ...others } =
+    props;
   const sf = getScaleFactor();
   const { chat } = useI18nContext();
   // const TextInputRef = React.useRef<RNTextInput>(null);
@@ -235,16 +245,53 @@ const Input = React.memo((props: InputType) => {
             }}
             style={[styles.talk, { width: sf(width - 24 - 28 - 20) }]}
             onPressIn={() => {
+              const localPath = Services.dcs.getFileDir(chatId, uuid());
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'enable_voice' as ChatEventType,
-                params: {},
+                params: {
+                  localPath,
+                },
               });
+              Services.ms
+                .startRecordAudio({
+                  audio: {
+                    AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
+                    AudioSourceAndroid: AudioSourceAndroidType.MIC,
+                    AVModeIOS: AVModeIOSOption.measurement,
+                    AVEncoderAudioQualityKeyIOS:
+                      AVEncoderAudioQualityIOSType.high,
+                    AVNumberOfChannelsKeyIOS: 2,
+                    AVFormatIDKeyIOS: AVEncodingOption.aac,
+                  } as AudioSet,
+                  url: localPath,
+                  onPosition: (pos) => {
+                    console.log('test:pos:', pos);
+                  },
+                  onFailed: (error) => {
+                    console.warn('test:onFailed:', error);
+                  },
+                  onSaved: (path) => {
+                    console.log('test:onSaved:', path);
+                  },
+                })
+                .then((result) => {
+                  console.log('test:result:', result);
+                })
+                .catch((error) => {
+                  console.warn('test:startRecordAudio:error:', error);
+                });
             }}
             onPressOut={() => {
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'disable_voice' as ChatEventType,
                 params: {},
               });
+              Services.ms
+                .stopRecordAudio()
+                .then()
+                .catch((error) => {
+                  console.warn('test:stopRecordAudio:error:', error);
+                });
             }}
           >
             {chat.voiceButton}
@@ -340,7 +387,11 @@ const Content = React.memo(
               r = ChatMessage.createVoiceMessage(
                 chatId,
                 voice.localPath!,
-                chatType
+                chatType,
+                {
+                  duration: voice.duration,
+                  displayName: '',
+                }
               );
             }
             break;
@@ -402,6 +453,16 @@ const Content = React.memo(
         ) => {
           const type = msg.body.type;
           switch (type) {
+            case ChatMessageType.VOICE:
+              {
+                const body = msg.body as ChatVoiceMessageBody;
+                const r = item as VoiceMessageItemType;
+                r.localPath = body.localPath;
+                r.remoteUrl = body.remotePath;
+                r.duration = body.duration;
+                r.type = ChatMessageType.VOICE;
+              }
+              break;
             case ChatMessageType.IMAGE:
               {
                 const body = msg.body as ChatImageMessageBody;
@@ -473,10 +534,10 @@ const Content = React.memo(
             },
           } as ChatMessageStatusCallback)
           .then((result) => {
-            console.log('test:result:', result);
+            console.log('test:sendToServer:result:', result);
           })
           .catch((error) => {
-            console.warn('test:error:', error);
+            console.warn('test:sendToServer:error:', error);
           });
       },
       [client.chatManager, convertFromMessage]
@@ -542,7 +603,6 @@ const Content = React.memo(
           localPath = localPath.replace('file://', '');
         }
         const targetPath = Services.dcs.getFileDir(chatId, uuid());
-        console.log('test:----------:', localPath, targetPath);
         await Services.ms.saveFromLocal({
           localPath,
           targetPath: targetPath,
@@ -578,6 +638,50 @@ const Content = React.memo(
         sendToServer,
       ]
     );
+
+    // const sendVoiceMessage = React.useCallback(
+    //   async ({
+    //     localPath,
+    //     second,
+    //   }: {
+    //     localPath: string;
+    //     memoSize?: number;
+    //     second?: number;
+    //   }) => {
+    //     if (localPath.length === 0) {
+    //       return;
+    //     }
+    //     if (localPath.startsWith('file://')) {
+    //       localPath = localPath.replace('file://', '');
+    //     }
+    //     const item = {
+    //       sender: chatId,
+    //       isSender: true,
+    //       type: ChatMessageType.IMAGE,
+    //       state: 'sending',
+    //       localPath: localPath,
+    //       duration: second,
+    //     } as VoiceMessageItemType;
+
+    //     const msg = convertToMessage(item);
+    //     if (msg === undefined) {
+    //       throw new Error('This is impossible.');
+    //     }
+
+    //     getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+    //     timeoutTask(() => {
+    //       getMsgListRef().current?.scrollToEnd();
+    //     });
+    //     // sendToServer(msg);
+    //   },
+    //   [
+    //     chatId,
+    //     convertFromMessage,
+    //     convertToMessage,
+    //     getMsgListRef,
+    //     sendToServer,
+    //   ]
+    // );
 
     const loadMessage = React.useCallback(
       (msgs: ChatMessage[]) => {
