@@ -16,12 +16,14 @@ import { HeaderStyleProvider } from '../contexts/HeaderContext';
 import { I18nContextProvider } from '../contexts/I18nContext';
 import { ChatSdkContextProvider } from '../contexts/ImSdkContext';
 import { ThemeContextProvider } from '../contexts/ThemeContext';
-import type {
+import {
   ClipboardService,
+  DirCacheService,
   LocalStorageService,
   MediaService,
   NotificationService,
   PermissionService,
+  Services,
 } from '../services';
 import { once } from '../utils/function';
 
@@ -42,6 +44,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
     notification?: NotificationService | undefined;
     permission?: PermissionService | undefined;
     storage?: LocalStorageService | undefined;
+    dir?: DirCacheService | undefined;
   };
 }>;
 
@@ -96,6 +99,10 @@ export function GlobalContainer({
     throw new Error('storage is undefined.');
   }
 
+  if (services?.dir === undefined) {
+    throw new Error('dir is undefined.');
+  }
+
   const init = once(() => {
     sdk.client
       .init(
@@ -107,6 +114,20 @@ export function GlobalContainer({
       )
       .then(() => {
         console.log('test:sdk:init:success');
+        if (__DEV__) {
+          sdk.client
+            .getCurrentUsername()
+            .then((result) => {
+              console.log('test:userId:', result);
+              if (result.length > 0)
+                Services.dcs.init(
+                  `${sdk.client.options!.appKey.replace('#', '-')}/${result}`
+                );
+            })
+            .catch((error) => {
+              console.warn('tes:e', error);
+            });
+        }
       })
       .catch((error) => {
         throw new Error('chat sdk init failed.', error);

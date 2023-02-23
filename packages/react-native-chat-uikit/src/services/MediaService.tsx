@@ -25,10 +25,90 @@ import type {
 export class MediaServiceImplement implements MediaService {
   option: MediaServiceOptions;
   audioPlayer: AudioRecorderPlayer;
+  rootDir: string;
   constructor(option: MediaServiceOptions) {
     this.option = option;
+    this.rootDir = '';
     this.audioPlayer = new this.option.audioModule.default();
+    const rootDirName = this.option.rootDirName ?? 'chatuikit';
+    this.createRootDir(rootDirName);
   }
+
+  protected createRootDir(rootDirName: string): void {
+    const create = () => {
+      const docDir = this.option.fsModule.Dirs.DocumentDir;
+      this.rootDir = `${docDir}/${rootDirName}`;
+      console.log('test:rootDir:', this.rootDir);
+      this.option.fsModule.FileSystem.exists(this.rootDir)
+        .then((result) => {
+          if (result === false) {
+            this.option.fsModule.FileSystem.mkdir(this.rootDir);
+          }
+        })
+        .catch((error) => {
+          console.warn(error);
+        });
+    };
+    this.option.permission
+      .hasMediaLibraryPermission()
+      .then((result) => {
+        console.log(result);
+        if (result === false) {
+          this.option.permission
+            .requestMediaLibraryPermission()
+            .then((_) => {
+              create();
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        } else {
+          create();
+        }
+      })
+      .catch((error) => {
+        console.warn(error);
+      });
+  }
+
+  public getRootDir(): string {
+    return this.rootDir;
+  }
+
+  public async createDir(subDir: string): Promise<string> {
+    let dir = this.rootDir;
+    if (subDir.startsWith('/')) {
+      dir += subDir;
+    } else {
+      dir += '/' + subDir;
+    }
+    return this.option.fsModule.FileSystem.mkdir(dir);
+  }
+
+  public async isDir(subDir: string): Promise<boolean> {
+    let dir = this.rootDir;
+    if (subDir.startsWith('/')) {
+      dir += subDir;
+    } else {
+      dir += '/' + subDir;
+    }
+    return this.option.fsModule.FileSystem.isDir(dir);
+  }
+
+  public async isExistedDir(subDir: string): Promise<boolean> {
+    let dir = this.rootDir;
+    if (subDir.startsWith('/')) {
+      dir += subDir;
+    } else {
+      dir += '/' + subDir;
+    }
+    return this.option.fsModule.FileSystem.exists(dir);
+  }
+
+  public async isExistedFile(file: string): Promise<boolean> {
+    return this.option.fsModule.FileSystem.exists(file);
+  }
+
   async startRecordAudio(options: RecordAudioOptions): Promise<boolean> {
     const hasPermission =
       await this.option.permission.hasCameraAndMicPermission();
@@ -92,9 +172,18 @@ export class MediaServiceImplement implements MediaService {
     size,
     name,
     type,
+    width,
+    height,
   }: PartialNullable<FileType>): Nullable<FileType> {
     if (!uri) return null;
-    return { uri, size: size ?? 0, name: name ?? '', type: type ?? '' };
+    return {
+      uri,
+      size: size ?? 0,
+      name: name ?? '',
+      type: type ?? '',
+      width: width === null ? undefined : width,
+      height: height === null ? undefined : height,
+    };
   }
 
   async openMediaLibrary(
@@ -144,8 +233,8 @@ export class MediaServiceImplement implements MediaService {
 
     const r: Nullable<FileType>[] = (response.assets || [])
       .slice(0, selectionLimit)
-      .map(({ fileName: name, fileSize: size, type, uri }) =>
-        this.resultReduction({ uri, size, name, type })
+      .map(({ fileName: name, fileSize: size, type, uri, width, height }) =>
+        this.resultReduction({ uri, size, name, type, width, height })
       );
     return r;
   }
@@ -218,11 +307,35 @@ export class MediaServiceImplement implements MediaService {
       return null;
     }
   }
-  async save(options: SaveFileOptions): Promise<Nullable<string>> {
-    const basePath = Platform.select({
-      android: this.option.fsModule.Dirs.CacheDir,
-      default: this.option.fsModule.Dirs.DocumentDir,
+  async saveFromUrl({
+    remoteUrl,
+    localPath,
+  }: {
+    remoteUrl: string;
+    localPath: string;
+  }): Promise<string> {
+    await this.option.fsModule.FileSystem.fetch(remoteUrl, {
+      path: localPath,
     });
+    return localPath;
+  }
+  async saveFromLocal({
+    targetPath,
+    localPath,
+  }: {
+    targetPath: string;
+    localPath: string;
+  }): Promise<string> {
+    await this.option.fsModule.FileSystem.cp(localPath, targetPath);
+    return targetPath;
+  }
+  async save(options: SaveFileOptions): Promise<Nullable<string>> {
+    const basePath =
+      options.basePath ??
+      Platform.select({
+        android: this.option.fsModule.Dirs.CacheDir,
+        default: this.option.fsModule.Dirs.DocumentDir,
+      });
     let downloadPath = `${basePath}/${options.fileName}`;
     if (!getFileExtension(options.fileName)) {
       const extensionFromUrl = getFileExtension(options.fileUrl);

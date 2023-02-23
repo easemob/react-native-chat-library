@@ -99,6 +99,10 @@ const InvisiblePlaceholder = React.memo(() => {
                   ms.openMediaLibrary({ selectionLimit: 1 })
                     .then((result) => {
                       console.log('test:result:', result);
+                      DeviceEventEmitter.emit(ChatEvent, {
+                        type: 'send_image_message' as ChatEventType,
+                        params: result,
+                      });
                     })
                     .catch((error) => {
                       console.warn('error:', error);

@@ -30,6 +30,7 @@ import { LocalIcon } from '../components/Icon';
 import { ListItemSeparator } from '../components/ListItemSeparator';
 import { ListSearchHeader } from '../components/ListSearchHeader';
 import { useChatSdkContext } from '../contexts';
+import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
 import { messageTimestamp } from '../utils/format';
@@ -430,6 +431,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           convType,
           true
         );
+        await Services.dcs.createConversationDir(convId);
         if (conv) {
           const msg = await conv.getLatestMessage();
           if (msg) {
@@ -615,6 +617,19 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     standardizedData,
   ]);
 
+  const initDirs = React.useCallback((convIds: string[]) => {
+    for (const convId of convIds) {
+      Services.dcs
+        .createConversationDir(convId)
+        .then((result) => {
+          console.log('test:dir:', result);
+        })
+        .catch((error) => {
+          console.warn('test:create:dir:error:', error);
+        });
+    }
+  }, []);
+
   const initList = React.useCallback(() => {
     client.chatManager
       .getAllConversations()
@@ -639,16 +654,20 @@ export default function ConversationListFragment(props: Props): JSX.Element {
             } as ItemDataType);
           });
           const rr = [] as ItemDataType[];
+          const convIds = [] as string[];
           for (const item of r) {
-            rr.push(await item);
+            const rrr = await item;
+            rr.push(rrr);
+            convIds.push(rrr.convId);
           }
           manualRefresh({ type: 'init', items: rr });
+          initDirs(convIds);
         }
       })
       .catch((error) => {
         console.warn('test:error:', error);
       });
-  }, [client.chatManager, manualRefresh, standardizedData]);
+  }, [client.chatManager, initDirs, manualRefresh, standardizedData]);
 
   React.useEffect(() => {
     const load = () => {

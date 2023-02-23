@@ -1,4 +1,5 @@
 import { ClipboardServiceImplement } from './ClipboardService';
+import { DirCacheServiceImplement } from './DirCacheService';
 import { LocalStorageServiceImplement } from './LocalStorageService';
 import { MediaServiceImplement } from './MediaService';
 import { NotificationServiceImplement } from './NotificationService';
@@ -6,6 +7,8 @@ import { PermissionServiceImplement } from './PermissionService';
 import type {
   ClipboardService,
   ClipboardServiceOption,
+  DirCacheService,
+  DirCacheServiceOption,
   LocalStorageService,
   MediaService,
   MediaServiceOptions,
@@ -22,6 +25,7 @@ export class Services {
   static ns: NotificationService;
   static ps: PermissionService;
   static ls: LocalStorageService;
+  static dcs: DirCacheService;
 
   public static createPermissionService(
     option: PermissionServiceOption
@@ -67,6 +71,15 @@ export class Services {
       Services.ls = new LocalStorageServiceImplement();
     }
     return Services.ls;
+  }
+
+  public static createDirCacheService(
+    option: DirCacheServiceOption
+  ): DirCacheService {
+    if (Services.dcs === undefined) {
+      Services.dcs = new DirCacheServiceImplement(option);
+    }
+    return Services.dcs;
   }
 }
 

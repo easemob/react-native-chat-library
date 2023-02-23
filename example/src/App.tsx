@@ -79,6 +79,17 @@ export default function App() {
     firebaseMessage: FirebaseMessage,
   });
 
+  const media = Services.createMediaService({
+    videoModule: VideoComponent,
+    videoThumbnail: CreateThumbnail,
+    imagePickerModule: ImagePicker,
+    documentPickerModule: DocumentPicker,
+    mediaLibraryModule: MediaLibrary,
+    fsModule: FileAccess,
+    audioModule: Audio,
+    permission: permission,
+  });
+
   const storage = Services.createLocalStorageService();
 
   const [isReady, setIsReady] = React.useState(__DEV__ ? false : true);
@@ -161,18 +172,12 @@ export default function App() {
             firebaseMessage: FirebaseMessage,
             permission: permission,
           }),
-          media: Services.createMediaService({
-            videoModule: VideoComponent,
-            videoThumbnail: CreateThumbnail,
-            imagePickerModule: ImagePicker,
-            documentPickerModule: DocumentPicker,
-            mediaLibraryModule: MediaLibrary,
-            fsModule: FileAccess,
-            audioModule: Audio,
-            permission: permission,
-          }),
+          media: media,
           permission: permission,
           storage: storage,
+          dir: Services.createDirCacheService({
+            media: media,
+          }),
         }}
       >
         {__TEST__ === true ? (

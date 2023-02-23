@@ -49,4 +49,6 @@ export type ChatEventType =
   | 'enable_voice'
   | 'disable_voice'
   | 'msg_state'
-  | 'msg_progress';
+  | 'msg_progress'
+  | 'open_input_extension'
+  | 'send_image_message';

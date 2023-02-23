@@ -46,10 +46,11 @@ import type {
 } from '../components/MessageBubbleList';
 import MessageBubbleList from '../components/MessageBubbleList';
 import { useChatSdkContext, useI18nContext } from '../contexts';
+import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
 import { timeoutTask } from '../utils/function';
-import { seqId, timestamp } from '../utils/generator';
+import { seqId, timestamp, uuid } from '../utils/generator';
 import {
   type ChatEventType,
   ChatEvent,
@@ -154,6 +155,7 @@ const Input = React.memo((props: InputType) => {
                 style={{
                   flexGrow: 1,
                   backgroundColor: 'white',
+                  paddingLeft: sf(12),
                   width: calculateInputWidth(width, isInput),
                 }}
                 onChangeText={(text) => {
@@ -322,7 +324,13 @@ const Content = React.memo(
               r = ChatMessage.createImageMessage(
                 chatId,
                 img.localPath!,
-                chatType
+                chatType,
+                {
+                  displayName: img.displayName,
+                  width: img.width ?? 0,
+                  height: img.height ?? 0,
+                  fileSize: img.memoSize ?? 0,
+                } as any
               );
             }
             break;
@@ -343,6 +351,35 @@ const Content = React.memo(
       },
       [chatId, chatType]
     );
+
+    // const downloadAttachment = React.useCallback(
+    //   (msg: ChatMessage) => {
+    //     if (
+    //       msg.body.type === ChatMessageType.IMAGE ||
+    //       msg.body.type === ChatMessageType.VOICE
+    //     ) {
+    //       client.chatManager.downloadAttachment(msg, {
+    //         onProgress: (localMsgId: string, progress: number): void => {
+    //           console.log('test:onProgress:', localMsgId, progress);
+    //         },
+    //         onError: (localMsgId: string, error: ChatError): void => {
+    //           console.log('test:onError:', localMsgId, error);
+    //         },
+    //         onSuccess: (message: ChatMessage): void => {
+    //           DeviceEventEmitter.emit(ChatEvent, {
+    //             type: 'msg_state' as ChatEventType,
+    //             params: {
+    //               localMsgId: message.localMsgId,
+    //               result: true,
+    //               msg: message,
+    //             },
+    //           });
+    //         },
+    //       } as ChatMessageStatusCallback);
+    //     }
+    //   },
+    //   [client.chatManager]
+    // );
 
     const convertFromMessage = React.useCallback(
       (msg: ChatMessage): MessageItemType => {
@@ -371,6 +408,7 @@ const Content = React.memo(
                 const r = item as ImageMessageItemType;
                 r.localPath = body.localPath;
                 r.remoteUrl = body.remotePath;
+                r.localThumbPath = body.thumbnailLocalPath;
                 r.type = ChatMessageType.IMAGE;
               }
               break;
@@ -429,7 +467,7 @@ const Content = React.memo(
                 params: {
                   localMsgId: message.localMsgId,
                   result: true,
-                  msg: message,
+                  item: convertFromMessage(message),
                 },
               });
             },
@@ -441,7 +479,7 @@ const Content = React.memo(
             console.warn('test:error:', error);
           });
       },
-      [client]
+      [client.chatManager, convertFromMessage]
     );
 
     const sendTextMessage = React.useCallback(
@@ -465,16 +503,80 @@ const Content = React.memo(
         if (msg === undefined) {
           throw new Error('This is impossible.');
         }
-        item.key = msg.localMsgId;
-        item.timestamp = msg.serverTime;
 
-        getMsgListRef().current?.addMessage([item]);
+        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
         sendToServer(msg);
       },
-      [chatId, convertToMessage, getInputRef, getMsgListRef, sendToServer]
+      [
+        chatId,
+        convertFromMessage,
+        convertToMessage,
+        getInputRef,
+        getMsgListRef,
+        sendToServer,
+      ]
+    );
+
+    const sendImageMessage = React.useCallback(
+      async ({
+        name,
+        localPath,
+        memoSize,
+        width,
+        height,
+      }: {
+        name: string;
+        localPath: string;
+        memoSize?: number;
+        imageType?: string;
+        width?: number;
+        height?: number;
+      }) => {
+        if (localPath.length === 0) {
+          return;
+        }
+        if (localPath.startsWith('file://')) {
+          localPath = localPath.replace('file://', '');
+        }
+        const targetPath = Services.dcs.getFileDir(chatId, uuid());
+        console.log('test:----------:', localPath, targetPath);
+        await Services.ms.saveFromLocal({
+          localPath,
+          targetPath: targetPath,
+        });
+        const item = {
+          displayName: name,
+          sender: chatId,
+          isSender: true,
+          type: ChatMessageType.IMAGE,
+          state: 'sending',
+          localPath: targetPath,
+          memoSize: memoSize,
+          width: width,
+          height: height,
+        } as ImageMessageItemType;
+
+        const msg = convertToMessage(item);
+        if (msg === undefined) {
+          throw new Error('This is impossible.');
+        }
+
+        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        timeoutTask(() => {
+          getMsgListRef().current?.scrollToEnd();
+        });
+        sendToServer(msg);
+      },
+      [
+        chatId,
+        convertFromMessage,
+        convertToMessage,
+        getMsgListRef,
+        sendToServer,
+      ]
     );
 
     const loadMessage = React.useCallback(
@@ -484,6 +586,8 @@ const Content = React.memo(
           const item = convertFromMessage(msg);
           items.push(item);
         }
+        test111();
+        console.log('test:222:', items, msgs);
         getMsgListRef().current?.addMessage(items);
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
@@ -491,6 +595,17 @@ const Content = React.memo(
       },
       [convertFromMessage, getMsgListRef]
     );
+
+    const test111 = () => {
+      Services.dcs
+        .isExistedFile(
+          '/storage/emulated/0/Android/data/com.example.rnchatuikit/1135220126133718#demo/files/asterisk001/asterisk003/thumb_f62429a0-b364-11ed-b432-591c0ad161c6'
+        )
+        .then((r) => {
+          console.log('test:file:', r);
+        })
+        .catch();
+    };
 
     const _onFace = (value?: 'face' | 'key') => {
       if (value === 'key') {
@@ -555,10 +670,37 @@ const Content = React.memo(
     }, []);
 
     const addListeners = React.useCallback(() => {
+      const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
+        console.log('test:image:', event);
+        const eventType = event.type as ChatEventType;
+        if (eventType === 'send_image_message') {
+          const eventParams = event.params as any[];
+          for (const item of eventParams) {
+            sendImageMessage({
+              name: item.name,
+              localPath: item.uri,
+              memoSize: item.size,
+              imageType: item.type,
+              width: item.width,
+              height: item.height,
+            })
+              .then()
+              .catch((error) => {
+                console.warn('test:error', error);
+              });
+          }
+        }
+      });
       const msgListener: ChatMessageEventListener = {
         onMessagesReceived: async (messages: ChatMessage[]): Promise<void> => {
           /// todo: !!! 10000 message count ???
-          loadMessage(messages);
+          const r = [] as ChatMessage[];
+          for (const msg of messages) {
+            if (msg.conversationId === chatId) {
+              r.push(msg);
+            }
+          }
+          if (r.length > 0) loadMessage(r);
         },
 
         onCmdMessagesReceived: (_: ChatMessage[]): void => {},
@@ -589,9 +731,23 @@ const Content = React.memo(
       };
       client.chatManager.addMessageListener(msgListener);
       return () => {
+        sub.remove();
         client.chatManager.removeMessageListener(msgListener);
       };
-    }, [client.chatManager, loadMessage]);
+    }, [chatId, client.chatManager, loadMessage, sendImageMessage]);
+
+    const initDirs = React.useCallback((convIds: string[]) => {
+      for (const convId of convIds) {
+        Services.dcs
+          .createConversationDir(convId)
+          .then((result) => {
+            console.log('test:dir:', result);
+          })
+          .catch((error) => {
+            console.warn('test:create:dir:error:', error);
+          });
+      }
+    }, []);
 
     const initList = React.useCallback(() => {
       client.chatManager
@@ -616,6 +772,7 @@ const Content = React.memo(
       const load = () => {
         const unsubscribe = addListeners();
         initList();
+        initDirs([chatId]);
         createConversationIfNotExisted();
         clearRead();
         return {
@@ -628,7 +785,14 @@ const Content = React.memo(
 
       const res = load();
       return () => unload(res);
-    }, [createConversationIfNotExisted, addListeners, initList, clearRead]);
+    }, [
+      createConversationIfNotExisted,
+      addListeners,
+      initList,
+      clearRead,
+      initDirs,
+      chatId,
+    ]);
 
     const MessageBubbleListM = React.memo(() =>
       messageBubbleList ? (
@@ -756,7 +920,6 @@ const styles = createStyleSheet({
     overflow: 'hidden',
     borderColor: '#A5A7A6',
     borderWidth: 1,
-    paddingLeft: 15,
   },
   talk: {
     height: 36,

@@ -8,12 +8,14 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import type { ChatConnectEventListener } from 'react-native-chat-sdk';
 import {
   autoFocus,
   createStyleSheet,
   getScaleFactor,
   LoadingButton,
   LocalIcon,
+  Services,
   TextInput,
   useChatSdkContext,
   useHeaderContext,
@@ -70,6 +72,7 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
       .login(id, password)
       .then(() => {
         console.log('test:login:success');
+        Services.dcs.init(`${client.options!.appKey.replace('#', '-')}/${id}`);
         setButtonState('stop');
         navigation.push('Home', { params: undefined });
       })
@@ -77,12 +80,53 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
         console.log('test:login:fail:', error);
         setButtonState('stop');
         if (error.code === 200) {
+          Services.dcs.init(
+            `${client.options!.appKey.replace('#', '-')}/${id}`
+          );
           navigation.push('Home', { params: undefined });
         } else {
           toast.showToast('Login Failed');
         }
       });
   };
+
+  const addListeners = React.useCallback(() => {
+    const connectListener = {
+      onConnected: (): void => {
+        console.log('test:onConnected:');
+      },
+      onDisconnected: (errorCode?: number): void => {
+        console.log('test:onDisconnected:', errorCode);
+      },
+      onTokenWillExpire: (): void => {
+        console.log('test:onTokenWillExpire:');
+      },
+      onTokenDidExpire: (): void => {
+        console.log('test:onTokenDidExpire:');
+      },
+    } as ChatConnectEventListener;
+    client.addConnectionListener(connectListener);
+    return () => {
+      client.removeConnectionListener(connectListener);
+    };
+  }, [client]);
+
+  React.useEffect(() => {
+    const load = () => {
+      console.log('test:load:', SignInScreen.name);
+      const unsubscribe = addListeners();
+      return {
+        unsubscribe: unsubscribe,
+      };
+    };
+    const unload = (params: { unsubscribe: () => void }) => {
+      console.log('test:unload:', SignInScreen.name);
+      params.unsubscribe();
+    };
+
+    const res = load();
+    return () => unload(res);
+  }, [addListeners, client]);
 
   return (
     <SafeAreaView

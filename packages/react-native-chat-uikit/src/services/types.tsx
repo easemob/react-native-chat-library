@@ -17,6 +17,8 @@ export type FileType = {
   size: number;
   name: string;
   type: string;
+  width?: number;
+  height?: number;
 };
 
 export interface VideoProps {
@@ -45,6 +47,7 @@ export interface SaveFileOptions {
   fileUrl: string;
   fileName: string;
   fileType?: string | null;
+  basePath?: string | undefined;
 }
 export interface RecordAudioOptions extends OpenResult {
   url?: string;
@@ -84,6 +87,7 @@ export type MediaServiceOptions = {
   fsModule: typeof FileAccess;
   audioModule: typeof Audio;
   permission: PermissionService;
+  rootDirName?: string;
 };
 export interface MediaService {
   getVideoComponent<Props = {}>(props: VideoProps & Props): JSX.Element;
@@ -103,11 +107,30 @@ export interface MediaService {
    * @param options save file options.
    */
   save(options: SaveFileOptions): Promise<Nullable<string>>;
+  saveFromUrl({
+    remoteUrl,
+    localPath,
+  }: {
+    remoteUrl: string;
+    localPath: string;
+  }): Promise<string>;
+  saveFromLocal({
+    targetPath,
+    localPath,
+  }: {
+    targetPath: string;
+    localPath: string;
+  }): Promise<string>;
 
   startRecordAudio(options: RecordAudioOptions): Promise<boolean>;
   stopRecordAudio(): Promise<void>;
   playAudio(options: PlayAudioOptions): Promise<boolean>;
   stopAudio(): Promise<void>;
+  getRootDir(): string;
+  createDir(subDir: string): Promise<string>;
+  isDir(subDir: string): Promise<boolean>;
+  isExistedDir(subDir: string): Promise<boolean>;
+  isExistedFile(file: string): Promise<boolean>;
 }
 // export interface ImageService {}
 // export interface NetworkService {}
@@ -140,4 +163,28 @@ export interface LocalStorageService {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
   removeItem(key: string): Promise<void>;
+}
+
+export type DirCacheServiceOption = {
+  media: MediaService;
+};
+
+export interface DirCacheService {
+  init(useId: string): void;
+  unInit(): void;
+
+  getRootDir(): string;
+  getUserDir(): string;
+  getMessageDir(): string;
+  getConversationDir(convId: string): string;
+  getFileDir(convId: string, file: string): string;
+
+  isExistedUserDir(): Promise<boolean>;
+  isExistedMessageDir(): Promise<boolean>;
+  isExistedConversationDir(convId: string): Promise<boolean>;
+  isExistedFile(file: string): Promise<boolean>;
+
+  createUserDir(): Promise<string>;
+  createMessageDir(): Promise<string>;
+  createConversationDir(convId: string): Promise<string>;
 }

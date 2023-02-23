@@ -4,11 +4,12 @@ import {
   Image,
   ListRenderItem,
   ListRenderItemInfo,
+  Platform,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
-import { ChatMessage, ChatMessageType } from 'react-native-chat-sdk';
+import { ChatMessageType } from 'react-native-chat-sdk';
 
 import { type ChatEventType, ChatEvent } from '../fragments';
 import { getScaleFactor } from '../styles/createScaleFactor';
@@ -45,9 +46,13 @@ export interface TextMessageItemType extends MessageItemType {
 }
 
 export interface ImageMessageItemType extends MessageItemType {
-  image: string;
+  displayName: string;
   localPath?: string;
+  localThumbPath?: string;
   remoteUrl?: string;
+  memoSize?: number;
+  width?: number;
+  height?: number;
 }
 export interface VoiceMessageItemType extends MessageItemType {
   length: number;
@@ -77,7 +82,7 @@ export interface VoiceMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: false,
 //   key: seqId('ml').toString(),
-//   image:
+//   remoteUrl:
 //     'https://t4.focus-img.cn/sh740wsh/zx/duplication/9aec104f-1380-4425-a5c6-bc03000c4332.JPEG',
 //   type: ChatMessageType.IMAGE,
 // };
@@ -86,7 +91,7 @@ export interface VoiceMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: true,
 //   key: seqId('ml').toString(),
-//   image:
+//   remoteUrl:
 //     'https://t4.focus-img.cn/sh740wsh/zx/duplication/9aec104f-1380-4425-a5c6-bc03000c4332.JPEG',
 //   type: ChatMessageType.IMAGE,
 // };
@@ -201,6 +206,37 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     const sf = getScaleFactor();
     const { item } = info;
     const msg = item as ImageMessageItemType;
+    const encode = (url: string) => {
+      return Platform.select({
+        ios: encodeURI(url),
+        android: `file://${encodeURI(url).replace('#', '%23')}`, // !!! try fix android bug
+      })!;
+    };
+    const url = (msg: ImageMessageItemType): string => {
+      let r: string;
+      if (msg.localThumbPath && msg.localThumbPath.length > 0) {
+        console.log('test:localThumbPath:', encode(msg.localThumbPath));
+        r = Platform.select({
+          ios: msg.localThumbPath,
+          android: `file://${encode(msg.localThumbPath)}`,
+        })!;
+      } else if (msg.localPath && msg.localPath.length > 0) {
+        console.log('test:localPath:', msg.localPath);
+        r = Platform.select({
+          ios: msg.localPath,
+          android: `file://${encode(msg.localPath)}`,
+        })!;
+      } else {
+        r = Platform.select({
+          ios: msg.remoteUrl,
+          android: encode(msg.remoteUrl!),
+        })!;
+      }
+      console.log('test:url:', r);
+      return r;
+    };
+    console.log('test:msg:', msg);
+
     return (
       <View
         style={[
@@ -230,7 +266,7 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
         >
           <Image
             source={{
-              uri: msg.image,
+              uri: url(msg),
             }}
             resizeMode="cover"
             style={{ height: sf(200), borderRadius: sf(10) }}
@@ -511,28 +547,17 @@ const MessageBubbleList = (
               localMsgId: string;
               result: boolean;
               reason?: any;
-              msg?: ChatMessage;
+              item: MessageItemType;
             };
             if (eventParams.result === true) {
               updateData({
-                type: 'update-part',
-                items: [
-                  {
-                    key: eventParams.localMsgId,
-                    state: 'arrived',
-                    timestamp: eventParams.msg!.serverTime,
-                  } as MessageItemType,
-                ],
+                type: 'update-all',
+                items: [eventParams.item],
               });
             } else {
               updateData({
                 type: 'update-part',
-                items: [
-                  {
-                    key: eventParams.localMsgId,
-                    state: 'failed',
-                  } as MessageItemType,
-                ],
+                items: [eventParams.item],
               });
             }
           }
