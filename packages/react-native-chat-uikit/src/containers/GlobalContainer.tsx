@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Text } from 'react-native';
-import { ChatOptions } from 'react-native-chat-sdk';
+import { ChatConversationType, ChatOptions } from 'react-native-chat-sdk';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import {
@@ -112,7 +112,7 @@ export function GlobalContainer({
           debugModel: true,
         })
       )
-      .then(() => {
+      .then(async () => {
         console.log('test:sdk:init:success');
         if (__DEV__) {
           sdk.client
@@ -127,6 +127,25 @@ export function GlobalContainer({
             .catch((error) => {
               console.warn('tes:e', error);
             });
+
+          console.log('test:removeAllMessage:');
+          const currentId = await sdk.client.getCurrentUsername();
+          sdk.client.chatManager
+            .deleteAllMessages(currentId, ChatConversationType.PeerChat)
+            .then()
+            .catch((error) => {
+              console.warn('test:removeAllMessage:', error);
+            });
+          // client.chatManager
+          //   .deleteMessagesBeforeTimestamp(timestamp())
+          //   .then()
+          //   .catch((error) => {
+          //     console.warn('test:deleteMessagesBeforeTimestamp:', error);
+          //   });
+          const list = await sdk.client.chatManager.getAllConversations();
+          for (const item of list) {
+            await sdk.client.chatManager.deleteConversation(item.convId, true);
+          }
         }
       })
       .catch((error) => {

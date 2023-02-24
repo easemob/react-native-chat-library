@@ -5,6 +5,7 @@ import {
   ListRenderItem,
   ListRenderItemInfo,
   Platform,
+  Pressable,
   Text,
   useWindowDimensions,
   View,
@@ -39,6 +40,8 @@ export interface MessageItemType {
   key: string;
   type: ChatMessageType;
   state?: MessageItemStateType;
+  onPress?: (data: MessageItemType) => void;
+  onLongPress?: (data: MessageItemType) => void;
 }
 
 export interface TextMessageItemType extends MessageItemType {
@@ -58,6 +61,13 @@ export interface VoiceMessageItemType extends MessageItemType {
   duration: number;
   localPath?: string;
   remoteUrl?: string;
+}
+export interface CustomMessageItemType extends MessageItemType {
+  // SubComponent: (props: React.PropsWithChildren<any>) => React.ReactElement;
+  SubComponent: React.FunctionComponent<
+    MessageItemType & { eventType: string; data: any }
+  >;
+  SubComponentProps: MessageItemType & { eventType: string; data: any };
 }
 // const text1: TextMessageItemType = {
 //   sender: 'zs',
@@ -215,13 +225,11 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     const url = (msg: ImageMessageItemType): string => {
       let r: string;
       if (msg.localThumbPath && msg.localThumbPath.length > 0) {
-        console.log('test:localThumbPath:', encode(msg.localThumbPath));
         r = Platform.select({
           ios: msg.localThumbPath,
           android: `file://${encode(msg.localThumbPath)}`,
         })!;
       } else if (msg.localPath && msg.localPath.length > 0) {
-        console.log('test:localPath:', msg.localPath);
         r = Platform.select({
           ios: msg.localPath,
           android: `file://${encode(msg.localPath)}`,
@@ -232,10 +240,8 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
           android: encode(msg.remoteUrl!),
         })!;
       }
-      console.log('test:url:', r);
       return r;
     };
-    console.log('test:msg:', msg);
 
     return (
       <View
@@ -366,6 +372,13 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     );
   }
 );
+const CustomMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
+  (info: ListRenderItemInfo<MessageItemType>): React.ReactElement | null => {
+    const { item } = info;
+    const { SubComponent, SubComponentProps } = item as CustomMessageItemType;
+    return <SubComponent {...SubComponentProps} />;
+  }
+);
 const MessageRenderItem: ListRenderItem<MessageItemType> = (
   info: ListRenderItemInfo<MessageItemType>
 ): React.ReactElement | null => {
@@ -377,11 +390,19 @@ const MessageRenderItem: ListRenderItem<MessageItemType> = (
     MessageItem = ImageMessageRenderItem;
   } else if (item.type === ChatMessageType.VOICE) {
     MessageItem = VoiceMessageRenderItem;
+  } else if (item.type === ChatMessageType.CUSTOM) {
+    MessageItem = CustomMessageRenderItem;
   } else {
     throw new Error('error');
   }
   return (
-    <View
+    <Pressable
+      onPress={() => {
+        item.onPress?.(item);
+      }}
+      onLongPress={() => {
+        item.onLongPress?.(item);
+      }}
       style={{
         width: '100%',
         alignItems:
@@ -393,7 +414,7 @@ const MessageRenderItem: ListRenderItem<MessageItemType> = (
       }}
     >
       <MessageItem {...info} />
-    </View>
+    </Pressable>
   );
 };
 export type MessageBubbleListRef = {
@@ -403,12 +424,16 @@ export type MessageBubbleListRef = {
 };
 export type MessageBubbleListProps = {
   onPressed?: () => void;
+  CustomMessageRenderItem?: React.FunctionComponent<
+    React.PropsWithChildren<MessageItemType & { eventType: string; data: any }>
+  >;
 };
 const MessageBubbleList = (
   props: MessageBubbleListProps,
   ref?: React.Ref<MessageBubbleListRef>
 ): JSX.Element => {
-  const { onPressed } = props;
+  const { onPressed, CustomMessageRenderItem } = props;
+  console.log('test:', CustomMessageRenderItem);
   const enableRefresh = true;
   const [refreshing, setRefreshing] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -461,13 +486,26 @@ const MessageBubbleList = (
   const updateData = React.useCallback(
     ({
       type,
-      items: list,
+      list,
     }: {
       type: 'add' | 'update-all' | 'update-part';
-      items: MessageItemType[];
+      list: MessageItemType[];
     }) => {
       switch (type) {
         case 'add':
+          // for (const item of items) {
+          //   const { type } = item;
+          //   if (type === ChatMessageType.CUSTOM) {
+          //     const custom = item as CustomMessageItemType;
+          //     if (
+          //       custom.SubComponent === undefined &&
+          //       CustomMessageRenderItem !== undefined
+          //     ) {
+          //       console.log('test:custom:111:', custom);
+          //       custom.SubComponent = CustomMessageRenderItem;
+          //     }
+          //   }
+          // }
           items.push(...list);
           // setItems([...items]);
           break;
@@ -529,7 +567,7 @@ const MessageBubbleList = (
       },
       scrollToTop: () => {},
       addMessage: (msgs: MessageItemType[]) => {
-        updateData({ type: 'add', items: msgs });
+        updateData({ type: 'add', list: msgs });
       },
     }),
     [updateData]
@@ -552,12 +590,12 @@ const MessageBubbleList = (
             if (eventParams.result === true) {
               updateData({
                 type: 'update-all',
-                items: [eventParams.item],
+                list: [eventParams.item],
               });
             } else {
               updateData({
                 type: 'update-part',
-                items: [eventParams.item],
+                list: [eventParams.item],
               });
             }
           }
@@ -603,7 +641,7 @@ const MessageBubbleList = (
         setRefreshing(true);
         updateData({
           type: 'add',
-          items: [
+          list: [
             {
               sender: 'zs',
               timestamp: timestamp(),

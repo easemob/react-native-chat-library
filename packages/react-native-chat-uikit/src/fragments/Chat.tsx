@@ -5,6 +5,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Text,
   TextInput as RNTextInput,
   TextInput,
   TouchableOpacity,
@@ -22,6 +23,7 @@ import {
 } from 'react-native-audio-recorder-player';
 import {
   ChatConversationType,
+  ChatCustomMessageBody,
   ChatError,
   ChatGroupMessageAck,
   ChatImageMessageBody,
@@ -45,6 +47,7 @@ import Button from '../components/Button';
 import { FaceList } from '../components/FaceList';
 import { type LocalIconName, LocalIcon } from '../components/Icon';
 import type {
+  CustomMessageItemType,
   ImageMessageItemType,
   MessageBubbleListProps,
   MessageBubbleListRef,
@@ -54,7 +57,17 @@ import type {
   VoiceMessageItemType,
 } from '../components/MessageBubbleList';
 import MessageBubbleList from '../components/MessageBubbleList';
-import { useChatSdkContext, useI18nContext } from '../contexts';
+import { FragmentContainer } from '../containers';
+import {
+  useActionMenu,
+  useAlert,
+  useBottomSheet,
+  useChatSdkContext,
+  useContentStateContext,
+  useI18nContext,
+  useThemeContext,
+  useToastContext,
+} from '../contexts';
 import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
@@ -65,7 +78,166 @@ import {
   ChatEvent,
   ConversationListEvent,
   ConversationListEventType,
+  MessageBubbleEvent,
+  MessageBubbleEventType,
 } from './types';
+
+const InvisiblePlaceholder = React.memo(() => {
+  const sheet = useBottomSheet();
+  const toast = useToastContext();
+  const alert = useAlert();
+  const menu = useActionMenu();
+  const { groupInfo, chat } = useI18nContext();
+  const theme = useThemeContext();
+  const sf = getScaleFactor();
+  const state = useContentStateContext();
+  const ms = Services.ms;
+
+  React.useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
+      // console.log('test:ChatEvent:Chat:', event);
+      switch (event.type as ChatEventType) {
+        case 'enable_voice':
+          state.showState({
+            children: (
+              <View
+                style={{
+                  height: sf(100),
+                  width: sf(161),
+                  borderRadius: sf(16),
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ flexDirection: 'row' }}>
+                  <LocalIcon name="mic" size={sf(40)} />
+                  <LocalIcon name="volume8" size={sf(40)} />
+                </View>
+                <Text style={{ color: 'white' }}>{chat.voiceState}</Text>
+              </View>
+            ),
+          });
+          break;
+        case 'disable_voice':
+          state.hideState();
+          break;
+        case 'open_input_extension':
+          sheet.openSheet({
+            sheetItems: [
+              {
+                iconColor: theme.colors.primary,
+                title: 'Camera',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openCamera({})
+                    .then((result) => {
+                      console.log('test:result:', result);
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
+                },
+              },
+              {
+                iconColor: theme.colors.primary,
+                title: 'Album',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openMediaLibrary({ selectionLimit: 1 })
+                    .then((result) => {
+                      console.log('test:result:', result);
+                      DeviceEventEmitter.emit(ChatEvent, {
+                        type: 'send_image_message' as ChatEventType,
+                        params: result,
+                      });
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
+                },
+              },
+              {
+                iconColor: theme.colors.primary,
+                title: 'Files',
+                titleColor: 'black',
+                onPress: () => {
+                  ms.openDocument({})
+                    .then((result) => {
+                      console.log('test:result:', result);
+                    })
+                    .catch((error) => {
+                      console.warn('error:', error);
+                    });
+                },
+              },
+            ],
+          });
+          break;
+        default:
+          break;
+      }
+    });
+
+    const sub2 = DeviceEventEmitter.addListener(MessageBubbleEvent, (event) => {
+      // console.log('test:ChatEvent:Chat:', event);
+      switch (event.type as MessageBubbleEventType) {
+        case 'on_press':
+          break;
+        case 'on_long_press':
+          menu.openMenu({
+            menuItems: [
+              {
+                title: 'delete message',
+                onPress: () => {
+                  console.log('test:111:');
+                },
+              },
+              {
+                title: 'resend message',
+                onPress: () => {
+                  console.log('test:222:');
+                },
+              },
+              {
+                title: 'recall message',
+                onPress: () => {
+                  console.log('test:222:');
+                },
+              },
+            ],
+          });
+          break;
+        default:
+          break;
+      }
+    });
+    return () => {
+      sub.remove();
+      sub2.remove();
+    };
+  }, [
+    toast,
+    sheet,
+    alert,
+    groupInfo.inviteAlert.title,
+    groupInfo.inviteAlert.message,
+    groupInfo.inviteAlert.cancelButton,
+    groupInfo.inviteAlert.confirmButton,
+    groupInfo.toast,
+    groupInfo.memberSheet.add,
+    groupInfo.memberSheet.remove,
+    groupInfo.memberSheet.chat,
+    theme.colors.primary,
+    sf,
+    state,
+    chat.voiceState,
+    ms,
+    menu,
+  ]);
+
+  return <></>;
+});
 
 type BaseType = {
   chatId: string;
@@ -96,6 +268,11 @@ type ContentType = BaseType & {
     >;
     MessageBubbleListPropsP: MessageBubbleListProps;
     MessageBubbleListRefP: React.RefObject<MessageBubbleListRef>;
+  };
+  customMessageBubble?: {
+    CustomMessageRenderItemP: React.FunctionComponent<
+      MessageItemType & { eventType: string; data: any }
+    >;
   };
 };
 
@@ -303,7 +480,14 @@ const Input = React.memo((props: InputType) => {
 });
 
 const Content = React.memo(
-  ({ chatId, chatType, messageBubbleList, onFace, inputRef }: ContentType) => {
+  ({
+    chatId,
+    chatType,
+    messageBubbleList,
+    onFace,
+    inputRef,
+    customMessageBubble,
+  }: ContentType) => {
     const sf = getScaleFactor();
     const TextInputRef = React.useRef<RNTextInput>(null);
     const msgListRef = React.useRef<MessageBubbleListRef>(null);
@@ -395,6 +579,19 @@ const Content = React.memo(
               );
             }
             break;
+          case ChatMessageType.CUSTOM:
+            {
+              const custom = item as CustomMessageItemType;
+              r = ChatMessage.createCustomMessage(
+                chatId,
+                custom.SubComponentProps.eventType,
+                chatType,
+                {
+                  params: custom.SubComponentProps.data,
+                }
+              );
+            }
+            break;
           default:
             break;
         }
@@ -431,6 +628,30 @@ const Content = React.memo(
     //   },
     //   [client.chatManager]
     // );
+
+    const standardizedData = React.useCallback(
+      (
+        item: Omit<MessageItemType, 'onPress' | 'onLongPress'>
+      ): MessageItemType => {
+        const r = {
+          ...item,
+          onLongPress: (data: MessageItemType) => {
+            DeviceEventEmitter.emit(MessageBubbleEvent, {
+              type: 'on_long_press' as MessageBubbleEventType,
+              params: data,
+            });
+          },
+          onPress: (data: MessageItemType) => {
+            DeviceEventEmitter.emit(MessageBubbleEvent, {
+              type: 'on_press' as MessageBubbleEventType,
+              params: data,
+            });
+          },
+        } as MessageItemType;
+        return r;
+      },
+      []
+    );
 
     const convertFromMessage = React.useCallback(
       (msg: ChatMessage): MessageItemType => {
@@ -481,6 +702,19 @@ const Content = React.memo(
                 r.type = ChatMessageType.TXT;
               }
               break;
+            case ChatMessageType.CUSTOM:
+              {
+                const body = msg.body as ChatCustomMessageBody;
+                const r = item as CustomMessageItemType;
+                r.SubComponentProps = {
+                  eventType: body.event,
+                  data: body.params,
+                  ...item,
+                } as MessageItemType & { eventType: string; data: any };
+                r.SubComponent = customMessageBubble?.CustomMessageRenderItemP!; // !!! must
+                r.type = ChatMessageType.CUSTOM;
+              }
+              break;
             default:
               throw new Error('This is impossible.');
           }
@@ -494,9 +728,9 @@ const Content = React.memo(
           state: convertFromMessageState(msg),
         } as MessageItemType;
         convertFromMessageBody(msg, r);
-        return r;
+        return standardizedData(r);
       },
-      []
+      [customMessageBubble?.CustomMessageRenderItemP, standardizedData]
     );
 
     const sendToServer = React.useCallback(
@@ -639,6 +873,22 @@ const Content = React.memo(
       ]
     );
 
+    const sendCustomMessage = React.useCallback(
+      async ({ data }: { data: CustomMessageItemType }) => {
+        const msg = convertToMessage(data);
+        if (msg === undefined) {
+          throw new Error('This is impossible.');
+        }
+
+        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        timeoutTask(() => {
+          getMsgListRef().current?.scrollToEnd();
+        });
+        sendToServer(msg);
+      },
+      [convertFromMessage, convertToMessage, getMsgListRef, sendToServer]
+    );
+
     // const sendVoiceMessage = React.useCallback(
     //   async ({
     //     localPath,
@@ -690,8 +940,6 @@ const Content = React.memo(
           const item = convertFromMessage(msg);
           items.push(item);
         }
-        test111();
-        console.log('test:222:', items, msgs);
         getMsgListRef().current?.addMessage(items);
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
@@ -699,17 +947,6 @@ const Content = React.memo(
       },
       [convertFromMessage, getMsgListRef]
     );
-
-    const test111 = () => {
-      Services.dcs
-        .isExistedFile(
-          '/storage/emulated/0/Android/data/com.example.rnchatuikit/1135220126133718#demo/files/asterisk001/asterisk003/thumb_f62429a0-b364-11ed-b432-591c0ad161c6'
-        )
-        .then((r) => {
-          console.log('test:file:', r);
-        })
-        .catch();
-    };
 
     const _onFace = (value?: 'face' | 'key') => {
       if (value === 'key') {
@@ -775,7 +1012,6 @@ const Content = React.memo(
 
     const addListeners = React.useCallback(() => {
       const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-        console.log('test:image:', event);
         const eventType = event.type as ChatEventType;
         if (eventType === 'send_image_message') {
           const eventParams = event.params as any[];
@@ -793,6 +1029,8 @@ const Content = React.memo(
                 console.warn('test:error', error);
               });
           }
+        } else if (eventType === 'send_custom_message') {
+          // const eventParams = event.params as any[];
         }
       });
       const msgListener: ChatMessageEventListener = {
@@ -904,12 +1142,24 @@ const Content = React.memo(
           ref={messageBubbleList.MessageBubbleListRefP}
           {...messageBubbleList.MessageBubbleListPropsP}
           onPressed={() => {
+            console.log('test:click:item:');
             Keyboard.dismiss();
             _onFace('face');
             messageBubbleList.MessageBubbleListPropsP?.onPressed?.();
           }}
         />
-      ) : null
+      ) : (
+        <MessageBubbleList
+          ref={msgListRef}
+          onPressed={() => {
+            Keyboard.dismiss();
+            _onFace('face');
+          }}
+          CustomMessageRenderItem={
+            customMessageBubble?.CustomMessageRenderItemP
+          }
+        />
+      )
     );
 
     return (
@@ -920,17 +1170,7 @@ const Content = React.memo(
             // backgroundColor: '#fff8dc',
           }}
         >
-          {messageBubbleList === undefined ? (
-            <MessageBubbleList
-              ref={msgListRef}
-              onPressed={() => {
-                Keyboard.dismiss();
-                _onFace('face');
-              }}
-            />
-          ) : (
-            <MessageBubbleListM />
-          )}
+          <MessageBubbleListM />
         </View>
 
         <Input
@@ -939,7 +1179,23 @@ const Content = React.memo(
           chatType={chatType}
           onFace={_onFace}
           onSendTextMessage={({ content }) => {
-            sendTextMessage(content);
+            const test = false;
+            if (test) sendTextMessage(content);
+            else
+              sendCustomMessage({
+                data: {
+                  sender: chatId,
+                  timestamp: timestamp(),
+                  isSender: true,
+                  key: seqId('ml').toString(),
+                  type: ChatMessageType.CUSTOM,
+                  state: 'sending',
+                  SubComponentProps: {
+                    data: content,
+                    eventType: 'test',
+                  },
+                } as CustomMessageItemType,
+              });
             setTestRef.current();
           }}
           onInit={({ setIsInput, exeTest, getContent, setContent }) => {
@@ -956,7 +1212,7 @@ const Content = React.memo(
   }
 );
 
-type Props = {
+type ChatFragmentProps = {
   screenParams: any;
   messageBubbleList?: {
     MessageBubbleListP: React.ForwardRefExoticComponent<
@@ -966,9 +1222,16 @@ type Props = {
     MessageBubbleListRefP: React.RefObject<MessageBubbleListRef>;
   };
   onFace?: (value?: 'face' | 'key') => void;
+  customMessageBubble?: {
+    CustomMessageRenderItemP: React.FunctionComponent<
+      MessageItemType & { eventType: string; data: any }
+    >;
+  };
 };
-export default function ChatFragment(props: Props): JSX.Element {
-  const { screenParams, messageBubbleList, onFace } = props;
+
+export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
+  const { screenParams, messageBubbleList, onFace, customMessageBubble } =
+    props;
   const params = screenParams.params as {
     chatId: string;
     chatType: number;
@@ -977,31 +1240,42 @@ export default function ChatFragment(props: Props): JSX.Element {
   const { bottom } = useSafeAreaInsets();
   const chatId = params.chatId;
   const chatType = params.chatType;
-  let keyboardVerticalOffset = sf(bottom + 50);
+  let keyboardVerticalOffset = sf(
+    bottom + Platform.select({ ios: 50, android: 70 })!
+  );
   return (
-    <KeyboardAvoidingView
-      pointerEvents="box-none"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={keyboardVerticalOffset}
-      style={{
-        flex: 1,
-      }}
-    >
-      {/* <TouchableWithoutFeedback
+    <React.Fragment>
+      <KeyboardAvoidingView
+        pointerEvents="box-none"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+        style={{
+          flex: 1,
+        }}
+      >
+        {/* <TouchableWithoutFeedback
     onPress={() => {
       keyboardVerticalOffset = sf(0);
       Keyboard.dismiss();
       _onFace('face');
     }}
   > */}
-      <Content
-        chatId={chatId}
-        chatType={chatType}
-        messageBubbleList={messageBubbleList}
-        onFace={onFace}
-      />
-      {/* </TouchableWithoutFeedback> */}
-    </KeyboardAvoidingView>
+        <Content
+          chatId={chatId}
+          chatType={chatType}
+          messageBubbleList={messageBubbleList}
+          onFace={onFace}
+          customMessageBubble={customMessageBubble}
+          // customMessageBubble={{
+          //   CustomMessageRenderItemP: CustomMessageRenderItem,
+          // }}
+        />
+        {/* </TouchableWithoutFeedback> */}
+      </KeyboardAvoidingView>
+      <FragmentContainer>
+        <InvisiblePlaceholder />
+      </FragmentContainer>
+    </React.Fragment>
   );
 }
 

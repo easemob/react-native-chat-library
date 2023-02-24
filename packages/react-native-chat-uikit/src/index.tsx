@@ -73,6 +73,7 @@ export { default as LoadingButton } from './components/LoadingButton';
 export { default as LoadingRN } from './components/LoadingRN';
 export { default as MenuBar } from './components/MenuBar';
 export {
+  CustomMessageItemType,
   default as DefaultMessageBubbleList,
   MessageBubbleListProps as DefaultMessageBubbleListProps,
   MessageBubbleListRef as DefaultMessageBubbleListRef,
