@@ -231,7 +231,7 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
       return r;
     };
     const [_url] = React.useState(url(msg));
-    console.log('test:image:load:url:', _url);
+    // console.log('test:image:load:url:', _url);
     // Services.dcs
     //   .isExistedFile(_url)
     //   .then((r) => {
@@ -399,7 +399,7 @@ const CustomMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
 const MessageRenderItem: ListRenderItem<MessageItemType> = (
   info: ListRenderItemInfo<MessageItemType>
 ): React.ReactElement | null => {
-  console.log('test:MessageRenderItem:', info);
+  // console.log('test:MessageRenderItem:', info);
   const { item } = info;
   let MessageItem: ListRenderItem<MessageItemType>;
   if (item.type === ChatMessageType.TXT) {
@@ -595,7 +595,7 @@ const MessageBubbleList = (
 
   const addListeners = React.useCallback(() => {
     const sub1 = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-      console.log('test:addListeners:msg_state:', event);
+      // console.log('test:addListeners:msg_state:', event);
       const eventType = event.type as ChatEventType;
       switch (eventType) {
         case 'msg_state':

@@ -133,9 +133,7 @@ const InvisiblePlaceholder = React.memo(() => {
                 titleColor: 'black',
                 onPress: () => {
                   ms.openCamera({})
-                    .then((result) => {
-                      console.log('test:result:', result);
-                    })
+                    .then(() => {})
                     .catch((error) => {
                       console.warn('error:', error);
                     });
@@ -148,7 +146,6 @@ const InvisiblePlaceholder = React.memo(() => {
                 onPress: () => {
                   ms.openMediaLibrary({ selectionLimit: 1 })
                     .then((result) => {
-                      console.log('test:result:', result);
                       DeviceEventEmitter.emit(ChatEvent, {
                         type: 'send_image_message' as ChatEventType,
                         params: result,
@@ -165,9 +162,7 @@ const InvisiblePlaceholder = React.memo(() => {
                 titleColor: 'black',
                 onPress: () => {
                   ms.openDocument({})
-                    .then((result) => {
-                      console.log('test:result:', result);
-                    })
+                    .then(() => {})
                     .catch((error) => {
                       console.warn('error:', error);
                     });
@@ -189,7 +184,6 @@ const InvisiblePlaceholder = React.memo(() => {
             const eventParams = event.params as MessageItemType;
             if (eventParams.type === ChatMessageType.VOICE) {
               const voice = eventParams as VoiceMessageItemType;
-              console.log('test:play:', voice.localPath);
               if (voice.localPath) {
                 Services.ms
                   .playAudio({
@@ -231,7 +225,7 @@ const InvisiblePlaceholder = React.memo(() => {
               {
                 title: 'recall message',
                 onPress: () => {
-                  console.log('test:222:');
+                  console.log('test:333:');
                 },
               },
             ],
@@ -491,7 +485,6 @@ const Input = React.memo((props: InputType) => {
             }}
             onPressOut={() => {
               let localPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
-              console.log('test:localpath:', localPath);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'disable_voice' as ChatEventType,
                 params: {},
@@ -499,11 +492,6 @@ const Input = React.memo((props: InputType) => {
               Services.ms
                 .stopRecordAudio()
                 .then((result?: { pos: number; path: string }) => {
-                  console.log(
-                    'test:stopRecordAudio:',
-                    result?.pos,
-                    result?.path
-                  );
                   if (result?.path) {
                     const extension = getFileExtension(result.path);
                     console.log('test:extension:', extension);
@@ -768,7 +756,6 @@ const Content = React.memo(
           msg.body.type === ChatMessageType.IMAGE ||
           msg.body.type === ChatMessageType.VOICE
         ) {
-          console.log('test:downloadAttachment:', msg);
           client.chatManager.downloadAttachment(msg, {
             onProgress: (localMsgId: string, progress: number): void => {
               console.log(
@@ -785,7 +772,6 @@ const Content = React.memo(
               );
             },
             onSuccess: (message: ChatMessage): void => {
-              console.log('test:downloadAttachment:onSuccess:', message);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_state' as ChatEventType,
                 params: {
@@ -823,7 +809,6 @@ const Content = React.memo(
             return true;
           }
         };
-        console.log('test:checkAttachment:', msg);
         isExisted(msg)
           .then((result) => {
             if (result === false) {
@@ -861,7 +846,6 @@ const Content = React.memo(
               });
             },
             onSuccess: (message: ChatMessage): void => {
-              console.log('test:onSuccess:result:', message);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_state' as ChatEventType,
                 params: {
@@ -872,9 +856,7 @@ const Content = React.memo(
               });
             },
           } as ChatMessageStatusCallback)
-          .then((result) => {
-            console.log('test:sendToServer:result:', result);
-          })
+          .then(() => {})
           .catch((error) => {
             console.warn('test:sendToServer:error:', error);
           });
@@ -943,15 +925,18 @@ const Content = React.memo(
           localPath,
           targetPath: targetPath,
         });
-        const test_existed = await Services.dcs.isExistedFile(targetPath);
-        console.log(
-          'test:test_existed:',
-          test_existed,
-          'target:',
-          targetPath,
-          'org:',
-          localPath
-        );
+        if (__DEV__) {
+          const test_existed = await Services.dcs.isExistedFile(targetPath);
+          console.log(
+            'test:test_existed:',
+            test_existed,
+            'target:',
+            targetPath,
+            'org:',
+            localPath
+          );
+        }
+
         const modifiedTargetPath = removeFileHeader(targetPath);
         const item = {
           displayName: name,
@@ -1013,8 +998,11 @@ const Content = React.memo(
         if (localPath.length === 0) {
           return;
         }
-        const test_existed = await Services.dcs.isExistedFile(localPath);
-        console.log('test:test_existed:', test_existed);
+        if (__DEV__) {
+          const test_existed = await Services.dcs.isExistedFile(localPath);
+          console.log('test:test_existed:', test_existed);
+        }
+
         const modifiedTargetPath = removeFileHeader(localPath);
         const item = {
           sender: chatId,
@@ -1088,8 +1076,7 @@ const Content = React.memo(
           chatId,
           chatType as number as ChatConversationType
         )
-        .then((result) => {
-          console.log('test:result', result);
+        .then(() => {
           DeviceEventEmitter.emit(ConversationListEvent, {
             type: 'conversation_read' as ConversationListEventType,
             params: {
@@ -1212,9 +1199,7 @@ const Content = React.memo(
       for (const convId of convIds) {
         Services.dcs
           .createConversationDir(convId)
-          .then((result) => {
-            console.log('test:dir:', result);
-          })
+          .then(() => {})
           .catch((error) => {
             console.warn('test:create:dir:error:', error);
           });
@@ -1272,7 +1257,6 @@ const Content = React.memo(
           ref={messageBubbleList.MessageBubbleListRefP}
           {...messageBubbleList.MessageBubbleListPropsP}
           onPressed={() => {
-            console.log('test:click:item:');
             Keyboard.dismiss();
             _onFace('face');
             messageBubbleList.MessageBubbleListPropsP?.onPressed?.();
