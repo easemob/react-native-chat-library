@@ -143,7 +143,7 @@ export {
   wait,
 } from './utils/function';
 export { seqId, timestamp, uuid } from './utils/generator';
-export { autoFocus } from './utils/platform';
+export { autoFocus, localUrl, playUrl } from './utils/platform';
 export { throttle } from './utils/throttle';
 
 // declare module 'example/src/common' {

@@ -53,7 +53,15 @@ export interface RecordAudioOptions extends OpenResult {
   url?: string;
   audio: Audio.AudioSet;
   onPosition?: (position: number) => void;
-  onSaved?: (path: string) => void;
+  onFinished?: ({
+    result,
+    path,
+    error,
+  }: {
+    result: boolean;
+    path?: string;
+    error?: any;
+  }) => void;
 }
 export interface PlayAudioOptions extends OpenResult {
   url: string;
@@ -123,7 +131,7 @@ export interface MediaService {
   }): Promise<string>;
 
   startRecordAudio(options: RecordAudioOptions): Promise<boolean>;
-  stopRecordAudio(): Promise<void>;
+  stopRecordAudio(): Promise<{ pos: number; path: string } | undefined>;
   playAudio(options: PlayAudioOptions): Promise<boolean>;
   stopAudio(): Promise<void>;
   getRootDir(): string;

@@ -71,8 +71,10 @@ import {
 import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
+import { getFileExtension } from '../utils/file';
 import { timeoutTask } from '../utils/function';
 import { seqId, timestamp, uuid } from '../utils/generator';
+import { localUrl, playUrl, removeFileHeader } from '../utils/platform';
 import {
   type ChatEventType,
   ChatEvent,
@@ -183,6 +185,33 @@ const InvisiblePlaceholder = React.memo(() => {
       // console.log('test:ChatEvent:Chat:', event);
       switch (event.type as MessageBubbleEventType) {
         case 'on_press':
+          {
+            const eventParams = event.params as MessageItemType;
+            if (eventParams.type === ChatMessageType.VOICE) {
+              const voice = eventParams as VoiceMessageItemType;
+              console.log('test:play:', voice.localPath);
+              if (voice.localPath) {
+                Services.ms
+                  .playAudio({
+                    url: playUrl(voice.localPath),
+                    onPlay({ isMuted, currentPosition, duration }) {
+                      console.log(
+                        'test:onPlay',
+                        isMuted,
+                        currentPosition,
+                        duration
+                      );
+                    },
+                  })
+                  .then(() => {
+                    console.log('test:playAudio:finish:');
+                  })
+                  .catch((error) => {
+                    console.warn('test:error:', error);
+                  });
+              }
+            }
+          }
           break;
         case 'on_long_press':
           menu.openMenu({
@@ -422,12 +451,9 @@ const Input = React.memo((props: InputType) => {
             }}
             style={[styles.talk, { width: sf(width - 24 - 28 - 20) }]}
             onPressIn={() => {
-              const localPath = Services.dcs.getFileDir(chatId, uuid());
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'enable_voice' as ChatEventType,
-                params: {
-                  localPath,
-                },
+                params: {},
               });
               Services.ms
                 .startRecordAudio({
@@ -440,32 +466,64 @@ const Input = React.memo((props: InputType) => {
                     AVNumberOfChannelsKeyIOS: 2,
                     AVFormatIDKeyIOS: AVEncodingOption.aac,
                   } as AudioSet,
-                  url: localPath,
+                  // url: localPath,
                   onPosition: (pos) => {
-                    console.log('test:pos:', pos);
+                    console.log('test:startRecordAudio:pos:', pos);
                   },
                   onFailed: (error) => {
-                    console.warn('test:onFailed:', error);
+                    console.warn('test:startRecordAudio:onFailed:', error);
                   },
-                  onSaved: (path) => {
-                    console.log('test:onSaved:', path);
+                  onFinished: ({ result, path, error }) => {
+                    console.log(
+                      'test:startRecordAudio:onFinished:',
+                      result,
+                      path,
+                      error
+                    );
                   },
                 })
                 .then((result) => {
-                  console.log('test:result:', result);
+                  console.log('test:startRecordAudio:result:', result);
                 })
                 .catch((error) => {
                   console.warn('test:startRecordAudio:error:', error);
                 });
             }}
             onPressOut={() => {
+              let localPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
+              console.log('test:localpath:', localPath);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'disable_voice' as ChatEventType,
                 params: {},
               });
               Services.ms
                 .stopRecordAudio()
-                .then()
+                .then((result?: { pos: number; path: string }) => {
+                  console.log(
+                    'test:stopRecordAudio:',
+                    result?.pos,
+                    result?.path
+                  );
+                  if (result?.path) {
+                    const extension = getFileExtension(result.path);
+                    console.log('test:extension:', extension);
+                    localPath = localPath + extension;
+                    Services.ms
+                      .saveFromLocal({
+                        targetPath: localPath,
+                        localPath: result.path,
+                      })
+                      .then(() => {
+                        DeviceEventEmitter.emit(ChatEvent, {
+                          type: 'send_voice_message' as ChatEventType,
+                          params: { localPath, duration: result.pos / 1000 },
+                        });
+                      })
+                      .catch((error) => {
+                        console.warn('test:startRecordAudio:save:error', error);
+                      });
+                  }
+                })
                 .catch((error) => {
                   console.warn('test:stopRecordAudio:error:', error);
                 });
@@ -600,35 +658,6 @@ const Content = React.memo(
       [chatId, chatType]
     );
 
-    // const downloadAttachment = React.useCallback(
-    //   (msg: ChatMessage) => {
-    //     if (
-    //       msg.body.type === ChatMessageType.IMAGE ||
-    //       msg.body.type === ChatMessageType.VOICE
-    //     ) {
-    //       client.chatManager.downloadAttachment(msg, {
-    //         onProgress: (localMsgId: string, progress: number): void => {
-    //           console.log('test:onProgress:', localMsgId, progress);
-    //         },
-    //         onError: (localMsgId: string, error: ChatError): void => {
-    //           console.log('test:onError:', localMsgId, error);
-    //         },
-    //         onSuccess: (message: ChatMessage): void => {
-    //           DeviceEventEmitter.emit(ChatEvent, {
-    //             type: 'msg_state' as ChatEventType,
-    //             params: {
-    //               localMsgId: message.localMsgId,
-    //               result: true,
-    //               msg: message,
-    //             },
-    //           });
-    //         },
-    //       } as ChatMessageStatusCallback);
-    //     }
-    //   },
-    //   [client.chatManager]
-    // );
-
     const standardizedData = React.useCallback(
       (
         item: Omit<MessageItemType, 'onPress' | 'onLongPress'>
@@ -733,6 +762,81 @@ const Content = React.memo(
       [customMessageBubble?.CustomMessageRenderItemP, standardizedData]
     );
 
+    const downloadAttachment = React.useCallback(
+      (msg: ChatMessage) => {
+        if (
+          msg.body.type === ChatMessageType.IMAGE ||
+          msg.body.type === ChatMessageType.VOICE
+        ) {
+          console.log('test:downloadAttachment:', msg);
+          client.chatManager.downloadAttachment(msg, {
+            onProgress: (localMsgId: string, progress: number): void => {
+              console.log(
+                'test:downloadAttachment:onProgress:',
+                localMsgId,
+                progress
+              );
+            },
+            onError: (localMsgId: string, error: ChatError): void => {
+              console.log(
+                'test:downloadAttachment:onError:',
+                localMsgId,
+                error
+              );
+            },
+            onSuccess: (message: ChatMessage): void => {
+              console.log('test:downloadAttachment:onSuccess:', message);
+              DeviceEventEmitter.emit(ChatEvent, {
+                type: 'msg_state' as ChatEventType,
+                params: {
+                  localMsgId: message.localMsgId,
+                  result: true,
+                  item: convertFromMessage(message),
+                },
+              });
+            },
+          } as ChatMessageStatusCallback);
+        }
+      },
+      [client.chatManager, convertFromMessage]
+    );
+
+    const checkAttachment = React.useCallback(
+      (msg: ChatMessage) => {
+        const isExisted = async (msg: ChatMessage) => {
+          if (msg.body.type === ChatMessageType.IMAGE) {
+            const body = msg.body as ChatImageMessageBody;
+            const thumb = await Services.dcs.isExistedFile(
+              body.thumbnailLocalPath
+            );
+            const org = await Services.dcs.isExistedFile(body.localPath);
+            if (thumb === false || org === false) {
+              return false;
+            } else {
+              return true;
+            }
+          } else if (msg.body.type === ChatMessageType.VOICE) {
+            const body = msg.body as ChatVoiceMessageBody;
+            const org = await Services.dcs.isExistedFile(body.localPath);
+            return org;
+          } else {
+            return true;
+          }
+        };
+        console.log('test:checkAttachment:', msg);
+        isExisted(msg)
+          .then((result) => {
+            if (result === false) {
+              downloadAttachment(msg);
+            }
+          })
+          .catch((error) => {
+            console.warn('test:checkAttachment:error:', error);
+          });
+      },
+      [downloadAttachment]
+    );
+
     const sendToServer = React.useCallback(
       (msg: ChatMessage) => {
         client.chatManager
@@ -757,6 +861,7 @@ const Content = React.memo(
               });
             },
             onSuccess: (message: ChatMessage): void => {
+              console.log('test:onSuccess:result:', message);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_state' as ChatEventType,
                 params: {
@@ -833,21 +938,28 @@ const Content = React.memo(
         if (localPath.length === 0) {
           return;
         }
-        if (localPath.startsWith('file://')) {
-          localPath = localPath.replace('file://', '');
-        }
-        const targetPath = Services.dcs.getFileDir(chatId, uuid());
+        const targetPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
         await Services.ms.saveFromLocal({
           localPath,
           targetPath: targetPath,
         });
+        const test_existed = await Services.dcs.isExistedFile(targetPath);
+        console.log(
+          'test:test_existed:',
+          test_existed,
+          'target:',
+          targetPath,
+          'org:',
+          localPath
+        );
+        const modifiedTargetPath = removeFileHeader(targetPath);
         const item = {
           displayName: name,
           sender: chatId,
           isSender: true,
           type: ChatMessageType.IMAGE,
           state: 'sending',
-          localPath: targetPath,
+          localPath: modifiedTargetPath,
           memoSize: memoSize,
           width: width,
           height: height,
@@ -889,49 +1001,49 @@ const Content = React.memo(
       [convertFromMessage, convertToMessage, getMsgListRef, sendToServer]
     );
 
-    // const sendVoiceMessage = React.useCallback(
-    //   async ({
-    //     localPath,
-    //     second,
-    //   }: {
-    //     localPath: string;
-    //     memoSize?: number;
-    //     second?: number;
-    //   }) => {
-    //     if (localPath.length === 0) {
-    //       return;
-    //     }
-    //     if (localPath.startsWith('file://')) {
-    //       localPath = localPath.replace('file://', '');
-    //     }
-    //     const item = {
-    //       sender: chatId,
-    //       isSender: true,
-    //       type: ChatMessageType.IMAGE,
-    //       state: 'sending',
-    //       localPath: localPath,
-    //       duration: second,
-    //     } as VoiceMessageItemType;
+    const sendVoiceMessage = React.useCallback(
+      async ({
+        localPath,
+        duration,
+      }: {
+        localPath: string;
+        memoSize?: number;
+        duration?: number;
+      }) => {
+        if (localPath.length === 0) {
+          return;
+        }
+        const test_existed = await Services.dcs.isExistedFile(localPath);
+        console.log('test:test_existed:', test_existed);
+        const modifiedTargetPath = removeFileHeader(localPath);
+        const item = {
+          sender: chatId,
+          isSender: true,
+          type: ChatMessageType.VOICE,
+          state: 'sending',
+          localPath: modifiedTargetPath,
+          duration: duration,
+        } as VoiceMessageItemType;
 
-    //     const msg = convertToMessage(item);
-    //     if (msg === undefined) {
-    //       throw new Error('This is impossible.');
-    //     }
+        const msg = convertToMessage(item);
+        if (msg === undefined) {
+          throw new Error('This is impossible.');
+        }
 
-    //     getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
-    //     timeoutTask(() => {
-    //       getMsgListRef().current?.scrollToEnd();
-    //     });
-    //     // sendToServer(msg);
-    //   },
-    //   [
-    //     chatId,
-    //     convertFromMessage,
-    //     convertToMessage,
-    //     getMsgListRef,
-    //     sendToServer,
-    //   ]
-    // );
+        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        timeoutTask(() => {
+          getMsgListRef().current?.scrollToEnd();
+        });
+        sendToServer(msg);
+      },
+      [
+        chatId,
+        convertFromMessage,
+        convertToMessage,
+        getMsgListRef,
+        sendToServer,
+      ]
+    );
 
     const loadMessage = React.useCallback(
       (msgs: ChatMessage[]) => {
@@ -939,13 +1051,14 @@ const Content = React.memo(
         for (const msg of msgs) {
           const item = convertFromMessage(msg);
           items.push(item);
+          checkAttachment(msg);
         }
         getMsgListRef().current?.addMessage(items);
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
       },
-      [convertFromMessage, getMsgListRef]
+      [checkAttachment, convertFromMessage, getMsgListRef]
     );
 
     const _onFace = (value?: 'face' | 'key') => {
@@ -1029,8 +1142,19 @@ const Content = React.memo(
                 console.warn('test:error', error);
               });
           }
-        } else if (eventType === 'send_custom_message') {
-          // const eventParams = event.params as any[];
+        } else if (eventType === 'send_voice_message') {
+          const eventParams = event.params as {
+            localPath: string;
+            duration: number;
+          };
+          sendVoiceMessage({
+            localPath: eventParams.localPath,
+            duration: eventParams.duration,
+          })
+            .then()
+            .catch((error) => {
+              console.warn('test:error', error);
+            });
         }
       });
       const msgListener: ChatMessageEventListener = {
@@ -1076,7 +1200,13 @@ const Content = React.memo(
         sub.remove();
         client.chatManager.removeMessageListener(msgListener);
       };
-    }, [chatId, client.chatManager, loadMessage, sendImageMessage]);
+    }, [
+      chatId,
+      client.chatManager,
+      loadMessage,
+      sendImageMessage,
+      sendVoiceMessage,
+    ]);
 
     const initDirs = React.useCallback((convIds: string[]) => {
       for (const convId of convIds) {
@@ -1179,7 +1309,7 @@ const Content = React.memo(
           chatType={chatType}
           onFace={_onFace}
           onSendTextMessage={({ content }) => {
-            const test = false;
+            const test = true;
             if (test) sendTextMessage(content);
             else
               sendCustomMessage({

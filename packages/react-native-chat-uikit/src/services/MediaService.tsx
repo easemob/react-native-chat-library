@@ -26,6 +26,7 @@ export class MediaServiceImplement implements MediaService {
   option: MediaServiceOptions;
   audioPlayer: AudioRecorderPlayer;
   rootDir: string;
+  record?: { pos: number; path: string };
   constructor(option: MediaServiceOptions) {
     this.option = option;
     this.rootDir = '';
@@ -124,19 +125,34 @@ export class MediaServiceImplement implements MediaService {
       const recorder = this.audioPlayer;
       recorder.addRecordBackListener((e: RecordBackType) => {
         options.onPosition?.(e.currentPosition);
+        if (this.record && e.currentPosition > 0) {
+          this.record.pos = e.currentPosition;
+        }
       });
       const uri = await recorder.startRecorder(options.url, options.audio);
-      options.onSaved?.(uri.replace('file:///', ''));
+      console.log('test:startRecorder:uri:', uri);
+      options.onFinished?.({ result: true, path: uri });
+      this.record = {
+        pos: 0,
+        path: uri,
+      };
       return true;
     } catch (error) {
-      console.warn('startRecordAudio:', error);
+      this.record = undefined;
+      options?.onFailed?.(error as any);
+      options.onFinished?.({
+        result: false,
+        path: undefined,
+        error: error,
+      });
       return false;
     }
   }
-  async stopRecordAudio(): Promise<void> {
+  async stopRecordAudio(): Promise<{ pos: number; path: string } | undefined> {
     const recorder = this.audioPlayer;
     await recorder.stopRecorder();
     recorder.removeRecordBackListener();
+    return this.record;
   }
   async playAudio(options: PlayAudioOptions): Promise<boolean> {
     const hasPermission =
@@ -154,8 +170,11 @@ export class MediaServiceImplement implements MediaService {
       recorder.addPlayBackListener((value: PlayBackType) => {
         options.onPlay?.({ ...value });
       });
-      const url = await recorder.startPlayer(options.url, options.opt);
-      options.onFile?.(url.replace(/file:\/\//, ''));
+      // !!! extension must, or no working
+      // url =
+      //   'file:///var/mobile/Containers/Data/Application/A630B779-3187-4CE7-A6DC-470AA34ED72F/Library/Caches/sound.m4a';
+      const r = await recorder.startPlayer(options.url, options.opt);
+      options.onFile?.(r);
       return true;
     } catch (error) {
       console.warn('playAudio:', error);

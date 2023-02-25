@@ -1,10 +1,9 @@
 import * as React from 'react';
 import {
   DeviceEventEmitter,
-  Image,
+  // Image as RNImage,
   ListRenderItem,
   ListRenderItemInfo,
-  Platform,
   Pressable,
   Text,
   useWindowDimensions,
@@ -22,6 +21,7 @@ import DynamicHeightList, {
   type DynamicHeightListRef,
 } from './DynamicHeightList';
 import { type LocalIconName, LocalIcon } from './Icon';
+import Image from './Image';
 import Loading from './Loading';
 
 export type MessageItemStateType =
@@ -110,7 +110,7 @@ export interface CustomMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: false,
 //   key: seqId('ml').toString(),
-//   duration: 45,
+//   duration: 60,
 //   type: ChatMessageType.VOICE,
 // };
 // const voice2: VoiceMessageItemType = {
@@ -118,7 +118,7 @@ export interface CustomMessageItemType extends MessageItemType {
 //   timestamp: timestamp(),
 //   isSender: true,
 //   key: seqId('ml').toString(),
-//   duration: 45,
+//   duration: 3,
 //   type: ChatMessageType.VOICE,
 // };
 
@@ -216,32 +216,45 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     const sf = getScaleFactor();
     const { item } = info;
     const msg = item as ImageMessageItemType;
-    const encode = (url: string) => {
-      return Platform.select({
-        ios: encodeURI(url),
-        android: `file://${encodeURI(url).replace('#', '%23')}`, // !!! try fix android bug
-      })!;
-    };
     const url = (msg: ImageMessageItemType): string => {
       let r: string;
       if (msg.localThumbPath && msg.localThumbPath.length > 0) {
-        r = Platform.select({
-          ios: msg.localThumbPath,
-          android: `file://${encode(msg.localThumbPath)}`,
-        })!;
+        r = msg.localThumbPath;
       } else if (msg.localPath && msg.localPath.length > 0) {
-        r = Platform.select({
-          ios: msg.localPath,
-          android: `file://${encode(msg.localPath)}`,
-        })!;
+        r = msg.localPath;
       } else {
-        r = Platform.select({
-          ios: msg.remoteUrl,
-          android: encode(msg.remoteUrl!),
-        })!;
+        r = msg.remoteUrl ?? '';
       }
+      r = encodeURI(r);
+      r = r.replace('#', '%23');
+      // return '/var/mobile/Containers/Data/Application/10335732-F30F-46F6-93C1-2C89FC7C3B4E/Library/Application%20Support/HyphenateSDK/appdata/asterisk001/asterisk003/thumb_128dc850-b4b7-11ed-9711-5313982e6d8a';
       return r;
     };
+    const [_url] = React.useState(url(msg));
+    console.log('test:image:load:url:', _url);
+    // Services.dcs
+    //   .isExistedFile(_url)
+    //   .then((r) => {
+    //     console.log('test:image:isExisted:', r);
+    //     if (r === false && msg.remoteUrl) {
+    //       Services.ms
+    //         .saveFromUrl({
+    //           remoteUrl: msg.remoteUrl,
+    //           localPath: _url,
+    //         })
+    //         .then((result) => {
+    //           console.log('test:image:save:success:', result);
+    //           setUrl(_url);
+    //         })
+    //         .catch((error) => {
+    //           console.warn('test:error:', error);
+    //           if (msg.remoteUrl) setUrl(msg.remoteUrl);
+    //         });
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.warn('test:error:', error);
+    //   });
 
     return (
       <View
@@ -272,7 +285,7 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
         >
           <Image
             source={{
-              uri: url(msg),
+              uri: _url.includes('file://') ? _url : `file://${_url}`,
             }}
             resizeMode="cover"
             style={{ height: sf(200), borderRadius: sf(10) }}
@@ -295,6 +308,7 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     );
   }
 );
+
 const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
   (info: ListRenderItemInfo<MessageItemType>): React.ReactElement | null => {
     const sf = getScaleFactor();
@@ -305,7 +319,9 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
       if (duration < 0) {
         throw new Error('The voice length cannot be less than 0.');
       }
-      return width * 0.7 * (1 / 60) * (duration > 60 ? 60 : duration);
+      let r = width * 0.7 * (1 / 60) * (duration > 60 ? 60 : duration);
+      r = r < 150 ? 150 : r;
+      return r;
     };
     return (
       <View
@@ -354,7 +370,7 @@ const VoiceMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
               },
             ]}
           >
-            {msg.duration.toString() + "'"}
+            {Math.round(msg.duration).toString() + "'"}
           </Text>
         </View>
         <View
@@ -379,9 +395,11 @@ const CustomMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
     return <SubComponent {...SubComponentProps} />;
   }
 );
+
 const MessageRenderItem: ListRenderItem<MessageItemType> = (
   info: ListRenderItemInfo<MessageItemType>
 ): React.ReactElement | null => {
+  console.log('test:MessageRenderItem:', info);
   const { item } = info;
   let MessageItem: ListRenderItem<MessageItemType>;
   if (item.type === ChatMessageType.TXT) {
@@ -577,6 +595,7 @@ const MessageBubbleList = (
 
   const addListeners = React.useCallback(() => {
     const sub1 = DeviceEventEmitter.addListener(ChatEvent, (event) => {
+      console.log('test:addListeners:msg_state:', event);
       const eventType = event.type as ChatEventType;
       switch (eventType) {
         case 'msg_state':
@@ -595,7 +614,12 @@ const MessageBubbleList = (
             } else {
               updateData({
                 type: 'update-part',
-                list: [eventParams.item],
+                list: [
+                  {
+                    key: eventParams.localMsgId,
+                    state: 'failed',
+                  } as MessageItemType,
+                ],
               });
             }
           }

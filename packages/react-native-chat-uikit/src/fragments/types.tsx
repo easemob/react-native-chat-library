@@ -52,6 +52,7 @@ export type ChatEventType =
   | 'msg_progress'
   | 'open_input_extension'
   | 'send_image_message'
+  | 'send_voice_message'
   | 'send_custom_message';
 
 export const MessageBubbleEvent = 'MessageBubbleEvent';
