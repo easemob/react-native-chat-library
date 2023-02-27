@@ -620,12 +620,19 @@ export default function ConversationListFragment(props: Props): JSX.Element {
   const initDirs = React.useCallback((convIds: string[]) => {
     for (const convId of convIds) {
       Services.dcs
-        .createConversationDir(convId)
+        .isExistedConversationDir(convId)
         .then((result) => {
-          console.log('test:dir:', result);
+          if (result === false) {
+            Services.dcs
+              .createConversationDir(convId)
+              .then(() => {})
+              .catch((error) => {
+                console.warn('test:create:dir:error:', error);
+              });
+          }
         })
         .catch((error) => {
-          console.warn('test:create:dir:error:', error);
+          console.warn('test:isExisted:dir:error:', error);
         });
     }
   }, []);

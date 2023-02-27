@@ -9,6 +9,7 @@ import {
   NavigationAction,
   NavigationContainer,
   NavigationState,
+  useNavigationContainerRef,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { registerRootComponent } from 'expo';
@@ -38,7 +39,7 @@ import HomeHeaderRight from './components/HomeHeaderRight';
 import HomeHeaderTitle from './components/HomeHeaderTitle';
 import { AppChatSdkContext } from './contexts/AppImSdkContext';
 import { AppStringSet } from './I18n/AppCStringSet.en';
-import type { RootParamsList } from './routes';
+import type { RootParamsList, RootParamsName } from './routes';
 import Chat from './screens/Chat';
 import ContactInfo from './screens/ContactInfo';
 import ContactList from './screens/ContactList';
@@ -46,6 +47,7 @@ import GroupInfo from './screens/GroupInfo';
 import HomeScreen from './screens/Home';
 import LoginScreen from './screens/Login';
 import Search from './screens/Search';
+import { SplashScreen } from './screens/Splash';
 import { createAppScaleFactor } from './styles/createAppScaleFactor';
 
 if (Platform.OS === 'web') {
@@ -92,9 +94,15 @@ export default function App() {
 
   const storage = Services.createLocalStorageService();
 
-  const [isReady, setIsReady] = React.useState(__DEV__ ? false : true);
+  const [isReady, setIsReady] = React.useState(__DEV__ ? true : true);
   const [initialState, setInitialState] = React.useState();
+  const [initialRouteName] = React.useState('Splash' as RootParamsName);
   const sf = getScaleFactor();
+  const sdk = ChatClient.getInstance();
+  const autoLogin = React.useRef(true);
+  const RootRef = useNavigationContainerRef<RootParamsList>();
+  const isOnInitialized = React.useRef(false);
+  const isOnReady = React.useRef(false);
 
   React.useEffect(() => {
     const restoreState = async () => {
@@ -123,6 +131,28 @@ export default function App() {
   }, [isReady, storage]);
   console.log('test:App:isReady:', isReady);
 
+  const onInitApp = React.useCallback(() => {
+    console.log('test:onInitApp:', isOnInitialized, isOnReady);
+    if (isOnInitialized.current === false || isOnReady.current === false) {
+      return;
+    }
+    console.log('test:onInitApp:');
+    if (autoLogin.current === true) {
+      sdk
+        .isLoginBefore()
+        .then((result) => {
+          if (result === true) {
+            RootRef.navigate('Home', { params: {} });
+          }
+        })
+        .catch((error) => {
+          console.warn('test:error:', error);
+        });
+    } else {
+      RootRef.navigate('Login', { params: {} });
+    }
+  }, [RootRef, isOnInitialized, isOnReady, sdk]);
+
   if (!isReady) {
     return null;
   }
@@ -149,7 +179,11 @@ export default function App() {
   return (
     <React.StrictMode>
       <GlobalContainer
-        option={{ appKey: appKey, autoLogin: false }}
+        option={{ appKey: appKey, autoLogin: autoLogin.current }}
+        onInitialized={() => {
+          isOnInitialized.current = true;
+          onInitApp();
+        }}
         theme={isLightTheme ? LightTheme : DarkTheme}
         localization={createStringSetEn2(new AppStringSet())}
         sdk={
@@ -184,6 +218,7 @@ export default function App() {
           Dev()
         ) : (
           <NavigationContainer
+            ref={RootRef}
             initialState={initialState}
             theme={isLightTheme ? NDefaultTheme : NDarkTheme}
             onStateChange={(state: NavigationState | undefined) => {
@@ -199,6 +234,11 @@ export default function App() {
             onUnhandledAction={(action: NavigationAction) => {
               console.log('test:onUnhandledAction:', action);
             }}
+            onReady={() => {
+              console.log('test:NavigationContainer:onReady:');
+              isOnReady.current = true;
+              onInitApp();
+            }}
             fallback={
               <View
                 style={{
@@ -211,7 +251,14 @@ export default function App() {
               </View>
             }
           >
-            <Root.Navigator initialRouteName="SignIn">
+            <Root.Navigator initialRouteName={initialRouteName}>
+              <Root.Screen
+                name="Splash"
+                options={{
+                  headerShown: false,
+                }}
+                component={SplashScreen}
+              />
               <Root.Screen
                 name="Login"
                 options={{

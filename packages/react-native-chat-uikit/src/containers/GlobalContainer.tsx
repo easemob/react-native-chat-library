@@ -46,6 +46,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
     storage?: LocalStorageService | undefined;
     dir?: DirCacheService | undefined;
   };
+  onInitialized?: () => void;
 }>;
 
 export function GlobalContainer({
@@ -56,6 +57,7 @@ export function GlobalContainer({
   header,
   services,
   children,
+  onInitialized,
 }: GlobalContainerProps): JSX.Element {
   console.log('test:GlobalContainer:', option);
 
@@ -147,6 +149,7 @@ export function GlobalContainer({
           //   await sdk.client.chatManager.deleteConversation(item.convId, true);
           // }
         }
+        onInitialized?.();
       })
       .catch((error) => {
         throw new Error('chat sdk init failed.', error);

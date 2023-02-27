@@ -15,7 +15,7 @@ export default function LoginScreen(
   _props: NativeStackScreenProps<ParamListBase, 'Login'>
 ): JSX.Element {
   return (
-    <Login.Navigator>
+    <Login.Navigator initialRouteName="SignIn">
       <Login.Screen
         name="SignIn"
         options={{

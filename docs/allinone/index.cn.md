@@ -129,7 +129,7 @@ UI 组件的使用一般比较简单。对应示例也非常丰富。
 // copy to clipboard
 Services.cbs.setString(id);
 // copy from clipboard
-const content = Services.cbs..getString();
+const content = Services.cbs.getString();
 ```
 
 ### 使用示例：国际化

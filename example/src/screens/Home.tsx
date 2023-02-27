@@ -19,6 +19,7 @@ export default function HomeScreen(
   const shifting = true;
   return (
     <Home.Navigator
+      initialRouteName="ConversationList"
       shifting={shifting}
       labeled={false}
       activeColor="blue"

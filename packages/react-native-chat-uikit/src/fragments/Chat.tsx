@@ -1198,10 +1198,19 @@ const Content = React.memo(
     const initDirs = React.useCallback((convIds: string[]) => {
       for (const convId of convIds) {
         Services.dcs
-          .createConversationDir(convId)
-          .then(() => {})
+          .isExistedConversationDir(convId)
+          .then((result) => {
+            if (result === false) {
+              Services.dcs
+                .createConversationDir(convId)
+                .then(() => {})
+                .catch((error) => {
+                  console.warn('test:create:dir:error:', error);
+                });
+            }
+          })
           .catch((error) => {
-            console.warn('test:create:dir:error:', error);
+            console.warn('test:isExisted:dir:error:', error);
           });
       }
     }, []);
