@@ -45,7 +45,8 @@ export const HomeEvent = 'HomeEvent';
 export type HomeEventType =
   | 'update_state'
   | 'update_all_count'
-  | 'update_request';
+  | 'update_request'
+  | 'forward_notify_msg';
 export type HomeEventBarType = 'conv' | 'contact' | 'setting';
 
 export const ContactEvent = 'ContactEvent';

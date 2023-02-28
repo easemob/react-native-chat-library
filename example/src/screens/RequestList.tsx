@@ -12,8 +12,6 @@ import {
 import {
   Blank,
   Button,
-  ContactChatSdkEvent,
-  ContactChatSdkEventType,
   createStyleSheet,
   DefaultAvatar,
   DefaultListItemSeparator,
@@ -406,6 +404,7 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       }
     }
     if (count === 0) {
+      console.log('test:1235:from:requestlist:');
       DeviceEventEmitter.emit(HomeEvent, {
         type: 'update_request' as HomeEventType,
         params: { unread: count !== 0 },
@@ -621,63 +620,37 @@ export default function RequestListScreen(_props: Props): JSX.Element {
   }, [client.chatManager, getCurrentId, initData]);
 
   const addListeners = React.useCallback(() => {
-    const sub = DeviceEventEmitter.addListener(
-      ContactChatSdkEvent,
-      async (event) => {
-        const eventType = event.type as ContactChatSdkEventType;
-        const eventParams = event.params as { id: string; error: string };
-        switch (eventType) {
-          case 'onContactInvited':
-            {
-              const userName = eventParams.id;
-              const reason = eventParams.error;
-              console.log('test:onContactInvited:', userName, reason);
-              const convId = getCurrentId();
-              const msg = ChatMessage.createCustomMessage(
-                convId,
-                'ContactInvitation',
-                ChatMessageChatType.PeerChat,
-                {
-                  params: {
-                    from: userName,
-                    type: 'ContactInvitation',
-                  },
-                }
-              );
-              console.log('test:onContactInvited:', msg);
-              client.chatManager
-                .insertMessage(msg)
-                .then((result) => {
-                  console.log('test:insertMessage:success:', result);
-                  manualRefresh({
-                    type: 'add',
-                    items: [
-                      standardizedData({
-                        key: msg.serverTime.toString(),
-                        timestamp: msg.serverTime,
-                        msgId: msg.msgId,
-                        notificationID: userName,
-                        from: userName,
-                        notificationType:
-                          'ContactInvitation' as NotificationMessageDescriptionType,
-                      }) as ItemDataType,
-                    ],
-                  });
-                })
-                .catch((error) => {
-                  console.warn('test:insertMessage:fail:', error);
-                });
-            }
-            break;
-          default:
-            break;
-        }
+    const sub2 = DeviceEventEmitter.addListener(HomeEvent, (event) => {
+      const eventType = event.type as HomeEventType;
+      const eventParams = event.params;
+      switch (eventType) {
+        case 'forward_notify_msg':
+          {
+            const msg = eventParams.msg as ChatMessage;
+            manualRefresh({
+              type: 'add',
+              items: [
+                standardizedData({
+                  key: msg.serverTime.toString(),
+                  timestamp: msg.serverTime,
+                  msgId: msg.msgId,
+                  notificationID: msg.from,
+                  from: msg.from,
+                  notificationType:
+                    'ContactInvitation' as NotificationMessageDescriptionType,
+                }) as ItemDataType,
+              ],
+            });
+          }
+          break;
+        default:
+          break;
       }
-    );
+    });
     return () => {
-      sub.remove();
+      sub2.remove();
     };
-  }, [client.chatManager, getCurrentId, manualRefresh, standardizedData]);
+  }, [manualRefresh, standardizedData]);
 
   React.useEffect(() => {
     const load = () => {

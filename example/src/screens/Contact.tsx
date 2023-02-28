@@ -3,10 +3,6 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import type { ParamListBase } from '@react-navigation/native';
 import * as React from 'react';
 import { DeviceEventEmitter, View } from 'react-native';
-import {
-  ContactChatSdkEvent,
-  ContactChatSdkEventType,
-} from 'react-native-chat-uikit';
 
 import HomeHeaderTitle from '../components/HomeHeaderTitle';
 import TabBarIcon from '../components/TabBarIcon';
@@ -60,7 +56,7 @@ const ContactScreenInternal = React.memo(
 
     React.useEffect(() => {
       const sub = DeviceEventEmitter.addListener(ContactEvent, (event) => {
-        console.log('test:event:', event);
+        console.log('test:event:ContactScreenInternal:', event);
         const eventType = event.type as ContactEventType;
         if (eventType === 'update_state') {
           const eventParams = event.params as {
@@ -78,7 +74,7 @@ const ContactScreenInternal = React.memo(
         }
       });
       const sub2 = DeviceEventEmitter.addListener(HomeEvent, (event) => {
-        console.log('test:event:', ContactScreenInternal.name, event);
+        console.log('test:event:ContactScreenInternal:', event);
         const eventType = event.type as HomeEventType;
         if (eventType === 'update_request') {
           const eventParams = event.params as {
@@ -169,29 +165,6 @@ export default function ContactScreen({
   const requestFlag = React.useRef<boolean>(true);
   const { getAllUnreadCount, getCurrentId } = useAppChatSdkContext();
 
-  const addListeners = React.useCallback(() => {
-    const sub = DeviceEventEmitter.addListener(
-      ContactChatSdkEvent,
-      async (event) => {
-        const eventType = event.type as ContactChatSdkEventType;
-        switch (eventType) {
-          case 'onContactInvited':
-            requestFlag.current = true;
-            DeviceEventEmitter.emit(HomeEvent, {
-              type: 'update_request' as HomeEventType,
-              params: { unread: true },
-            });
-            break;
-          default:
-            break;
-        }
-      }
-    );
-    return () => {
-      sub.remove();
-    };
-  }, []);
-
   const initRequestFlag = React.useCallback(async () => {
     const currentId = getCurrentId();
     if (currentId === undefined || currentId.length === 0) {
@@ -203,6 +176,7 @@ export default function ContactScreen({
         if (error) {
           console.warn('test:error:', error);
         }
+        console.log('test:1235:from:initRequestFlag:contact:');
         requestFlag.current = unread;
         DeviceEventEmitter.emit(HomeEvent, {
           type: 'update_request' as HomeEventType,
@@ -222,13 +196,11 @@ export default function ContactScreen({
         headerBackTitleVisible: false,
       });
     });
-    const ret = addListeners();
     initRequestFlag();
     return () => {
       sub();
-      ret();
     };
-  }, [addListeners, initRequestFlag, navigation]);
+  }, [initRequestFlag, navigation]);
 
   return <ContactScreenInternal requestFlag={requestFlag} />;
 }
