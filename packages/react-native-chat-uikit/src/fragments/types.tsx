@@ -13,8 +13,6 @@ export type ToastEvent = 'toast_';
 export type AlertEvent = 'alert_';
 export type SheetEvent = 'sheet_';
 export type PressEvent = 'press' | 'long_press';
-export type MessageEvent = 'message';
-export type ConversationEvent = 'conversion';
 
 export const CreateGroupSettingsEvent = 'CreateGroupSettingsEvent';
 export type CreateGroupSettingsEventType =
@@ -38,9 +36,9 @@ export type ConversationListEventType =
   | ToastEvent
   | AlertEvent
   | SheetEvent
-  | PressEvent
-  | MessageEvent
-  | ConversationEvent
+  | 'press'
+  | 'long_press'
+  | 'conversion'
   | 'create_conversation'
   | 'conversation_read';
 
@@ -60,3 +58,6 @@ export type MessageBubbleEventType = 'on_press' | 'on_long_press';
 
 export const LoginEvent = 'LoginEvent';
 export type LoginEventType = 'on_login_end' | 'on_logout_end';
+
+export const MessageEvent = 'MessageEvent';
+export type MessageEventType = 'on_send_before' | 'on_send_result';

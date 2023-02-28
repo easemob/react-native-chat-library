@@ -34,7 +34,12 @@ import { messageTimestamp } from '../utils/format';
 import { queueTask } from '../utils/function';
 import { timestamp } from '../utils/generator';
 import { autoFocus } from '../utils/platform';
-import { ConversationListEvent, ConversationListEventType } from './types';
+import {
+  ConversationListEvent,
+  ConversationListEventType,
+  MessageEvent,
+  MessageEventType,
+} from './types';
 
 export type ItemDataType = ItemData & {
   convId: string;
@@ -396,7 +401,6 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           onLongPress?.(data);
         },
         onPress: (data: ItemDataType) => {
-          console.log('test:12345:', data);
           onPress?.(data);
         },
         actions: {
@@ -614,9 +618,57 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       }
     );
 
+    const sub3 = DeviceEventEmitter.addListener(MessageEvent, (event) => {
+      console.log('test:sub3:', ConversationListFragment.name, event);
+      const eventType = event.type as MessageEventType;
+      switch (eventType) {
+        case 'on_send_before':
+          {
+            const eventParams = event.params as { message: ChatMessage };
+            const conv = getConv(eventParams.message.conversationId);
+            if (conv === undefined) {
+              return;
+            }
+            manualRefresh({
+              type: 'update-one',
+              items: [
+                standardizedData({
+                  ...conv,
+                  count: 0,
+                  lastMsg: eventParams.message,
+                } as ItemDataType),
+              ],
+            });
+          }
+          break;
+        case 'on_send_result':
+          {
+            const eventParams = event.params as { message: ChatMessage };
+            const conv = getConv(eventParams.message.conversationId);
+            if (conv === undefined) {
+              return;
+            }
+            manualRefresh({
+              type: 'update-one',
+              items: [
+                standardizedData({
+                  ...conv,
+                  count: 0,
+                  lastMsg: eventParams.message,
+                } as ItemDataType),
+              ],
+            });
+          }
+          break;
+        default:
+          break;
+      }
+    });
+
     return () => {
       sub.remove();
       sub2.remove();
+      sub3.remove();
     };
   }, [
     client.chatManager,

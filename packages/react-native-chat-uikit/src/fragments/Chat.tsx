@@ -79,6 +79,8 @@ import {
   ConversationListEventType,
   MessageBubbleEvent,
   MessageBubbleEventType,
+  MessageEvent,
+  MessageEventType,
 } from './types';
 
 const InvisiblePlaceholder = React.memo(() => {
@@ -821,8 +823,22 @@ const Content = React.memo(
       [downloadAttachment]
     );
 
+    const onSendBefore = React.useCallback((msg: ChatMessage) => {
+      DeviceEventEmitter.emit(MessageEvent, {
+        type: 'on_send_before' as MessageEventType,
+        params: { message: msg },
+      });
+    }, []);
+    const onSendResult = React.useCallback((msg: ChatMessage) => {
+      DeviceEventEmitter.emit(MessageEvent, {
+        type: 'on_send_result' as MessageEventType,
+        params: { message: msg },
+      });
+    }, []);
+
     const sendToServer = React.useCallback(
       (msg: ChatMessage) => {
+        onSendBefore(msg);
         client.chatManager
           .sendMessage(msg, {
             onProgress: (localMsgId: string, progress: number): void => {
@@ -843,6 +859,8 @@ const Content = React.memo(
                   reason: error,
                 },
               });
+              msg.status = ChatMessageStatus.FAIL;
+              onSendResult(msg);
             },
             onSuccess: (message: ChatMessage): void => {
               DeviceEventEmitter.emit(ChatEvent, {
@@ -853,6 +871,7 @@ const Content = React.memo(
                   item: convertFromMessage(message),
                 },
               });
+              onSendResult(message);
             },
           } as ChatMessageStatusCallback)
           .then(() => {})
@@ -860,7 +879,7 @@ const Content = React.memo(
             console.warn('test:sendToServer:error:', error);
           });
       },
-      [client.chatManager, convertFromMessage]
+      [client.chatManager, convertFromMessage, onSendBefore, onSendResult]
     );
 
     const sendTextMessage = React.useCallback(
