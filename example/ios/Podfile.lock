@@ -155,7 +155,7 @@ PODS:
     - GoogleUtilities/MethodSwizzler
   - GoogleUtilities/UserDefaults (7.10.0):
     - GoogleUtilities/Logger
-  - HyphenateChat (3.9.7.1)
+  - HyphenateChat (4.0.0)
   - libevent (2.1.12)
   - libwebp (1.2.3):
     - libwebp/demux (= 1.2.3)
@@ -420,8 +420,8 @@ PODS:
     - glog
   - react-native-cameraroll (5.2.0):
     - React-Core
-  - react-native-chat-sdk (1.0.10):
-    - HyphenateChat (= 3.9.7.1)
+  - react-native-chat-sdk (1.1.0):
+    - HyphenateChat (= 4.0.0)
     - React-Core
   - react-native-chat-uikit (0.1.0):
     - React-Core
@@ -670,7 +670,6 @@ SPEC REPOS:
     - Flipper-RSocket
     - FlipperKit
     - fmt
-    - HyphenateChat
     - libevent
     - OpenSSL-Universal
     - SocketRocket
@@ -684,6 +683,7 @@ SPEC REPOS:
     - FirebaseMessaging
     - GoogleDataTransport
     - GoogleUtilities
+    - HyphenateChat
     - libwebp
     - nanopb
     - PromisesObjC
@@ -882,7 +882,7 @@ SPEC CHECKSUMS:
   glog: 476ee3e89abb49e07f822b48323c51c57124b572
   GoogleDataTransport: 1c8145da7117bd68bbbed00cf304edb6a24de00f
   GoogleUtilities: bad72cb363809015b1f7f19beb1f1cd23c589f95
-  HyphenateChat: 83d34c3edbd9f2dbdc3e48e222dd2ae4ea62bd9f
+  HyphenateChat: 9f6e4ac3b290e52cc0e52491f85d86097b35c285
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   libwebp: 60305b2e989864154bd9be3d772730f08fc6a59c
   nanopb: b552cce312b6c8484180ef47159bc0f65a1f0431
@@ -921,7 +921,7 @@ SPEC CHECKSUMS:
   React-jsinspector: eb202e43b3879aba9a14f3f65788aec85d4e1ea9
   React-logger: 98f663b292a60967ebbc6d803ae96c1381183b6d
   react-native-cameraroll: 0ff04cc4e0ff5f19a94ff4313e5c8bc4503cd86d
-  react-native-chat-sdk: d4e5ecdecdb1194e73d25fde43960c06bca3b52a
+  react-native-chat-sdk: b6f6c6c68839d5a5aba050ee451c0ef6c55c671a
   react-native-chat-uikit: d9e6fd6797706d75f7c8924b7c98e45b1f1af62a
   react-native-create-thumbnail: 94e68f6cc050a870f830352d1a924c1e8d38b52f
   react-native-document-picker: 958e2bc82e128be69055be261aeac8d872c8d34c

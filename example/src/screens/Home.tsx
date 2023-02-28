@@ -4,6 +4,8 @@ import * as React from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import {
   ConnectStateEventDispatch,
+  ContactChatSdkEvent,
+  ContactChatSdkEventType,
   ContactEventDispatch,
   ConversationEventDispatch,
   MessageEventDispatch,
@@ -11,6 +13,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import TabBarIcon from '../components/TabBarIcon';
+import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import {
   type HomeEventBarType,
   type HomeEventType,
@@ -23,21 +26,27 @@ import MySetting from './MySetting';
 
 const Home = createMaterialBottomTabNavigator<RootParamsList>();
 
-const HomeScreenInternal = React.memo(() => {
-  console.log('test:HomeScreenInternal:');
+type HomeScreenInternalProps = {
+  contactFlag: React.RefObject<boolean>;
+};
+
+const HomeScreenInternal = React.memo((props: HomeScreenInternalProps) => {
+  console.log('test:HomeScreenInternal:', props);
+  const { contactFlag } = props;
+
   const [convBarState, setConvBarState] = React.useState<
     number | boolean | undefined
   >(undefined);
   const [contactBarState, setContactBarState] = React.useState<
     number | boolean | undefined
-  >(undefined);
+  >(contactFlag.current ?? undefined);
   const [settingBarState, setSettingBarState] = React.useState<
     number | boolean | undefined
   >(undefined);
 
   const addListeners = React.useCallback(() => {
     const sub = DeviceEventEmitter.addListener(HomeEvent, (event) => {
-      console.log('test:event:', event);
+      console.log('test:event:', HomeScreenInternal.name, event);
       const eventType = event.type as HomeEventType;
       if (eventType === 'update_state') {
         const eventParams = event.params as {
@@ -69,6 +78,11 @@ const HomeScreenInternal = React.memo(() => {
           count: number;
         };
         setConvBarState(eventParams.count);
+      } else if (eventType === 'update_request') {
+        const eventParams = event.params as {
+          unread: boolean;
+        };
+        setContactBarState(eventParams.unread);
       }
     });
     return () => {
@@ -162,6 +176,8 @@ export default function HomeScreen(
   _: NativeStackScreenProps<RootParamsList, 'Home'>
 ): JSX.Element {
   console.log('test:HomeScreen:');
+  const { getCurrentId, getAllUnreadCount } = useAppChatSdkContext();
+  const contactFlag = React.useRef(false);
 
   const contactEventListener = React.useRef<ContactEventDispatch>(
     new ContactEventDispatch()
@@ -180,7 +196,26 @@ export default function HomeScreen(
   );
 
   const addListeners = React.useCallback(() => {
-    return () => {};
+    const sub = DeviceEventEmitter.addListener(
+      ContactChatSdkEvent,
+      async (event) => {
+        const eventType = event.type as ContactChatSdkEventType;
+        switch (eventType) {
+          case 'onContactInvited':
+            contactFlag.current = true;
+            DeviceEventEmitter.emit(HomeEvent, {
+              type: 'update_request' as HomeEventType,
+              params: { unread: true },
+            });
+            break;
+          default:
+            break;
+        }
+      }
+    );
+    return () => {
+      sub.remove();
+    };
   }, []);
 
   const init = React.useCallback(() => {
@@ -201,12 +236,34 @@ export default function HomeScreen(
     multiEventListener.current.unInit();
   }, []);
 
+  const initContactFlag = React.useCallback(async () => {
+    const currentId = getCurrentId();
+    if (currentId === undefined || currentId.length === 0) {
+      return;
+    }
+    getAllUnreadCount({
+      currentId: currentId,
+      onResult: ({ unread, error }) => {
+        if (error) {
+          console.warn('test:error:', error);
+        }
+        contactFlag.current = unread;
+        DeviceEventEmitter.emit(HomeEvent, {
+          type: 'update_request' as HomeEventType,
+          params: { unread: unread },
+        });
+      },
+    });
+  }, [getAllUnreadCount, getCurrentId]);
+
   React.useEffect(() => {
     console.log('test:useEffect:', addListeners, init);
     const load = () => {
       console.log('test:load:', HomeScreen.name);
       const unsubscribe = addListeners();
       init();
+      initContactFlag();
+      addListeners();
       return {
         unsubscribe: unsubscribe,
         unInit: unInit,
@@ -219,7 +276,7 @@ export default function HomeScreen(
 
     const res = load();
     return () => unload(res);
-  }, [addListeners, init, unInit]);
+  }, [addListeners, init, initContactFlag, unInit]);
 
-  return <HomeScreenInternal />;
+  return <HomeScreenInternal contactFlag={contactFlag} />;
 }

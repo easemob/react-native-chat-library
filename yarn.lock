@@ -11666,10 +11666,10 @@ react-native-builder-bob@^0.20.1:
   optionalDependencies:
     jetifier "^2.0.0"
 
-react-native-chat-sdk@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.npmmirror.com/react-native-chat-sdk/-/react-native-chat-sdk-1.0.10.tgz#18c331f83094a80bb234abd4716afbfc3d39322a"
-  integrity sha512-WzlHA+FktUNisGZJj4r6sEkt6GHqEtNRm4FFoU/D1jht6c83KmkXQS0qnyUoR7dXa+3KkJysdiU+hluSGBoFiw==
+react-native-chat-sdk@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmmirror.com/react-native-chat-sdk/-/react-native-chat-sdk-1.1.0.tgz#be3650d8c28f60b6157a93be6680f980e2221454"
+  integrity sha512-mySaej7aCweEdXie2IDo/SW30ioDxvHnB7lhV72lZT5nH/23HKNdv0qOLuIofEfe3/4Z8HX44Te0yPESbzY4wg==
 
 react-native-codegen@^0.0.18:
   version "0.0.18"

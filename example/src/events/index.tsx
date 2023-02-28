@@ -42,7 +42,10 @@ export type ChatEventType =
   | 'send_image_message';
 
 export const HomeEvent = 'HomeEvent';
-export type HomeEventType = 'update_state' | 'update_all_count';
+export type HomeEventType =
+  | 'update_state'
+  | 'update_all_count'
+  | 'update_request';
 export type HomeEventBarType = 'conv' | 'contact' | 'setting';
 
 export const ContactEvent = 'ContactEvent';

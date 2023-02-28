@@ -30,6 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
+import { HomeEvent, HomeEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
 
@@ -390,6 +391,28 @@ export default function RequestListScreen(_props: Props): JSX.Element {
     [client.chatManager, client.contactManager, client.groupManager]
   );
 
+  const updateRequestFlag = React.useCallback((data: ItemDataType[]) => {
+    let count = 0;
+    for (const item of data) {
+      if (
+        item.notificationType !== 'ContactInvitationAccepted' &&
+        item.notificationType !== 'GroupRequestJoinAccepted' &&
+        item.notificationType !== 'GroupInvitationAccepted' &&
+        item.notificationType !== 'ContactInvitationDeclined' &&
+        item.notificationType !== 'GroupRequestJoinDeclined' &&
+        item.notificationType !== 'GroupInvitationDeclined'
+      ) {
+        ++count;
+      }
+    }
+    if (count === 0) {
+      DeviceEventEmitter.emit(HomeEvent, {
+        type: 'update_request' as HomeEventType,
+        params: { unread: count !== 0 },
+      });
+    }
+  }, []);
+
   const manualRefresh = React.useCallback(
     (params: {
       type: 'init' | 'add' | 'search' | 'del-one' | 'update-one';
@@ -482,8 +505,9 @@ export default function RequestListScreen(_props: Props): JSX.Element {
         return;
       }
       setIsEmpty(data.length === 0);
+      updateRequestFlag(data);
     },
-    [data]
+    [data, updateRequestFlag]
   );
 
   const standardizedData = React.useCallback(
