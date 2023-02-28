@@ -26,7 +26,7 @@ import type { NavigationProp } from '../screens/ContactList';
 export const CreateGroupSettings = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  console.log('test:route:', route.key);
+  console.log('test:CreateGroupSettings:', route.key);
   const [isPublic, setIsPublic] = React.useState(false);
   const [isInvite, setIsInvite] = React.useState(false);
   const sf = getScaleFactor();
@@ -40,23 +40,10 @@ export const CreateGroupSettings = () => {
   );
 
   const onIsPublic = React.useCallback((is: boolean) => {
-    // console.log('test:onIsPublic');
     setIsPublic(is);
-    // DeviceEventEmitter.emit(CreateGroupSettingsEvent, {
-    //   type: 'set_public' as CreateGroupSettingsEventType,
-    //   params: {
-    //     isPublic: is,
-    //   },
-    // });
   }, []);
   const onIsInvite = React.useCallback((is: boolean) => {
     setIsInvite(is);
-    // DeviceEventEmitter.emit(CreateGroupSettingsEvent, {
-    //   type: 'set_invite' as CreateGroupSettingsEventType,
-    //   params: {
-    //     isInvite: is,
-    //   },
-    // });
   }, []);
 
   const startCreateNewGroup = React.useCallback(
@@ -78,7 +65,7 @@ export const CreateGroupSettings = () => {
 
   React.useEffect(() => {
     const sub = DeviceEventEmitter.addListener(ContactListEvent, (event) => {
-      console.log('test:ContactListEvent:', event);
+      console.log('test:CreateGroupSettings:', event);
       if (event.type !== 'create_group_result') {
         return;
       }
@@ -102,7 +89,6 @@ export const CreateGroupSettings = () => {
             console.warn('test:error:', error);
           });
       } else {
-        console.log('test:create_group_result:', eventParams.result);
         manualClose()
           .then(() => {
             DeviceEventEmitter.emit(ContactListEvent, {
@@ -217,7 +203,7 @@ export const CreateGroupSettings = () => {
           style={{ height: sf(48), borderRadius: sf(24) }}
           state={buttonState}
           onChangeState={(state) => {
-            console.log('test:state:', state);
+            console.log('test:onChangeState:', state);
             startCreateNewGroup(state);
           }}
         />

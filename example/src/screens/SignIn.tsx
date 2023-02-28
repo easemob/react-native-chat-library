@@ -1,6 +1,8 @@
+import { StackActions } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import {
+  DeviceEventEmitter,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -8,14 +10,12 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import type { ChatConnectEventListener } from 'react-native-chat-sdk';
 import {
   autoFocus,
   createStyleSheet,
   getScaleFactor,
   LoadingButton,
   LocalIcon,
-  Services,
   TextInput,
   useChatSdkContext,
   useHeaderContext,
@@ -24,6 +24,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
+import { AppEvent, AppEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 
@@ -53,7 +54,7 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
   const [buttonState, setButtonState] = React.useState<'loading' | 'stop'>(
     'stop'
   );
-  const { client } = useChatSdkContext();
+  const { client, login: loginAction } = useChatSdkContext();
 
   React.useEffect(() => {
     if (id.length > 0 && password.length > 0) {
@@ -68,48 +69,39 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
       return;
     }
     setButtonState('loading');
-    client
-      .login(id, password)
-      .then(() => {
-        console.log('test:login:success');
-        Services.dcs.init(`${client.options!.appKey.replace('#', '-')}/${id}`);
-        setButtonState('stop');
-        navigation.push('Home', { params: undefined });
-      })
-      .catch((error) => {
-        console.log('test:login:fail:', error);
-        setButtonState('stop');
-        if (error.code === 200) {
-          Services.dcs.init(
-            `${client.options!.appKey.replace('#', '-')}/${id}`
-          );
-          navigation.push('Home', { params: undefined });
+    loginAction({
+      id: id,
+      pass: password,
+      type: 'easemob',
+      onResult: (result) => {
+        if (result.result === true) {
+          console.log('test:login:success');
+          setButtonState('stop');
+          DeviceEventEmitter.emit(AppEvent, {
+            type: 'on_logined' as AppEventType,
+            params: {},
+          });
+          navigation.dispatch(StackActions.push('Home', { params: {} }));
         } else {
-          toast.showToast('Login Failed');
+          console.warn('test:login:fail:', result.error);
+          setButtonState('stop');
+          if (result.error.code === 200) {
+            DeviceEventEmitter.emit(AppEvent, {
+              type: 'on_logined' as AppEventType,
+              params: {},
+            });
+            navigation.dispatch(StackActions.push('Home', { params: {} }));
+          } else {
+            toast.showToast('Login Failed');
+          }
         }
-      });
+      },
+    });
   };
 
   const addListeners = React.useCallback(() => {
-    const connectListener = {
-      onConnected: (): void => {
-        console.log('test:onConnected:');
-      },
-      onDisconnected: (errorCode?: number): void => {
-        console.log('test:onDisconnected:', errorCode);
-      },
-      onTokenWillExpire: (): void => {
-        console.log('test:onTokenWillExpire:');
-      },
-      onTokenDidExpire: (): void => {
-        console.log('test:onTokenDidExpire:');
-      },
-    } as ChatConnectEventListener;
-    client.addConnectionListener(connectListener);
-    return () => {
-      client.removeConnectionListener(connectListener);
-    };
-  }, [client]);
+    return () => {};
+  }, []);
 
   React.useEffect(() => {
     const load = () => {

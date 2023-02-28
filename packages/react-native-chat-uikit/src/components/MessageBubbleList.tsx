@@ -231,30 +231,6 @@ const ImageMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
       return r;
     };
     const [_url] = React.useState(url(msg));
-    // console.log('test:image:load:url:', _url);
-    // Services.dcs
-    //   .isExistedFile(_url)
-    //   .then((r) => {
-    //     console.log('test:image:isExisted:', r);
-    //     if (r === false && msg.remoteUrl) {
-    //       Services.ms
-    //         .saveFromUrl({
-    //           remoteUrl: msg.remoteUrl,
-    //           localPath: _url,
-    //         })
-    //         .then((result) => {
-    //           console.log('test:image:save:success:', result);
-    //           setUrl(_url);
-    //         })
-    //         .catch((error) => {
-    //           console.warn('test:error:', error);
-    //           if (msg.remoteUrl) setUrl(msg.remoteUrl);
-    //         });
-    //     }
-    //   })
-    //   .catch((error) => {
-    //     console.warn('test:error:', error);
-    //   });
 
     return (
       <View

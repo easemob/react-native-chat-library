@@ -23,8 +23,6 @@ export function ScreenContainer({
   edges,
   ...others
 }: ScreenContainerProps): JSX.Element {
-  console.log('test:ScreenContainer:', mode, edges);
-
   return (
     <DialogContextProvider>
       <ToastContextProvider>

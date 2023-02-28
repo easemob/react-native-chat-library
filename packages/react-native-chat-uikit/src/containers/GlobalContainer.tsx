@@ -16,14 +16,13 @@ import { HeaderStyleProvider } from '../contexts/HeaderContext';
 import { I18nContextProvider } from '../contexts/I18nContext';
 import { ChatSdkContextProvider } from '../contexts/ImSdkContext';
 import { ThemeContextProvider } from '../contexts/ThemeContext';
-import {
+import type {
   ClipboardService,
   DirCacheService,
   LocalStorageService,
   MediaService,
   NotificationService,
   PermissionService,
-  Services,
 } from '../services';
 import { once } from '../utils/function';
 
@@ -116,39 +115,6 @@ export function GlobalContainer({
       )
       .then(async () => {
         console.log('test:sdk:init:success');
-        if (__DEV__) {
-          sdk.client
-            .getCurrentUsername()
-            .then((result) => {
-              console.log('test:userId:', result);
-              if (result.length > 0)
-                Services.dcs.init(
-                  `${sdk.client.options!.appKey.replace('#', '-')}/${result}`
-                );
-            })
-            .catch((error) => {
-              console.warn('tes:e', error);
-            });
-
-          // console.log('test:removeAllMessage:');
-          // const currentId = await sdk.client.getCurrentUsername();
-          // sdk.client.chatManager
-          //   .deleteAllMessages(currentId, ChatConversationType.PeerChat)
-          //   .then()
-          //   .catch((error) => {
-          //     console.warn('test:removeAllMessage:', error);
-          //   });
-          // // client.chatManager
-          // //   .deleteMessagesBeforeTimestamp(timestamp())
-          // //   .then()
-          // //   .catch((error) => {
-          // //     console.warn('test:deleteMessagesBeforeTimestamp:', error);
-          // //   });
-          // const list = await sdk.client.chatManager.getAllConversations();
-          // for (const item of list) {
-          //   await sdk.client.chatManager.deleteConversation(item.convId, true);
-          // }
-        }
         onInitialized?.();
       })
       .catch((error) => {

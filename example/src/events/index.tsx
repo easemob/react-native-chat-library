@@ -40,3 +40,14 @@ export type ChatEventType =
   | 'msg_progress'
   | 'open_input_extension'
   | 'send_image_message';
+
+export const HomeEvent = 'HomeEvent';
+export type HomeEventType = 'update_state' | 'update_all_count';
+export type HomeEventBarType = 'conv' | 'contact' | 'setting';
+
+export const ContactEvent = 'ContactEvent';
+export type ContactEventType = 'update_state';
+export type ContactEventBarType = 'contact' | 'group' | 'request';
+
+export const AppEvent = 'AppEvent';
+export type AppEventType = 'on_initialized' | 'on_logined';

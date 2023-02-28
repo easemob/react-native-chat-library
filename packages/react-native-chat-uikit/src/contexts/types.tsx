@@ -48,6 +48,19 @@ export type ThemeContextType = {
 
 export interface ChatSdkContextType {
   client: ChatClient;
+  login: (params: {
+    id: string;
+    pass: string;
+    type?: 'easemob' | 'agora';
+    onResult: (result: { result: boolean; error?: any }) => void;
+  }) => Promise<void>;
+  logout: (params: {
+    onResult: (result: { result: boolean; error?: any }) => void;
+  }) => Promise<void>;
+  autoLogin: (params: {
+    onResult: (result: { result: boolean; error?: any }) => void;
+  }) => Promise<void>;
+  getCurrentId: () => string;
 }
 
 export type HeaderContextType = {

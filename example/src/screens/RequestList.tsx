@@ -1,8 +1,7 @@
 import type { MaterialTopTabScreenProps } from '@react-navigation/material-top-tabs';
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { DeviceEventEmitter, Pressable, View } from 'react-native';
 import {
-  ChatContactEventListener,
   ChatConversationType,
   ChatCustomMessageBody,
   ChatMessage,
@@ -13,6 +12,8 @@ import {
 import {
   Blank,
   Button,
+  ContactChatSdkEvent,
+  ContactChatSdkEventType,
   createStyleSheet,
   DefaultAvatar,
   DefaultListItemSeparator,
@@ -185,13 +186,13 @@ export default function RequestListScreen(_props: Props): JSX.Element {
   // const theme = useThemeContext();
   // const menu = useActionMenu();
   // const sheet = useBottomSheet();
-  const { client } = useAppChatSdkContext();
+  const { client, getCurrentId } = useAppChatSdkContext();
 
   const listRef = React.useRef<EqualHeightListRef>(null);
   const enableRefresh = true;
   const enableAlphabet = false;
   const enableHeader = false;
-  const data: ItemDataType[] = [];
+  const data: ItemDataType[] = React.useMemo(() => [], []); // for search
   const [isEmpty, setIsEmpty] = React.useState(false);
 
   const updateDataThen = React.useCallback(
@@ -389,6 +390,102 @@ export default function RequestListScreen(_props: Props): JSX.Element {
     [client.chatManager, client.contactManager, client.groupManager]
   );
 
+  const manualRefresh = React.useCallback(
+    (params: {
+      type: 'init' | 'add' | 'search' | 'del-one' | 'update-one';
+      items: ItemDataType[];
+    }) => {
+      console.log('test:manualRefresh:', params.type, params.items.length);
+      if (params.type === 'init') {
+        data.length = 0;
+        listRef.current?.manualRefresh([
+          {
+            type: 'clear',
+          },
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'dsc',
+          },
+        ]);
+        data.push(...params.items);
+      } else if (params.type === 'search') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'clear',
+          },
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'dsc',
+          },
+        ]);
+      } else if (params.type === 'add') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'dsc',
+          },
+        ]);
+        data.push(...params.items);
+      } else if (params.type === 'del-one') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'del',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: false,
+          },
+        ]);
+        let hadDeleted = false;
+        for (let index = 0; index < data.length; index++) {
+          const element = data[index];
+          for (const item of params.items) {
+            if (element && item.key === element.key) {
+              data.splice(index, 1);
+              hadDeleted = true;
+              break;
+            }
+          }
+          if (hadDeleted === true) {
+            break;
+          }
+        }
+      } else if (params.type === 'update-one') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'update',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'dsc',
+          },
+        ]);
+        let hadUpdated = false;
+        for (let index = 0; index < data.length; index++) {
+          const element = data[index];
+          for (const item of params.items) {
+            if (element && item.key === element.key) {
+              data[index] = item;
+              hadUpdated = true;
+              break;
+            }
+          }
+          if (hadUpdated === true) {
+            break;
+          }
+        }
+      } else {
+        console.warn('test:');
+        return;
+      }
+      setIsEmpty(data.length === 0);
+    },
+    [data]
+  );
+
   const standardizedData = React.useCallback(
     (data: Omit<ItemDataType, 'onAction'>): ItemDataType => {
       return {
@@ -397,18 +494,15 @@ export default function RequestListScreen(_props: Props): JSX.Element {
           const select = 'await' as 'then' | 'await';
           if (select === 'then') {
             updateDataThen(isAccepted, item, (_, body) => {
-              listRef.current?.manualRefresh([
-                {
-                  type: 'update',
-                  enableSort: false,
-                  data: [
-                    {
-                      ...item,
-                      notificationType: body!.params.type,
-                    } as EqualHeightListItemData,
-                  ],
-                },
-              ]);
+              manualRefresh({
+                type: 'update-one',
+                items: [
+                  {
+                    ...item,
+                    notificationType: body!.params.type,
+                  } as ItemDataType,
+                ],
+              });
             });
           } else if (select === 'await') {
             const ret = await updateDataAwait(isAccepted, item);
@@ -419,23 +513,20 @@ export default function RequestListScreen(_props: Props): JSX.Element {
             if (body === undefined) {
               return;
             }
-            listRef.current?.manualRefresh([
-              {
-                type: 'update',
-                enableSort: false,
-                data: [
-                  {
-                    ...item,
-                    notificationType: body.params.type,
-                  } as EqualHeightListItemData,
-                ],
-              },
-            ]);
+            manualRefresh({
+              type: 'update-one',
+              items: [
+                {
+                  ...item,
+                  notificationType: body.params.type,
+                } as ItemDataType,
+              ],
+            });
           }
         },
       };
     },
-    [updateDataThen, updateDataAwait]
+    [updateDataThen, manualRefresh, updateDataAwait]
   );
 
   const initData = React.useCallback(
@@ -461,23 +552,16 @@ export default function RequestListScreen(_props: Props): JSX.Element {
         });
       });
       // data.push(...r);
-      listRef.current?.manualRefresh([
-        {
-          type: 'clear',
-        },
-        {
-          type: 'add',
-          data: r,
-          enableSort: true,
-          sortDirection: 'dsc',
-        },
-      ]);
+      manualRefresh({
+        type: 'init',
+        items: r,
+      });
     },
-    [standardizedData]
+    [manualRefresh, standardizedData]
   );
 
   const initList = React.useCallback(async () => {
-    const convId = await client.getCurrentUsername();
+    const convId = getCurrentId();
     if (convId === undefined || convId.length === 0) {
       return;
     }
@@ -490,7 +574,6 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       )
       .then((result) => {
         console.log('test:RequestListScreen:success:', result.length);
-        setIsEmpty(result.length === 0);
         initData(
           result.map((item) => {
             const content = (item.body as ChatCustomMessageBody).params;
@@ -511,58 +594,66 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       .catch((error) => {
         console.warn('test:error:', error);
       });
-  }, [client, initData]);
+  }, [client.chatManager, getCurrentId, initData]);
 
   const addListeners = React.useCallback(() => {
-    const contactEventListener: ChatContactEventListener = {
-      onContactInvited: async (userName: string, reason?: string) => {
-        console.log('test:onContactInvited:', userName, reason);
-        const convId = await client.getCurrentUsername();
-        const msg = ChatMessage.createCustomMessage(
-          convId,
-          'ContactInvitation',
-          ChatMessageChatType.PeerChat,
-          {
-            params: {
-              from: userName,
-              type: 'ContactInvitation',
-            },
-          }
-        );
-        console.log('test:onContactInvited:', msg);
-        client.chatManager
-          .insertMessage(msg)
-          .then((result) => {
-            console.log('test:insertMessage:success:', result);
-            listRef.current?.manualRefresh([
-              {
-                type: 'add',
-                enableSort: true,
-                sortDirection: 'dsc',
-                data: [
-                  standardizedData({
-                    key: msg.serverTime.toString(),
-                    timestamp: msg.serverTime,
-                    msgId: msg.msgId,
-                    notificationID: userName,
+    const sub = DeviceEventEmitter.addListener(
+      ContactChatSdkEvent,
+      async (event) => {
+        const eventType = event.type as ContactChatSdkEventType;
+        const eventParams = event.params as { id: string; error: string };
+        switch (eventType) {
+          case 'onContactInvited':
+            {
+              const userName = eventParams.id;
+              const reason = eventParams.error;
+              console.log('test:onContactInvited:', userName, reason);
+              const convId = getCurrentId();
+              const msg = ChatMessage.createCustomMessage(
+                convId,
+                'ContactInvitation',
+                ChatMessageChatType.PeerChat,
+                {
+                  params: {
                     from: userName,
-                    notificationType:
-                      'ContactInvitation' as NotificationMessageDescriptionType,
-                  }) as EqualHeightListItemData,
-                ],
-              },
-            ]);
-          })
-          .catch((error) => {
-            console.warn('test:insertMessage:fail:', error);
-          });
-      },
-    };
-    client.contactManager.addContactListener(contactEventListener);
+                    type: 'ContactInvitation',
+                  },
+                }
+              );
+              console.log('test:onContactInvited:', msg);
+              client.chatManager
+                .insertMessage(msg)
+                .then((result) => {
+                  console.log('test:insertMessage:success:', result);
+                  manualRefresh({
+                    type: 'add',
+                    items: [
+                      standardizedData({
+                        key: msg.serverTime.toString(),
+                        timestamp: msg.serverTime,
+                        msgId: msg.msgId,
+                        notificationID: userName,
+                        from: userName,
+                        notificationType:
+                          'ContactInvitation' as NotificationMessageDescriptionType,
+                      }) as ItemDataType,
+                    ],
+                  });
+                })
+                .catch((error) => {
+                  console.warn('test:insertMessage:fail:', error);
+                });
+            }
+            break;
+          default:
+            break;
+        }
+      }
+    );
     return () => {
-      client.contactManager.removeContactListener(contactEventListener);
+      sub.remove();
     };
-  }, [client, standardizedData]);
+  }, [client.chatManager, getCurrentId, manualRefresh, standardizedData]);
 
   React.useEffect(() => {
     const load = () => {
@@ -588,7 +679,7 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       style={useStyleSheet().safe}
       edges={['right', 'left']}
     >
-      {isEmpty ? (
+      {isEmpty === true ? (
         <Blank />
       ) : (
         <EqualHeightList

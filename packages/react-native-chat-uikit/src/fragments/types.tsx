@@ -57,3 +57,6 @@ export type ChatEventType =
 
 export const MessageBubbleEvent = 'MessageBubbleEvent';
 export type MessageBubbleEventType = 'on_press' | 'on_long_press';
+
+export const LoginEvent = 'LoginEvent';
+export type LoginEventType = 'on_login_end' | 'on_logout_end';

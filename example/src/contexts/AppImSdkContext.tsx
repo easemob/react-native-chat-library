@@ -5,10 +5,8 @@ import {
 } from 'react-native-chat-uikit';
 
 export class AppChatSdkContext extends UIKitChatSdkContext {
-  autoLogin: boolean;
-  constructor(params: { client: ChatClient; autoLogin: boolean }) {
+  constructor(params: { client: ChatClient }) {
     super(params.client);
-    this.autoLogin = params.autoLogin;
   }
 }
 

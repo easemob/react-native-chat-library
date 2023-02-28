@@ -33,6 +33,8 @@ import { useAppI18nContext } from '../contexts/AppI18nContext';
 import {
   type ConversationListEventType,
   ConversationListEvent,
+  HomeEvent,
+  HomeEventType,
 } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type {
@@ -269,6 +271,12 @@ export default function ConversationListScreen({
           }}
           onData={(d) => {
             setData(d);
+          }}
+          onUpdateReadCount={(unreadCount) => {
+            DeviceEventEmitter.emit(HomeEvent, {
+              type: 'update_all_count' as HomeEventType,
+              params: { count: unreadCount },
+            });
           }}
         />
       )}

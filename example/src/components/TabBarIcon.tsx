@@ -19,12 +19,14 @@ type TabBarIconProps = {
     | 'TopRequestList'
     | 'TopContacts'
     | 'TopGroups';
+  state?: number | boolean;
 };
 
 export default function TabBarIcon({
   focused,
   color,
   type,
+  state,
 }: TabBarIconProps): JSX.Element {
   const { tabbar } = useAppI18nContext();
   const sf = getScaleFactor();
@@ -35,12 +37,14 @@ export default function TabBarIcon({
     return (
       <React.Fragment>
         <LocalIcon name="tabbar_chats" color={color} size={sf(32)} />
-        <Badge
-          count={999}
-          badgeColor="rgba(255, 20, 204, 1)"
-          textColor="white"
-          style={styles.chat}
-        />
+        {state ? (
+          <Badge
+            count={state as number}
+            badgeColor="rgba(255, 20, 204, 1)"
+            textColor="white"
+            style={styles.chat}
+          />
+        ) : null}
       </React.Fragment>
     );
   };
@@ -48,11 +52,15 @@ export default function TabBarIcon({
     return (
       <React.Fragment>
         <LocalIcon name="tabbar_contacts" color={color} size={sf(32)} />
-        <LocalIcon
-          name="contact_request_hint"
-          size={sf(14)}
-          style={[styles.contact]}
-        />
+        {state
+          ? state === true && (
+              <LocalIcon
+                name="contact_request_hint"
+                size={sf(14)}
+                style={[styles.contact]}
+              />
+            )
+          : null}
       </React.Fragment>
     );
   };

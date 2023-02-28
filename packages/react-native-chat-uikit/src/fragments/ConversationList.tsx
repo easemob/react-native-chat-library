@@ -8,12 +8,8 @@ import {
 } from 'react-native';
 import {
   ChatConversationType,
-  ChatGroupMessageAck,
   ChatMessage,
   ChatMessageDirection,
-  ChatMessageEventListener,
-  ChatMessageReactionEvent,
-  ChatMessageThreadEvent,
   ChatMessageType,
   ChatTextMessageBody,
 } from 'react-native-chat-sdk';
@@ -30,6 +26,7 @@ import { LocalIcon } from '../components/Icon';
 import { ListItemSeparator } from '../components/ListItemSeparator';
 import { ListSearchHeader } from '../components/ListSearchHeader';
 import { useChatSdkContext } from '../contexts';
+import { MessageChatSdkEvent, MessageChatSdkEventType } from '../events';
 import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
@@ -163,13 +160,14 @@ export type Props = {
   onLongPress?: (data?: ItemDataType) => void;
   onPress?: (data?: ItemDataType) => void;
   onData?: (data: ItemDataType[]) => void;
+  onUpdateReadCount?: (unreadCount: number) => void;
 };
 export default function ConversationListFragment(props: Props): JSX.Element {
   console.log('test:ConversationListFragment:', props);
-  const { onLongPress, onPress, onData } = props;
+  const { onLongPress, onPress, onData, onUpdateReadCount } = props;
 
   const sf = getScaleFactor();
-  const { client } = useChatSdkContext();
+  const { client, getCurrentId } = useChatSdkContext();
 
   const listRef = React.useRef<EqualHeightListRef>(null);
   const enableRefresh = true;
@@ -285,6 +283,13 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       items: ItemDataType[];
     }) => {
       console.log('test:manualRefresh:', params.type, params.items.length);
+      for (let index = 0; index < params.items.length; index++) {
+        const element = params.items[index];
+        if (element?.convId === getCurrentId()) {
+          params.items.splice(index, 1);
+          break;
+        }
+      }
       if (params.type === 'init') {
         data.length = 0;
         listRef.current?.manualRefresh([
@@ -372,7 +377,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       }
       onData?.(data);
     },
-    [data, onData]
+    [data, getCurrentId, onData]
   );
 
   const standardizedData = React.useCallback(
@@ -391,6 +396,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           onLongPress?.(data);
         },
         onPress: (data: ItemDataType) => {
+          console.log('test:12345:', data);
           onPress?.(data);
         },
         actions: {
@@ -473,6 +479,19 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     [data]
   );
 
+  const updateAllUnreadCount = React.useCallback(() => {
+    client.chatManager
+      .getUnreadCount()
+      .then((result) => {
+        if (result !== undefined) {
+          onUpdateReadCount?.(result);
+        }
+      })
+      .catch((error) => {
+        console.warn('test:error:', error);
+      });
+  }, [client.chatManager, onUpdateReadCount]);
+
   const addListeners = React.useCallback(() => {
     const sub = DeviceEventEmitter.addListener(
       ConversationListEvent,
@@ -522,88 +541,82 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         }
       }
     );
-    const msgListener: ChatMessageEventListener = {
-      onMessagesReceived: async (messages: ChatMessage[]): Promise<void> => {
-        /// todo: !!! 10000 message count ???
-        console.log('test:onMessagesReceived:', messages.length);
-        for (const msg of messages) {
-          const convId = getConvId(msg);
-          const convType = msg.chatType as number as ChatConversationType;
-          const conv = getExisted(convId);
-          if (conv === undefined) {
-            await getConvIfNot(convId, convType);
-          }
-          const count = getConvCount(convId, msg);
-          manualRefresh({
-            type: 'update-one',
-            items: [
-              standardizedData({
-                key: convId,
-                convId: convId,
-                convType: convType,
-                lastMsg: msg,
-                count: count,
-              } as ItemDataType),
-            ],
-          });
+
+    const sub2 = DeviceEventEmitter.addListener(
+      MessageChatSdkEvent,
+      async (event) => {
+        const eventType = event.type as MessageChatSdkEventType;
+        const eventParams = event.params as { messages: ChatMessage[] };
+        switch (eventType) {
+          case 'onMessagesReceived':
+            {
+              const messages = eventParams.messages;
+              console.log('test:onMessagesReceived:', messages.length);
+              for (const msg of messages) {
+                const convId = getConvId(msg);
+                const convType = msg.chatType as number as ChatConversationType;
+                const conv = getExisted(convId);
+                if (conv === undefined) {
+                  await getConvIfNot(convId, convType);
+                }
+                const count = getConvCount(convId, msg);
+                manualRefresh({
+                  type: 'update-one',
+                  items: [
+                    standardizedData({
+                      key: convId,
+                      convId: convId,
+                      convType: convType,
+                      lastMsg: msg,
+                      count: count,
+                    } as ItemDataType),
+                  ],
+                });
+              }
+              updateAllUnreadCount();
+            }
+            break;
+          case 'onMessagesRead':
+            {
+              /// todo: !!! 10000 message count ???
+              const messages = eventParams.messages;
+              console.log('test:onMessagesRead:', messages.length);
+              for (const msg of messages) {
+                const convId = getConvId(msg);
+                const convType = msg.chatType as number as ChatConversationType;
+                const conv = getExisted(convId);
+                if (conv === undefined) {
+                  return;
+                }
+                const count =
+                  await client.chatManager.getConversationUnreadCount(
+                    convId,
+                    convType
+                  );
+                manualRefresh({
+                  type: 'update-one',
+                  items: [
+                    standardizedData({
+                      key: convId,
+                      convId: convId,
+                      convType: convType,
+                      lastMsg: msg,
+                      count: count,
+                    } as ItemDataType),
+                  ],
+                });
+              }
+            }
+            break;
+          default:
+            break;
         }
-      },
+      }
+    );
 
-      onCmdMessagesReceived: (_: ChatMessage[]): void => {},
-
-      onMessagesRead: async (messages: ChatMessage[]): Promise<void> => {
-        /// todo: !!! 10000 message count ???\
-        console.log('test:onMessagesRead:', messages.length);
-        for (const msg of messages) {
-          const convId = getConvId(msg);
-          const convType = msg.chatType as number as ChatConversationType;
-          const conv = getExisted(convId);
-          if (conv === undefined) {
-            return;
-          }
-          const count = await client.chatManager.getConversationUnreadCount(
-            convId,
-            convType
-          );
-          manualRefresh({
-            type: 'update-one',
-            items: [
-              standardizedData({
-                key: convId,
-                convId: convId,
-                convType: convType,
-                lastMsg: msg,
-                count: count,
-              } as ItemDataType),
-            ],
-          });
-        }
-      },
-
-      onGroupMessageRead: (_: ChatGroupMessageAck[]): void => {},
-
-      onMessagesDelivered: (_: ChatMessage[]): void => {},
-
-      onMessagesRecalled: (_: ChatMessage[]): void => {},
-
-      onConversationsUpdate: (): void => {},
-
-      onConversationRead: (): void => {},
-
-      onMessageReactionDidChange: (_: ChatMessageReactionEvent[]): void => {},
-
-      onChatMessageThreadCreated: (_: ChatMessageThreadEvent): void => {},
-
-      onChatMessageThreadUpdated: (_: ChatMessageThreadEvent): void => {},
-
-      onChatMessageThreadDestroyed: (_: ChatMessageThreadEvent): void => {},
-
-      onChatMessageThreadUserRemoved: (_: ChatMessageThreadEvent): void => {},
-    };
-    client.chatManager.addMessageListener(msgListener);
     return () => {
       sub.remove();
-      client.chatManager.removeMessageListener(msgListener);
+      sub2.remove();
     };
   }, [
     client.chatManager,
@@ -615,6 +628,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     getExisted,
     manualRefresh,
     standardizedData,
+    updateAllUnreadCount,
   ]);
 
   const initDirs = React.useCallback((convIds: string[]) => {

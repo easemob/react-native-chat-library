@@ -14,7 +14,7 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { registerRootComponent } from 'expo';
 import * as React from 'react';
-import { Linking, Platform, View } from 'react-native';
+import { DeviceEventEmitter, Linking, Platform, View } from 'react-native';
 import * as Audio from 'react-native-audio-recorder-player';
 import { ChatClient } from 'react-native-chat-sdk';
 import {
@@ -38,6 +38,7 @@ import Dev from './__dev__';
 import HomeHeaderRight from './components/HomeHeaderRight';
 import HomeHeaderTitle from './components/HomeHeaderTitle';
 import { AppChatSdkContext } from './contexts/AppImSdkContext';
+import { AppEvent, AppEventType } from './events';
 import { AppStringSet } from './I18n/AppCStringSet.en';
 import type { RootParamsList, RootParamsName } from './routes';
 import Chat from './screens/Chat';
@@ -98,7 +99,6 @@ export default function App() {
   const [initialState, setInitialState] = React.useState();
   const [initialRouteName] = React.useState('Splash' as RootParamsName);
   const sf = getScaleFactor();
-  const sdk = ChatClient.getInstance();
   const autoLogin = React.useRef(true);
   const RootRef = useNavigationContainerRef<RootParamsList>();
   const isOnInitialized = React.useRef(false);
@@ -137,21 +137,11 @@ export default function App() {
       return;
     }
     console.log('test:onInitApp:');
-    if (autoLogin.current === true) {
-      sdk
-        .isLoginBefore()
-        .then((result) => {
-          if (result === true) {
-            RootRef.navigate('Home', { params: {} });
-          }
-        })
-        .catch((error) => {
-          console.warn('test:error:', error);
-        });
-    } else {
-      RootRef.navigate('Login', { params: {} });
-    }
-  }, [RootRef, isOnInitialized, isOnReady, sdk]);
+    DeviceEventEmitter.emit(AppEvent, {
+      type: 'on_initialized' as AppEventType,
+      params: { autoLogin: autoLogin.current, navigation: RootRef },
+    });
+  }, [RootRef, isOnInitialized, isOnReady]);
 
   if (!isReady) {
     return null;
@@ -189,7 +179,6 @@ export default function App() {
         sdk={
           new AppChatSdkContext({
             client: ChatClient.getInstance(),
-            autoLogin: false,
           })
         }
         header={{

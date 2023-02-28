@@ -24,6 +24,13 @@
 - ios: Xcode 13.4 (**注意** 如果升级到 14 将不能使用虚拟机 12.4)
 - android: Android studio 2021.3.1 或以上
 
+## 安装依赖包
+
+```sh
+cd xx
+yarn add xxx
+```
+
 ## demo 项目
 
 在 `example` 目录下。

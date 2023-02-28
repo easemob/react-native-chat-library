@@ -25,16 +25,12 @@ import {
   ChatConversationType,
   ChatCustomMessageBody,
   ChatError,
-  ChatGroupMessageAck,
   ChatImageMessageBody,
   ChatMessage,
   ChatMessageChatType,
   ChatMessageDirection,
-  ChatMessageEventListener,
-  ChatMessageReactionEvent,
   ChatMessageStatus,
   ChatMessageStatusCallback,
-  ChatMessageThreadEvent,
   ChatMessageType,
   ChatSearchDirection,
   ChatTextMessageBody,
@@ -68,6 +64,7 @@ import {
   useThemeContext,
   useToastContext,
 } from '../contexts';
+import { MessageChatSdkEvent, MessageChatSdkEventType } from '../events';
 import { Services } from '../services';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
@@ -297,6 +294,7 @@ type ContentType = BaseType & {
       MessageItemType & { eventType: string; data: any }
     >;
   };
+  onUpdateReadCount?: (unreadCount: number) => void;
 };
 
 const Input = React.memo((props: InputType) => {
@@ -533,6 +531,7 @@ const Content = React.memo(
     onFace,
     inputRef,
     customMessageBubble,
+    onUpdateReadCount,
   }: ContentType) => {
     const sf = getScaleFactor();
     const TextInputRef = React.useRef<RNTextInput>(null);
@@ -1070,6 +1069,19 @@ const Content = React.memo(
       });
     }, [chatId, chatType]);
 
+    const updateAllUnreadCount = React.useCallback(() => {
+      client.chatManager
+        .getUnreadCount()
+        .then((result) => {
+          if (result !== undefined) {
+            onUpdateReadCount?.(result);
+          }
+        })
+        .catch((error) => {
+          console.warn('test:error:', error);
+        });
+    }, [client.chatManager, onUpdateReadCount]);
+
     const clearRead = React.useCallback(() => {
       client.chatManager
         .markAllMessagesAsRead(
@@ -1084,11 +1096,13 @@ const Content = React.memo(
               convType: chatType as number as ChatConversationType,
             },
           });
+
+          updateAllUnreadCount();
         })
         .catch((error) => {
           console.warn('test:error', error);
         });
-    }, [chatId, chatType, client.chatManager]);
+    }, [chatId, chatType, client.chatManager, updateAllUnreadCount]);
 
     React.useEffect(() => {
       const subscription1 = Keyboard.addListener('keyboardWillHide', (_) => {
@@ -1144,56 +1158,35 @@ const Content = React.memo(
             });
         }
       });
-      const msgListener: ChatMessageEventListener = {
-        onMessagesReceived: async (messages: ChatMessage[]): Promise<void> => {
-          /// todo: !!! 10000 message count ???
-          const r = [] as ChatMessage[];
-          for (const msg of messages) {
-            if (msg.conversationId === chatId) {
-              r.push(msg);
-            }
+      const sub2 = DeviceEventEmitter.addListener(
+        MessageChatSdkEvent,
+        (event) => {
+          const eventType = event.type as MessageChatSdkEventType;
+          const eventParams = event.params as { messages: ChatMessage[] };
+          switch (eventType) {
+            case 'onMessagesReceived':
+              {
+                /// todo: !!! 10000 message count ???
+                const messages = eventParams.messages;
+                const r = [] as ChatMessage[];
+                for (const msg of messages) {
+                  if (msg.conversationId === chatId) {
+                    r.push(msg);
+                  }
+                }
+                if (r.length > 0) loadMessage(r);
+              }
+              break;
+            default:
+              break;
           }
-          if (r.length > 0) loadMessage(r);
-        },
-
-        onCmdMessagesReceived: (_: ChatMessage[]): void => {},
-
-        onMessagesRead: async (_: ChatMessage[]): Promise<void> => {
-          /// todo: !!! 10000 message count ???
-        },
-
-        onGroupMessageRead: (_: ChatGroupMessageAck[]): void => {},
-
-        onMessagesDelivered: (_: ChatMessage[]): void => {},
-
-        onMessagesRecalled: (_: ChatMessage[]): void => {},
-
-        onConversationsUpdate: (): void => {},
-
-        onConversationRead: (): void => {},
-
-        onMessageReactionDidChange: (_: ChatMessageReactionEvent[]): void => {},
-
-        onChatMessageThreadCreated: (_: ChatMessageThreadEvent): void => {},
-
-        onChatMessageThreadUpdated: (_: ChatMessageThreadEvent): void => {},
-
-        onChatMessageThreadDestroyed: (_: ChatMessageThreadEvent): void => {},
-
-        onChatMessageThreadUserRemoved: (_: ChatMessageThreadEvent): void => {},
-      };
-      client.chatManager.addMessageListener(msgListener);
+        }
+      );
       return () => {
         sub.remove();
-        client.chatManager.removeMessageListener(msgListener);
+        sub2.remove();
       };
-    }, [
-      chatId,
-      client.chatManager,
-      loadMessage,
-      sendImageMessage,
-      sendVoiceMessage,
-    ]);
+    }, [chatId, loadMessage, sendImageMessage, sendVoiceMessage]);
 
     const initDirs = React.useCallback((convIds: string[]) => {
       for (const convId of convIds) {
@@ -1350,11 +1343,17 @@ type ChatFragmentProps = {
       MessageItemType & { eventType: string; data: any }
     >;
   };
+  onUpdateReadCount?: (unreadCount: number) => void;
 };
 
 export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
-  const { screenParams, messageBubbleList, onFace, customMessageBubble } =
-    props;
+  const {
+    screenParams,
+    messageBubbleList,
+    onFace,
+    customMessageBubble,
+    onUpdateReadCount,
+  } = props;
   const params = screenParams.params as {
     chatId: string;
     chatType: number;
@@ -1389,6 +1388,7 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
           messageBubbleList={messageBubbleList}
           onFace={onFace}
           customMessageBubble={customMessageBubble}
+          onUpdateReadCount={onUpdateReadCount}
           // customMessageBubble={{
           //   CustomMessageRenderItemP: CustomMessageRenderItem,
           // }}

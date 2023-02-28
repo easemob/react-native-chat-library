@@ -1,5 +1,5 @@
 import type { MaterialBottomTabScreenProps } from '@react-navigation/material-bottom-tabs';
-import type { CompositeScreenProps } from '@react-navigation/native';
+import { CommonActions, CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack/lib/typescript/src/types';
 import * as React from 'react';
 import { Linking, Pressable, TouchableOpacity, View } from 'react-native';
@@ -78,7 +78,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   const sdkVersion = 'AgoraChat v1.0.0';
   const uiVersion = 'AgoraChat v1.0.0';
   const urlName = 'agora.io';
-  const { client } = useAppChatSdkContext();
+  const { client, getCurrentId } = useAppChatSdkContext();
 
   const D = () => (
     <Divider
@@ -103,7 +103,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   );
 
   const removeAllMessage = async () => {
-    const currentId = await client.getCurrentUsername();
+    const currentId = getCurrentId();
     client.chatManager
       .deleteAllMessages(currentId, ChatConversationType.PeerChat)
       .then()
@@ -140,7 +140,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
       .logout()
       .then(() => {
         console.log('test:logout:success');
-        navigation.navigate('SignIn', {});
+        navigation.dispatch(CommonActions.navigate('Login', { params: {} }));
       })
       .catch((error) => {
         console.log('test:error:', error);

@@ -1,5 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import {
   type DefaultMessageBubbleListProps,
   ChatFragment,
@@ -8,6 +9,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import { CustomMessageRenderItem } from '../components/CustomMessageBubble';
+import { HomeEvent, HomeEventType } from '../events';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
@@ -46,6 +48,12 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
         onFace={() => {}}
         customMessageBubble={{
           CustomMessageRenderItemP: CustomMessageRenderItem,
+        }}
+        onUpdateReadCount={(unreadCount) => {
+          DeviceEventEmitter.emit(HomeEvent, {
+            type: 'update_all_count' as HomeEventType,
+            params: { count: unreadCount },
+          });
         }}
       />
     </ScreenContainer>
