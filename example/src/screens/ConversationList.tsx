@@ -150,6 +150,15 @@ const InvisiblePlaceholder = React.memo(
                         },
                       },
                       {
+                        title: conversation.searchGroup,
+                        titleColor: 'black',
+                        onPress: () => {
+                          navigation.navigate('Search', {
+                            params: { type: 'search_public_group_info' },
+                          });
+                        },
+                      },
+                      {
                         title: conversation.joinPublicGroup,
                         titleColor: 'black',
                         onPress: () => {
@@ -187,6 +196,7 @@ const InvisiblePlaceholder = React.memo(
       conversation.createGroup,
       conversation.addContact,
       conversation.joinPublicGroup,
+      conversation.searchGroup,
     ]);
 
     return <></>;

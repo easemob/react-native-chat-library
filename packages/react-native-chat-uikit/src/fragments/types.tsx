@@ -61,3 +61,9 @@ export type LoginEventType = 'on_login_end' | 'on_logout_end';
 
 export const MessageEvent = 'MessageEvent';
 export type MessageEventType = 'on_send_before' | 'on_send_result';
+
+export type ToastEventType =
+  | 'add_content_success'
+  | 'add_content_fail'
+  | 'request_join_public_group_success'
+  | 'request_join_public_group_fail';

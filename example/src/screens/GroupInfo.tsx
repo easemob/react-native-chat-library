@@ -93,7 +93,7 @@ export function GroupInfoScreenInternal({
           title: groupInfo.modify.groupId,
           titleColor: 'black',
           onPress: () => {
-            cbs.setString(groupInfo.modify.groupId);
+            cbs.setString(groupId);
             cbs.getString().then((text) => {
               console.log('test:openSheet:', text);
               toast.showToast(groupInfo.toast[3]!);

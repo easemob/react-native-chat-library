@@ -9,6 +9,7 @@ import {
   ContactChatSdkEventType,
   ContactEventDispatch,
   ConversationEventDispatch,
+  GroupEventDispatch,
   MessageEventDispatch,
   MultiDevicesEventDispatch,
 } from 'react-native-chat-uikit';
@@ -196,6 +197,9 @@ export default function HomeScreen(
   const multiEventListener = React.useRef<MultiDevicesEventDispatch>(
     new MultiDevicesEventDispatch()
   );
+  const groupEventListener = React.useRef<GroupEventDispatch>(
+    new GroupEventDispatch()
+  );
 
   const saveRequest = React.useCallback(
     (params: { from: string; convId: string }) => {
@@ -259,6 +263,7 @@ export default function HomeScreen(
     convEventListener.current.init();
     connectEventListener.current.init();
     multiEventListener.current.init();
+    groupEventListener.current.init();
   }, []);
 
   const unInit = React.useCallback(() => {
@@ -268,6 +273,7 @@ export default function HomeScreen(
     convEventListener.current.unInit();
     connectEventListener.current.unInit();
     multiEventListener.current.unInit();
+    groupEventListener.current.unInit();
   }, []);
 
   const initContactFlag = React.useCallback(async () => {

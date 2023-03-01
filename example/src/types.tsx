@@ -10,4 +10,7 @@ export type ContactActionType =
   | 'create_conversation'
   | 'create_group';
 
-export type SearchActionType = 'add_contact' | 'join_public_group';
+export type SearchActionType =
+  | 'add_contact'
+  | 'join_public_group'
+  | 'search_public_group_info';

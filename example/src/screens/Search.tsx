@@ -1,9 +1,15 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
-import { TextInput as RNTextInput, View } from 'react-native';
+import {
+  DeviceEventEmitter,
+  TextInput as RNTextInput,
+  View,
+} from 'react-native';
 import {
   Blank,
   Button,
+  ContactChatSdkEvent,
+  ContactChatSdkEventType,
   createStyleSheet,
   DefaultAvatar,
   DefaultListItemSeparator,
@@ -11,36 +17,101 @@ import {
   EqualHeightListItemComponent,
   EqualHeightListItemData,
   EqualHeightListRef,
+  FragmentContainer,
   getScaleFactor,
+  GroupChatSdkEvent,
+  GroupChatSdkEventType,
   SearchBar,
+  ToastEvent,
+  ToastEventType,
   useToastContext,
 } from 'react-native-chat-uikit';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { COUNTRY } from '../__dev__/const';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
+import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 import type { SearchActionType, Undefinable } from '../types';
 
 type Props = NativeStackScreenProps<RootScreenParamsList, 'Search'>;
 
-type ItemDataType = EqualHeightListItemData & {
-  en: string;
-  ch: string;
-  type?: Undefinable<SearchActionType>;
-  action?: {
-    addContact?: {
-      state: 'noAdded' | 'hadAdded' | 'adding';
-      onClicked?: () => void;
-    };
-    searchPublicGroup?: {
-      state: 'noJoined' | 'hadJoined' | 'applying';
-      onClicked?: () => void;
-    };
+type AddContactStateType = 'noAdded' | 'hadAdded' | 'adding';
+type SearchPublicGroupStateType = 'noJoined' | 'hadJoined' | 'applying';
+type ItemActionAddContactDataType = {
+  addContact: {
+    state: AddContactStateType;
+    onClicked?: () => void;
   };
 };
+type ItemActionPublicGroupDataType = {
+  searchPublicGroup: {
+    state: SearchPublicGroupStateType;
+    onClicked?: () => void;
+  };
+};
+type ItemActionSearchPublicGroupDataType = {
+  searchPublicGroupInfo: {
+    state: SearchPublicGroupStateType;
+    onClicked?: () => void;
+  };
+};
+type ItemActionDataType =
+  | ItemActionAddContactDataType
+  | ItemActionPublicGroupDataType
+  | ItemActionSearchPublicGroupDataType;
+type ItemDataType = EqualHeightListItemData & {
+  itemId: string;
+  itemName: string;
+  actionType?: Undefinable<SearchActionType>;
+  action?: Undefinable<ItemActionDataType>;
+};
+
+const InvisiblePlaceholder = React.memo(
+  ({ data }: { data: ItemDataType[] }) => {
+    console.log('test:InvisiblePlaceholder:', data);
+    const toast = useToastContext();
+    const sf = getScaleFactor();
+
+    React.useEffect(() => {
+      const sub = DeviceEventEmitter.addListener(
+        'toast_' as ToastEvent,
+        (event) => {
+          console.log('test:ContactListEvent:sub:', event);
+          const eventType = event.type as ToastEventType;
+          switch (eventType) {
+            case 'add_content_success':
+              toast.showToast(
+                'The other party has already applied through friends.'
+              );
+              break;
+            case 'add_content_fail':
+              toast.showToast('The other person rejected the friend request.');
+              break;
+            case 'request_join_public_group_success':
+              toast.showToast(
+                'The group administrator has applied to join the group.'
+              );
+              break;
+            case 'request_join_public_group_fail':
+              toast.showToast(
+                'The group administrator refused to join the group.'
+              );
+              break;
+            default:
+              break;
+          }
+        }
+      );
+      return () => {
+        sub.remove();
+      };
+    }, [toast, data, sf]);
+
+    return <></>;
+  }
+);
 
 const Item: EqualHeightListItemComponent = (props) => {
   const sf = getScaleFactor();
@@ -50,30 +121,52 @@ const Item: EqualHeightListItemComponent = (props) => {
 
   const Right = (type: SearchActionType | undefined) => {
     switch (type) {
-      case 'add_contact':
+      case 'add_contact': {
+        const action = item.action as ItemActionAddContactDataType;
         return (
           <View style={styles.rightItem}>
             <Button
-              disabled={item.action?.addContact?.state !== 'noAdded'}
+              disabled={action.addContact.state !== 'noAdded'}
               onPress={() => {
-                item.action?.addContact?.onClicked?.();
+                action.addContact.onClicked?.();
                 toast.showToast(searchServer.toast.contact[0]!);
               }}
               color={{ disabled: { content: 'black', background: '#F2F2F2' } }}
               font={styles.rightItemFont}
               style={styles.rightItemStyle}
             >
-              {searchServer.contact.item.button(item.action?.addContact?.state)}
+              {searchServer.contact.item.button(action.addContact.state)}
             </Button>
           </View>
         );
-      case 'join_public_group':
+      }
+      case 'join_public_group': {
+        const action = item.action as ItemActionPublicGroupDataType;
         return (
           <View style={styles.rightItem}>
             <Button
-              disabled={item.action?.searchPublicGroup?.state !== 'noJoined'}
+              disabled={action.searchPublicGroup.state !== 'noJoined'}
               onPress={() => {
-                item.action?.searchPublicGroup?.onClicked?.();
+                action.searchPublicGroup.onClicked?.();
+                toast.showToast(searchServer.toast.group[0]!);
+              }}
+              color={{ disabled: { content: 'black', background: '#F2F2F2' } }}
+              font={styles.rightItemFont}
+              style={styles.rightItemStyle}
+            >
+              {searchServer.group.item.button(action.searchPublicGroup.state)}
+            </Button>
+          </View>
+        );
+      }
+      case 'search_public_group_info': {
+        const action = item.action as ItemActionSearchPublicGroupDataType;
+        return (
+          <View style={styles.rightItem}>
+            <Button
+              disabled={action.searchPublicGroupInfo.state !== 'noJoined'}
+              onPress={() => {
+                action.searchPublicGroupInfo.onClicked?.();
                 toast.showToast(searchServer.toast.group[0]!);
               }}
               color={{ disabled: { content: 'black', background: '#F2F2F2' } }}
@@ -81,11 +174,13 @@ const Item: EqualHeightListItemComponent = (props) => {
               style={styles.rightItemStyle}
             >
               {searchServer.group.item.button(
-                item.action?.searchPublicGroup?.state
+                action.searchPublicGroupInfo.state
               )}
             </Button>
           </View>
         );
+      }
+
       default:
         return null;
     }
@@ -95,15 +190,20 @@ const Item: EqualHeightListItemComponent = (props) => {
     <View style={styles.item}>
       <DefaultAvatar size={sf(50)} radius={sf(25)} />
       <View style={styles.itemText}>
-        <Text>{item.en}</Text>
-        <Text>{item.ch}</Text>
+        {item.itemName && item.itemName.length > 0 ? (
+          <>
+            <Text>{item.itemId}</Text>
+            <Text>{item.itemName}</Text>
+          </>
+        ) : (
+          <Text>{item.itemId}</Text>
+        )}
       </View>
-      {Right(item.type)}
+      {Right(item.actionType)}
     </View>
   );
 };
-
-let count = 0;
+type RawDataStateType = 'initialized' | 'requesting' | 'resulting';
 export default function SearchScreen({
   route,
   navigation,
@@ -112,103 +212,584 @@ export default function SearchScreen({
   const params = rp?.params as any;
   const type = params?.type as Undefinable<SearchActionType>;
   console.log('test:SearchScreen:', params, type);
-  // const theme = useThemeContext();
   const sf = getScaleFactor();
-  // const menu = useActionMenu();
-  // const sheet = useBottomSheet();
-  // const { manualClose } = useManualCloseDialog();
-  // const alert = useAlert();
-  // const { header, groupInfo } = useAppI18nContext();
-  // const { width: screenWidth } = useWindowDimensions();
 
   const listRef = React.useRef<EqualHeightListRef>(null);
   const enableRefresh = false;
   const enableAlphabet = false;
   const enableHeader = false;
-  // const autoFocus = false;
-  // const isEmpty = true;
   const [isEmpty, setIsEmpty] = React.useState(true);
   const enableCancel = true;
   const enableClear = true;
   const bounces = false;
-  const [value, setValue] = React.useState('');
-  const [enableValue, setEnableValue] = React.useState(false);
-  const data: ItemDataType[] = React.useMemo(() => [], []);
-  let inputRef = React.useRef<RNTextInput>(null);
-  let dataCount = React.useRef(0);
-  // const [selectedCount] = React.useState(10);
-
-  const action = React.useCallback(
-    (type: SearchActionType | undefined, index: number) => {
-      const arr = ['noAdded', 'hadAdded', 'adding'];
-      const arr2 = ['noJoined', 'hadJoined', 'applying'];
-      switch (type) {
-        case 'add_contact':
-          return {
-            addContact: {
-              state: arr[index % 3],
-              onClicked: () => {
-                console.log('test:onClicked:');
-              },
-            },
-          };
-        case 'join_public_group':
-          return {
-            searchPublicGroup: {
-              state: arr2[index % 3],
-              onClicked: () => {
-                console.log('test:onClicked:');
-              },
-            },
-          };
-        default:
-          return undefined;
-      }
-    },
+  const rawData = React.useMemo(
+    () => [] as { id: string; name: string; state: RawDataStateType }[],
     []
   );
+  const data: ItemDataType[] = React.useMemo(() => [], []);
+  let inputRef = React.useRef<RNTextInput>(null);
+  const { client } = useAppChatSdkContext();
+  // const [selectedCount] = React.useState(10);
 
-  const _loadData = () => {
-    console.log('test:load:data:', dataCount);
-    const tmp = COUNTRY.slice(dataCount.current, dataCount.current + 2);
-    dataCount.current += 2;
-    const r = tmp.map((value, index) => {
-      const i = value.lastIndexOf(' ');
-      const en = value.slice(0, i);
-      const ch = value.slice(i + 1);
+  const getData = React.useCallback(
+    (key: string) => {
+      for (const item of data) {
+        if (item.key === key) {
+          return item;
+        }
+      }
+      return undefined;
+    },
+    [data]
+  );
 
+  const manualRefresh = React.useCallback(
+    (params: {
+      type: 'init' | 'add' | 'search' | 'del-one' | 'update-one' | 'clear';
+      items: ItemDataType[];
+    }) => {
+      if (params.type === 'init') {
+        data.length = 0;
+        listRef.current?.manualRefresh([
+          {
+            type: 'clear',
+          },
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'asc',
+          },
+        ]);
+        data.push(...params.items);
+      } else if (params.type === 'search') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'clear',
+          },
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'asc',
+          },
+        ]);
+      } else if (params.type === 'add') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'add',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'asc',
+          },
+        ]);
+        data.push(...params.items);
+      } else if (params.type === 'del-one') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'del',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: false,
+          },
+        ]);
+        let hadDeleted = false;
+        for (let index = 0; index < data.length; index++) {
+          const element = data[index];
+          for (const item of params.items) {
+            if (element && item.key === element.key) {
+              data.splice(index, 1);
+              hadDeleted = true;
+              break;
+            }
+          }
+          if (hadDeleted === true) {
+            break;
+          }
+        }
+      } else if (params.type === 'update-one') {
+        listRef.current?.manualRefresh([
+          {
+            type: 'update',
+            data: params.items as EqualHeightListItemData[],
+            enableSort: true,
+            sortDirection: 'asc',
+          },
+        ]);
+        let hadUpdated = false;
+        for (let index = 0; index < data.length; index++) {
+          const element = data[index];
+          for (const item of params.items) {
+            if (element && item.key === element.key) {
+              data[index] = item;
+              hadUpdated = true;
+              break;
+            }
+          }
+          if (hadUpdated === true) {
+            break;
+          }
+        }
+      } else if (params.type === 'clear') {
+        data.length = 0;
+        listRef.current?.manualRefresh([
+          {
+            type: 'clear',
+          },
+        ]);
+      } else {
+        return;
+      }
+      setIsEmpty(data.length === 0);
+    },
+    [data]
+  );
+
+  const sendContactRequest = React.useCallback(
+    (id: string) => {
+      client.contactManager
+        .addContact(id, 'Request to be a friend.')
+        .then()
+        .catch((error) => {
+          console.warn('test:error:', error);
+          // TODO: Probably already friends.
+          DeviceEventEmitter.emit('toast_' as ToastEvent, {
+            type: 'add_content_fail' as ToastEventType,
+            params: {},
+          });
+        });
+    },
+    [client.contactManager]
+  );
+
+  const sendJoinGroupRequest = React.useCallback(
+    (id: string) => {
+      client.groupManager
+        .joinPublicGroup(id)
+        .then()
+        .catch((error) => {
+          console.warn('test:error:', error);
+          // TODO: Probably already friends.
+          DeviceEventEmitter.emit('toast_' as ToastEvent, {
+            type: 'request_join_public_group_fail' as ToastEventType,
+            params: {},
+          });
+        });
+    },
+    [client.groupManager]
+  );
+
+  const standardizedData = React.useCallback(
+    (item: Omit<ItemDataType, 'onLongPress' | 'onPress'>): ItemDataType => {
+      const createAction = (
+        item: Omit<ItemDataType, 'onLongPress' | 'onPress'>
+      ) => {
+        switch (item.actionType) {
+          case 'add_contact': {
+            const action = item.action as ItemActionAddContactDataType;
+            return {
+              addContact: {
+                state: action.addContact.state,
+                onClicked: () => {
+                  console.log('test:onAction:add_contact:');
+                  if (action.addContact.state === 'noAdded') {
+                    action.addContact.state = 'adding';
+                    manualRefresh({
+                      type: 'update-one',
+                      items: [standardizedData(item)],
+                    });
+                    sendContactRequest(item.itemId);
+                  }
+                },
+              },
+            } as ItemActionAddContactDataType;
+          }
+
+          case 'join_public_group': {
+            const action = item.action as ItemActionPublicGroupDataType;
+            return {
+              searchPublicGroup: {
+                state: action.searchPublicGroup.state,
+                onClicked: () => {
+                  console.log('test:onAction:search_public_group:');
+                  if (action.searchPublicGroup.state === 'noJoined') {
+                    action.searchPublicGroup.state = 'applying';
+                    manualRefresh({
+                      type: 'update-one',
+                      items: [standardizedData(item)],
+                    });
+
+                    // TODO: send join group request
+                    sendJoinGroupRequest(item.itemId);
+                  }
+                },
+              },
+            } as ItemActionPublicGroupDataType;
+          }
+
+          case 'search_public_group_info': {
+            const action = item.action as ItemActionSearchPublicGroupDataType;
+            return {
+              searchPublicGroupInfo: {
+                state: action.searchPublicGroupInfo.state,
+                onClicked: () => {
+                  console.log('test:onAction:search_group_info:');
+                  if (action.searchPublicGroupInfo.state === 'noJoined') {
+                    action.searchPublicGroupInfo.state = 'applying';
+                    manualRefresh({
+                      type: 'update-one',
+                      items: [standardizedData(item)],
+                    });
+
+                    // TODO: send join group request
+                  }
+                },
+              },
+            } as ItemActionSearchPublicGroupDataType;
+          }
+
+          default:
+            return undefined;
+        }
+      };
+
+      const r = {
+        ...item,
+        action: createAction(item),
+      } as ItemDataType;
+      return r;
+    },
+    [manualRefresh, sendContactRequest, sendJoinGroupRequest]
+  );
+
+  const loadSearchResult = React.useCallback(
+    (params: {
+      type: Undefinable<SearchActionType>;
+      id: string;
+      name: string;
+    }) => {
+      const r = [] as ItemDataType[];
+      switch (params.type) {
+        case 'add_contact':
+          r.push(
+            standardizedData({
+              key: params.id,
+              itemId: params.name,
+              itemName: '',
+              actionType: params.type,
+              action: {
+                addContact: {
+                  state: 'noAdded' as AddContactStateType,
+                },
+              } as ItemActionAddContactDataType,
+            } as ItemDataType)
+          );
+          manualRefresh({ type: 'init', items: r });
+          break;
+
+        case 'join_public_group':
+          for (const item of rawData) {
+            if (item.id.includes(params.id)) {
+              r.push(
+                standardizedData({
+                  key: item.id,
+                  itemId: item.id,
+                  itemName: item.name,
+                  actionType: params.type,
+                  action: {
+                    searchPublicGroup: {
+                      state:
+                        item.state === 'initialized'
+                          ? 'noJoined'
+                          : item.state === 'requesting'
+                          ? 'applying'
+                          : 'hadJoined',
+                    },
+                  } as ItemActionPublicGroupDataType,
+                } as ItemDataType)
+              );
+            }
+          }
+          manualRefresh({ type: 'init', items: r });
+          break;
+
+        case 'search_public_group_info':
+          r.push(
+            standardizedData({
+              key: params.id,
+              itemId: params.name,
+              itemName: '',
+              actionType: params.type,
+              action: {
+                searchPublicGroupInfo: {
+                  state: 'noJoined',
+                },
+              } as ItemActionSearchPublicGroupDataType,
+            } as ItemDataType)
+          );
+          manualRefresh({ type: 'init', items: r });
+          break;
+
+        default:
+          break;
+      }
+    },
+    [manualRefresh, rawData, standardizedData]
+  );
+
+  const addListeners = React.useCallback(
+    (type: Undefinable<SearchActionType>) => {
+      console.log('test:', type);
+      const sub = DeviceEventEmitter.addListener(
+        ContactChatSdkEvent,
+        (event) => {
+          console.log('test:ContactChatSdkEvent:', event);
+          const eventType = event.type as ContactChatSdkEventType;
+          const eventParams = event.params as { id: string };
+          switch (eventType) {
+            case 'onFriendRequestAccepted':
+              {
+                const item = getData(eventParams.id);
+                if (item) {
+                  manualRefresh({
+                    type: 'update-one',
+                    items: [
+                      {
+                        ...item,
+                        action: {
+                          addContact: {
+                            state: 'hadAdded',
+                          },
+                        } as ItemActionAddContactDataType,
+                      } as ItemDataType,
+                    ],
+                  });
+                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                    type: 'add_content_success' as ToastEventType,
+                    params: {},
+                  });
+                }
+              }
+              break;
+            case 'onFriendRequestDeclined':
+              {
+                const item = getData(eventParams.id);
+                if (item) {
+                  manualRefresh({
+                    type: 'update-one',
+                    items: [
+                      standardizedData({
+                        ...item,
+                        action: {
+                          addContact: {
+                            state: 'noAdded',
+                          },
+                        } as ItemActionAddContactDataType,
+                      } as ItemDataType),
+                    ],
+                  });
+                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                    type: 'add_content_fail' as ToastEventType,
+                    params: {},
+                  });
+                }
+              }
+              break;
+
+            default:
+              break;
+          }
+        }
+      );
+      const sub2 = DeviceEventEmitter.addListener(
+        GroupChatSdkEvent,
+        (event) => {
+          console.log('test:GroupChatSdkEvent:', event);
+          const eventType = event.type as GroupChatSdkEventType;
+          const eventParams = event.params;
+          switch (eventType) {
+            case 'onRequestToJoinAccepted':
+              {
+                const item = getData(eventParams.groupId);
+                if (item) {
+                  manualRefresh({
+                    type: 'update-one',
+                    items: [
+                      {
+                        ...item,
+                        action: {
+                          searchPublicGroupInfo: {
+                            state: 'hadJoined',
+                          },
+                        } as ItemActionSearchPublicGroupDataType,
+                      } as ItemDataType,
+                    ],
+                  });
+                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                    type: 'request_join_public_group_success' as ToastEventType,
+                    params: {},
+                  });
+                }
+              }
+              break;
+            case 'onRequestToJoinDeclined':
+              {
+                const item = getData(eventParams.groupId);
+                if (item) {
+                  manualRefresh({
+                    type: 'update-one',
+                    items: [
+                      {
+                        ...item,
+                        action: {
+                          searchPublicGroupInfo: {
+                            state: 'noJoined',
+                          },
+                        } as ItemActionSearchPublicGroupDataType,
+                      } as ItemDataType,
+                    ],
+                  });
+                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                    type: 'request_join_public_group_fail' as ToastEventType,
+                    params: {},
+                  });
+                }
+              }
+              break;
+
+            default:
+              break;
+          }
+        }
+      );
+      return () => {
+        sub.remove();
+        sub2.remove();
+      };
+    },
+    [getData, manualRefresh, standardizedData]
+  );
+
+  const initList = React.useCallback(
+    (type: Undefinable<SearchActionType>) => {
+      console.log('test:initList:SearchScreen:', type);
+      switch (type) {
+        case 'add_contact':
+          break;
+        case 'join_public_group':
+          /// !!! This may not be all public groups.
+          client.groupManager
+            .fetchPublicGroupsFromServer(200)
+            .then((result) => {
+              console.log('test:result:fetchPublicGroupsFromServer:', result);
+              if (result.list) {
+                for (const item of result.list) {
+                  rawData.push({
+                    id: item.groupId,
+                    name: item.groupName,
+                    state: 'initialized',
+                  });
+                }
+                client.groupManager
+                  .fetchJoinedGroupsFromServer(20, 0)
+                  .then((result) => {
+                    console.log(
+                      'test:result:fetchJoinedGroupsFromServer:',
+                      result
+                    );
+                    for (const localItem of rawData) {
+                      for (const item of result) {
+                        if (item.groupId === localItem.id) {
+                          localItem.state = 'resulting';
+                        }
+                      }
+                    }
+                  })
+                  .catch((error) => {
+                    console.warn('test:error:', error);
+                  });
+              }
+            })
+            .catch((error) => {
+              console.warn('test:error:', error);
+            });
+          break;
+        case 'search_public_group_info':
+          break;
+        default:
+          break;
+      }
+    },
+    [client.groupManager, rawData]
+  );
+
+  React.useEffect(() => {
+    console.log('test:useEffect:', addListeners, initList, type);
+    const load = () => {
+      console.log('test:load:', SearchScreen.name);
+      const unsubscribe = addListeners(type);
+      initList(type);
       return {
-        key: en,
-        en: en,
-        ch: ch,
-        height: 80,
-        onPress: (data) => {
-          if (type === 'add_contact') {
-            navigation.navigate('ContactInfo', { params: { userId: 'test' } });
-          } else if (type === 'join_public_group') {
-            navigation.navigate('GroupInfo', {
-              params: { groupId: data!.key },
+        unsubscribe: unsubscribe,
+      };
+    };
+    const unload = (params: { unsubscribe: () => void }) => {
+      console.log('test:unload:', SearchScreen.name);
+      params.unsubscribe();
+    };
+
+    const res = load();
+    return () => unload(res);
+  }, [addListeners, initList, type]);
+
+  const fetchInfo = async (params: {
+    type: Undefinable<SearchActionType>;
+    keyword: string;
+  }) => {
+    try {
+      if (params.type === 'search_public_group_info') {
+        const info = await client.groupManager.getGroupWithId(params.keyword);
+        if (info) {
+          loadSearchResult({ type, id: info.groupId, name: info.groupName });
+        } else {
+          DeviceEventEmitter.emit('toast_' as ToastEvent, {
+            type: 'add_content_fail' as ToastEventType,
+            params: {},
+          });
+        }
+      } else if (params.type === 'add_contact') {
+        const kv = await client.userManager.fetchUserInfoById([params.keyword]);
+        if (kv.has(params.keyword)) {
+          const info = kv.get(params.keyword);
+          if (info) {
+            loadSearchResult({
+              type,
+              id: info.userId,
+              name: info.nickName ?? '',
+            });
+          } else {
+            DeviceEventEmitter.emit('toast_' as ToastEvent, {
+              type: 'request_join_public_group_fail' as ToastEventType,
+              params: {},
             });
           }
-        },
-        type: type,
-        action: action(type, index),
-      } as ItemDataType;
-    });
-    setIsEmpty(false);
-    // data.push(...r);
-    listRef.current?.manualRefresh([
-      {
-        type: 'add',
-        data: [...r],
-        enableSort: false,
-      },
-    ]);
+        }
+      }
+    } catch (error) {
+      console.warn('test:error:', error);
+    }
   };
 
-  const _search = (keyword: string) => {
-    console.log('test:search:', keyword);
-    _loadData();
+  const execSearch = async (params: {
+    type: Undefinable<SearchActionType>;
+    keyword: string;
+  }) => {
+    fetchInfo(params);
+  };
+
+  const execClear = () => {
+    inputRef.current?.blur();
+    inputRef.current?.clear();
+    manualRefresh({ type: 'clear', items: [] });
   };
 
   return (
@@ -229,22 +810,14 @@ export default function SearchScreen({
               navigation.goBack();
             },
           }}
-          onChangeText={(text) => {
-            setEnableValue(false);
-            setValue(text);
-          }}
-          onClear={() => {
-            setEnableValue(true);
-            setValue('');
-            inputRef.current?.blur();
-          }}
-          value={enableValue ? value : undefined}
+          onChangeText={() => {}}
+          onClear={execClear}
           returnKeyType="search"
           onSubmitEditing={(event) => {
             const c = event.nativeEvent.text;
             // Keyboard.dismiss();
             event.preventDefault();
-            _search(c);
+            execSearch({ type, keyword: c });
           }}
         />
       </View>
@@ -271,27 +844,11 @@ export default function SearchScreen({
             },
           }}
           ItemSeparatorComponent={DefaultListItemSeparator}
-          onRefresh={(type) => {
-            if (type === 'started') {
-              const en = 'aaa';
-              const v = en + count++;
-              listRef.current?.manualRefresh([
-                {
-                  type: 'add',
-                  data: [
-                    {
-                      en: v,
-                      ch: v,
-                      key: v,
-                    } as EqualHeightListItemData,
-                  ],
-                  enableSort: true,
-                },
-              ]);
-            }
-          }}
         />
       )}
+      <FragmentContainer>
+        <InvisiblePlaceholder data={data} />
+      </FragmentContainer>
     </SafeAreaView>
   );
 }

@@ -147,8 +147,8 @@ type SheetEvent =
 type ToastEvent = 'toast_Unblocked' | 'toast_Removed' | 'toast_';
 
 const InvisiblePlaceholder = React.memo(
-  ({ data }: { data: ItemDataType[] }) => {
-    console.log('test:InvisiblePlaceholder:', data);
+  ({ getData }: { getData: () => ItemDataType[] }) => {
+    console.log('test:InvisiblePlaceholder:', getData());
     const sheet = useBottomSheet();
     const toast = useToastContext();
     const alert = useAlert();
@@ -316,18 +316,14 @@ const InvisiblePlaceholder = React.memo(
                       iconColor: theme.colors.primary,
                       title: '1',
                       titleColor: 'black',
-                      onPress: () => {
-                        console.log('test:onPress:data:', data);
-                      },
+                      onPress: () => {},
                     },
                     {
                       icon: 'loading',
                       iconColor: theme.colors.primary,
                       title: '2',
                       titleColor: 'black',
-                      onPress: () => {
-                        console.log('test:onPress:data:', data);
-                      },
+                      onPress: () => {},
                     },
                   ],
                 });
@@ -338,9 +334,7 @@ const InvisiblePlaceholder = React.memo(
                     {
                       title: contactID,
                       titleColor: 'black',
-                      onPress: () => {
-                        console.log('test:onPress:data:', data);
-                      },
+                      onPress: () => {},
                       containerStyle: {
                         marginTop: sf(10),
                         flexDirection: 'row',
@@ -388,9 +382,7 @@ const InvisiblePlaceholder = React.memo(
                     {
                       title: groupInfo.memberSheet.chat,
                       titleColor: 'black',
-                      onPress: () => {
-                        console.log('test:onPress:data:', data);
-                      },
+                      onPress: () => {},
                     },
                   ],
                 });
@@ -440,7 +432,7 @@ const InvisiblePlaceholder = React.memo(
           if (event.type === 'create_new_group') {
             isInvite.current = event.params.isInvite;
             isPublic.current = event.params.isPublic;
-            createGroup(data);
+            createGroup(getData());
           }
         }
       );
@@ -462,9 +454,9 @@ const InvisiblePlaceholder = React.memo(
       groupInfo.memberSheet.chat,
       navigation,
       theme.colors.primary,
-      data,
       sf,
       createGroup,
+      getData,
     ]);
 
     return <></>;
@@ -606,6 +598,10 @@ export function ContactListScreenInternal({
   const data: ItemDataType[] = React.useMemo(() => [], []); // for search
   const [isEmpty, setIsEmpty] = React.useState(true);
   const { client } = useAppChatSdkContext();
+
+  const getData = React.useCallback(() => {
+    return data;
+  }, [data]);
 
   const manualRefresh = React.useCallback(
     (params: {
@@ -1188,7 +1184,7 @@ export function ContactListScreenInternal({
         />
       )}
       <FragmentContainer>
-        <InvisiblePlaceholder data={data} />
+        <InvisiblePlaceholder getData={getData} />
       </FragmentContainer>
     </>
   );
