@@ -203,6 +203,8 @@ const InvisiblePlaceholder = React.memo(() => {
                     console.warn('test:error:', error);
                   });
               }
+            } else if (eventParams.type === ChatMessageType.IMAGE) {
+              // TODO: open preview
             }
           }
           break;
@@ -743,6 +745,7 @@ const Content = React.memo(
           isSender:
             msg.direction === ChatMessageDirection.RECEIVE ? false : true,
           key: msg.localMsgId,
+          msgId: msg.msgId,
           state: convertFromMessageState(msg),
         } as MessageItemType;
         convertFromMessageBody(msg, r);
@@ -904,7 +907,10 @@ const Content = React.memo(
           throw new Error('This is impossible.');
         }
 
-        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        getMsgListRef().current?.addMessage({
+          direction: 'after',
+          msgs: [convertFromMessage(msg)],
+        });
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
@@ -973,7 +979,10 @@ const Content = React.memo(
           throw new Error('This is impossible.');
         }
 
-        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        getMsgListRef().current?.addMessage({
+          direction: 'after',
+          msgs: [convertFromMessage(msg)],
+        });
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
@@ -995,7 +1004,10 @@ const Content = React.memo(
           throw new Error('This is impossible.');
         }
 
-        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        getMsgListRef().current?.addMessage({
+          direction: 'after',
+          msgs: [convertFromMessage(msg)],
+        });
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
@@ -1036,7 +1048,10 @@ const Content = React.memo(
           throw new Error('This is impossible.');
         }
 
-        getMsgListRef().current?.addMessage([convertFromMessage(msg)]);
+        getMsgListRef().current?.addMessage({
+          direction: 'after',
+          msgs: [convertFromMessage(msg)],
+        });
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
@@ -1051,6 +1066,44 @@ const Content = React.memo(
       ]
     );
 
+    const loadHistoryMessage = React.useCallback(
+      (msgs: ChatMessage[]) => {
+        const items = [] as MessageItemType[];
+        for (const msg of msgs) {
+          const item = convertFromMessage(msg);
+          items.push(item);
+          checkAttachment(msg);
+        }
+        getMsgListRef().current?.addMessage({
+          direction: 'before',
+          msgs: items,
+        });
+      },
+      [checkAttachment, convertFromMessage, getMsgListRef]
+    );
+
+    const requestHistoryMessage = React.useCallback(
+      (earliestId?: string) => {
+        client.chatManager
+          .getMessages(
+            chatId,
+            chatType as number as ChatConversationType,
+            earliestId ?? '',
+            ChatSearchDirection.UP,
+            2
+          )
+          .then((result) => {
+            if (result) {
+              loadHistoryMessage(result);
+            }
+          })
+          .catch((error) => {
+            console.warn('test:error:', error);
+          });
+      },
+      [chatId, chatType, client.chatManager, loadHistoryMessage]
+    );
+
     const loadMessage = React.useCallback(
       (msgs: ChatMessage[]) => {
         const items = [] as MessageItemType[];
@@ -1059,7 +1112,10 @@ const Content = React.memo(
           items.push(item);
           checkAttachment(msg);
         }
-        getMsgListRef().current?.addMessage(items);
+        getMsgListRef().current?.addMessage({
+          direction: 'after',
+          msgs: items,
+        });
         timeoutTask(() => {
           getMsgListRef().current?.scrollToEnd();
         });
@@ -1175,6 +1231,11 @@ const Content = React.memo(
             .catch((error) => {
               console.warn('test:error', error);
             });
+        } else if (eventType === 'request_history_message') {
+          const eventParams = event.params as {
+            earliestId: string | undefined;
+          };
+          requestHistoryMessage(eventParams.earliestId);
         }
       });
       const sub2 = DeviceEventEmitter.addListener(
@@ -1205,7 +1266,13 @@ const Content = React.memo(
         sub.remove();
         sub2.remove();
       };
-    }, [chatId, loadMessage, sendImageMessage, sendVoiceMessage]);
+    }, [
+      chatId,
+      loadMessage,
+      requestHistoryMessage,
+      sendImageMessage,
+      sendVoiceMessage,
+    ]);
 
     const initDirs = React.useCallback((convIds: string[]) => {
       for (const convId of convIds) {
@@ -1234,7 +1301,7 @@ const Content = React.memo(
           chatType as number as ChatConversationType,
           '',
           ChatSearchDirection.UP,
-          5
+          2
         )
         .then((result) => {
           if (result) {

@@ -15,7 +15,6 @@ import { type ChatEventType, ChatEvent } from '../fragments';
 import { getScaleFactor } from '../styles/createScaleFactor';
 import createStyleSheet from '../styles/createStyleSheet';
 import { wait } from '../utils/function';
-import { seqId, timestamp } from '../utils/generator';
 import { DefaultAvatar } from './DefaultAvatars';
 import DynamicHeightList, {
   type DynamicHeightListRef,
@@ -38,6 +37,7 @@ export interface MessageItemType {
   timestamp: number;
   isSender?: boolean;
   key: string;
+  msgId: string;
   type: ChatMessageType;
   state?: MessageItemStateType;
   onPress?: (data: MessageItemType) => void;
@@ -152,6 +152,7 @@ const StateLabel = React.memo(({ state }: { state?: MessageItemStateType }) => {
 const TextMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
   (info: ListRenderItemInfo<MessageItemType>): React.ReactElement | null => {
     const sf = getScaleFactor();
+    const { width: screenWidth } = useWindowDimensions();
     const { item } = info;
     const msg = item as TextMessageItemType;
     return (
@@ -160,7 +161,7 @@ const TextMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
           styles.container,
           {
             flexDirection: msg.isSender ? 'row-reverse' : 'row',
-            width: '90%',
+            width: screenWidth * 0.9,
           },
         ]}
       >
@@ -180,6 +181,7 @@ const TextMessageRenderItem: ListRenderItem<MessageItemType> = React.memo(
             {
               borderBottomRightRadius: msg.isSender ? undefined : sf(12),
               borderBottomLeftRadius: msg.isSender ? sf(12) : undefined,
+              maxWidth: screenWidth * 0.7,
             },
           ]}
         >
@@ -411,10 +413,14 @@ const MessageRenderItem: ListRenderItem<MessageItemType> = (
     </Pressable>
   );
 };
+export type InsertDirectionType = 'before' | 'after';
 export type MessageBubbleListRef = {
   scrollToEnd: () => void;
   scrollToTop: () => void;
-  addMessage: (msg: MessageItemType[]) => void;
+  addMessage: (params: {
+    msgs: MessageItemType[];
+    direction: InsertDirectionType;
+  }) => void;
 };
 export type MessageBubbleListProps = {
   onPressed?: () => void;
@@ -433,6 +439,7 @@ const MessageBubbleList = (
   const [loading, setLoading] = React.useState(true);
   const data1 = React.useMemo(() => [] as MessageItemType[], []);
   const data2 = React.useMemo(() => [] as MessageItemType[], []);
+  const currentData = React.useRef(data1);
   const [items, setItems] = React.useState<MessageItemType[]>(data1);
   // const items = React.useMemo(() => [] as MessageItemType[], []);
   const listRef = React.useRef<DynamicHeightListRef>(null);
@@ -454,6 +461,20 @@ const MessageBubbleList = (
     setLoading(false);
   }
 
+  const getEarliestItem = React.useCallback(() => {
+    console.log('test:data1:', data1, data2);
+    if (currentData.current === data1) {
+      if (data1.length > 0) {
+        return data1[0];
+      }
+    } else if (currentData.current === data2) {
+      if (data2.length > 0) {
+        return data2[0];
+      }
+    }
+    return undefined;
+  }, [data1, data2]);
+
   const updateDataInternal = React.useCallback(
     (data: MessageItemType[]) => {
       if (data === data1) {
@@ -463,6 +484,7 @@ const MessageBubbleList = (
         }
         data2.splice(data1.length, data2.length);
         setItems(data2);
+        currentData.current = data2;
       } else if (data === data2) {
         for (let index = 0; index < data2.length; index++) {
           const element = data2[index] as MessageItemType;
@@ -470,6 +492,7 @@ const MessageBubbleList = (
         }
         data1.splice(data2.length, data1.length);
         setItems(data1);
+        currentData.current = data1;
       } else {
         throw new Error('This is impossible.');
       }
@@ -481,27 +504,21 @@ const MessageBubbleList = (
     ({
       type,
       list,
+      direction,
     }: {
       type: 'add' | 'update-all' | 'update-part';
       list: MessageItemType[];
+      direction: InsertDirectionType;
     }) => {
       switch (type) {
         case 'add':
-          // for (const item of items) {
-          //   const { type } = item;
-          //   if (type === ChatMessageType.CUSTOM) {
-          //     const custom = item as CustomMessageItemType;
-          //     if (
-          //       custom.SubComponent === undefined &&
-          //       CustomMessageRenderItem !== undefined
-          //     ) {
-          //       console.log('test:custom:111:', custom);
-          //       custom.SubComponent = CustomMessageRenderItem;
-          //     }
-          //   }
-          // }
-          items.push(...list);
-          // setItems([...items]);
+          if (direction === 'after') {
+            items.push(...list);
+          } else {
+            const tmp = list.concat(items);
+            items.length = 0;
+            items.push(...tmp);
+          }
           break;
         case 'update-all':
           for (let index = 0; index < items.length; index++) {
@@ -514,20 +531,8 @@ const MessageBubbleList = (
               }
             }
           }
-          // setItems([...items]);
           break;
         case 'update-part':
-          // for (const item of items) {
-          //   for (const i of list) {
-          //     if (item.key === i.key) {
-          //       if (i.isSender) item.isSender = i.isSender;
-          //       if (i.sender) item.sender = i.sender;
-          //       if (i.state) item.state = i.state;
-          //       if (i.timestamp) item.timestamp = i.timestamp;
-          //       if (i.type) item.type = i.type;
-          //     }
-          //   }
-          // }
           for (let index = 0; index < items.length; index++) {
             const item = items[index];
             if (item) {
@@ -543,7 +548,6 @@ const MessageBubbleList = (
               }
             }
           }
-          // setItems([...items]);
           break;
         default:
           return;
@@ -560,12 +564,27 @@ const MessageBubbleList = (
         listRef.current?.scrollToEnd();
       },
       scrollToTop: () => {},
-      addMessage: (msgs: MessageItemType[]) => {
-        updateData({ type: 'add', list: msgs });
+      addMessage: (params: {
+        msgs: MessageItemType[];
+        direction: InsertDirectionType;
+      }) => {
+        updateData({
+          type: 'add',
+          list: params.msgs,
+          direction: params.direction,
+        });
       },
     }),
     [updateData]
   );
+
+  const requestHistory = React.useCallback(() => {
+    const item = getEarliestItem();
+    DeviceEventEmitter.emit(ChatEvent, {
+      type: 'request_history_message' as ChatEventType,
+      params: { earliestId: item?.msgId },
+    });
+  }, [getEarliestItem]);
 
   const initList = React.useCallback(() => {}, []);
 
@@ -586,6 +605,7 @@ const MessageBubbleList = (
               updateData({
                 type: 'update-all',
                 list: [eventParams.item],
+                direction: 'after',
               });
             } else {
               updateData({
@@ -596,6 +616,7 @@ const MessageBubbleList = (
                     state: 'failed',
                   } as MessageItemType,
                 ],
+                direction: 'after',
               });
             }
           }
@@ -639,28 +660,7 @@ const MessageBubbleList = (
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
-        updateData({
-          type: 'add',
-          list: [
-            {
-              sender: 'zs',
-              timestamp: timestamp(),
-              isSender: false,
-              key: seqId('ml').toString(),
-              style: {
-                // backgroundColor: 'yellow',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                width: '66%',
-                // height: 80,
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-              },
-              text: 'test',
-              type: ChatMessageType.TXT,
-            } as TextMessageItemType,
-          ],
-        });
+        requestHistory();
         wait(1500)
           .then(() => {
             setRefreshing(false);
@@ -684,7 +684,7 @@ const styles = createStyleSheet({
     padding: 10,
   },
   innerContainer: {
-    flex: 1,
+    // flex: 1,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
     // backgroundColor: 'red',
