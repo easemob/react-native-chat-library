@@ -1,10 +1,13 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { DeviceEventEmitter } from 'react-native';
+import { ChatMessageType } from 'react-native-chat-sdk';
 import {
   type DefaultMessageBubbleListProps,
   ChatFragment,
   DefaultMessageBubbleList,
+  ImageMessageItemType,
+  MessageItemType,
   ScreenContainer,
 } from 'react-native-chat-uikit';
 
@@ -27,6 +30,20 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
   const chatId = params.chatId;
   const messageBubbleListRefP =
     React.useRef<typeof DefaultMessageBubbleList>(null);
+
+  const onItemPress = React.useCallback(
+    (data: MessageItemType) => {
+      if (data.type === ChatMessageType.IMAGE) {
+        const imageData = data as ImageMessageItemType;
+        const url = imageData.remoteUrl;
+        const localPath = imageData.localPath;
+        navigation.push('ImagePreview', {
+          params: { url: url ?? '', localPath: localPath ?? '' },
+        });
+      }
+    },
+    [navigation]
+  );
 
   React.useEffect(() => {
     navigation.setOptions({
@@ -55,6 +72,7 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
             params: { count: unreadCount },
           });
         }}
+        onItemPress={onItemPress}
       />
     </ScreenContainer>
   );

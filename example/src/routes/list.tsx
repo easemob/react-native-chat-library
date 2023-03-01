@@ -69,6 +69,10 @@ export type RootParamsList = BottomTabParamsList & {
     option?: {} | undefined;
     params?: {} | undefined;
   };
+  ImagePreview: {
+    option?: {} | undefined;
+    params?: { url: string; localPath: string } | undefined;
+  };
 };
 export type RootParamsName = Extract<keyof RootParamsList, string>;
 export type RootParamsNameList = RootParamsName[];
@@ -149,6 +153,10 @@ export const SCREEN_LIST: RootParamsList = {
     params: undefined,
   },
   Splash: {
+    option: undefined,
+    params: undefined,
+  },
+  ImagePreview: {
     option: undefined,
     params: undefined,
   },

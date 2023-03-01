@@ -18,6 +18,12 @@ module.exports = function (api) {
           alias: alias,
         },
       ],
+      [
+        'react-native-reanimated/plugin',
+        {
+          relativeSourceLocation: true,
+        },
+      ],
     ],
   };
 };

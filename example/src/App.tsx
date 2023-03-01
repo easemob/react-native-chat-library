@@ -46,6 +46,7 @@ import ContactInfo from './screens/ContactInfo';
 import ContactList from './screens/ContactList';
 import GroupInfo from './screens/GroupInfo';
 import HomeScreen from './screens/Home';
+import ImagePreview from './screens/ImagePreview';
 import LoginScreen from './screens/Login';
 import Search from './screens/Search';
 import { SplashScreen } from './screens/Splash';
@@ -323,6 +324,16 @@ export default function App() {
                     };
                   }}
                   component={Search}
+                />
+                <Root.Screen
+                  name="ImagePreview"
+                  options={() => {
+                    return {
+                      headerShown: false,
+                      presentation: 'fullScreenModal',
+                    };
+                  }}
+                  component={ImagePreview}
                 />
               </Root.Group>
             </Root.Navigator>

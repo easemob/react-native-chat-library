@@ -534,6 +534,33 @@ PODS:
     - React-Core
   - RNPermissions (3.6.1):
     - React-Core
+  - RNReanimated (3.0.0):
+    - DoubleConversion
+    - FBLazyVector
+    - FBReactNativeSpec
+    - glog
+    - RCT-Folly
+    - RCTRequired
+    - RCTTypeSafety
+    - React-callinvoker
+    - React-Core
+    - React-Core/DevSupport
+    - React-Core/RCTWebSocket
+    - React-CoreModules
+    - React-cxxreact
+    - React-jsi
+    - React-jsiexecutor
+    - React-jsinspector
+    - React-RCTActionSheet
+    - React-RCTAnimation
+    - React-RCTBlob
+    - React-RCTImage
+    - React-RCTLinking
+    - React-RCTNetwork
+    - React-RCTSettings
+    - React-RCTText
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNScreens (3.18.2):
     - React-Core
     - React-RCTImage
@@ -653,6 +680,7 @@ DEPENDENCIES:
   - "RNFBMessaging (from `../../node_modules/@react-native-firebase/messaging`)"
   - RNGestureHandler (from `../../node_modules/react-native-gesture-handler`)
   - RNPermissions (from `../../node_modules/react-native-permissions`)
+  - RNReanimated (from `../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../node_modules/react-native-screens`)
   - RNVectorIcons (from `../../node_modules/react-native-vector-icons`)
   - Yoga (from `../../node_modules/react-native/ReactCommon/yoga`)
@@ -842,6 +870,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native-gesture-handler"
   RNPermissions:
     :path: "../../node_modules/react-native-permissions"
+  RNReanimated:
+    :path: "../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../node_modules/react-native-screens"
   RNVectorIcons:
@@ -950,6 +980,7 @@ SPEC CHECKSUMS:
   RNFBMessaging: 1a84a46789e1ee9820d70839683faff890a22411
   RNGestureHandler: 62232ba8f562f7dea5ba1b3383494eb5bf97a4d3
   RNPermissions: dcdb7b99796bbeda6975a6e79ad519c41b251b1c
+  RNReanimated: 1a8508d03fcfc321c0fa0a1550850b41966bb469
   RNScreens: 34cc502acf1b916c582c60003dc3089fa01dc66d
   RNVectorIcons: fcc2f6cb32f5735b586e66d14103a74ce6ad61f8
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d

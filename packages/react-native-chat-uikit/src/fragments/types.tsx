@@ -52,7 +52,8 @@ export type ChatEventType =
   | 'send_image_message'
   | 'send_voice_message'
   | 'send_custom_message'
-  | 'request_history_message';
+  | 'request_history_message'
+  | 'preview_image';
 
 export const MessageBubbleEvent = 'MessageBubbleEvent';
 export type MessageBubbleEventType = 'on_press' | 'on_long_press';

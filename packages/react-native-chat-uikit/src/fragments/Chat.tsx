@@ -204,7 +204,10 @@ const InvisiblePlaceholder = React.memo(() => {
                   });
               }
             } else if (eventParams.type === ChatMessageType.IMAGE) {
-              // TODO: open preview
+              DeviceEventEmitter.emit(ChatEvent, {
+                type: 'preview_image' as ChatEventType,
+                params: eventParams,
+              });
             }
           }
           break;
@@ -299,6 +302,8 @@ type ContentType = BaseType & {
     >;
   };
   onUpdateReadCount?: (unreadCount: number) => void;
+  onItemPress?: (data: MessageItemType) => void;
+  onItemLongPress?: (data: MessageItemType) => void;
 };
 
 const Input = React.memo((props: InputType) => {
@@ -536,6 +541,8 @@ const Content = React.memo(
     inputRef,
     customMessageBubble,
     onUpdateReadCount,
+    onItemPress,
+    onItemLongPress,
   }: ContentType) => {
     const sf = getScaleFactor();
     const TextInputRef = React.useRef<RNTextInput>(null);
@@ -543,13 +550,13 @@ const Content = React.memo(
     const [, setContent] = React.useState('');
     const getContentRef = React.useRef<() => string>(() => '');
     const setContentRef = React.useRef(setContent);
-    // const content = React.useRef('');
     const [, setIsInput] = React.useState(false);
     const setIsInputRef = React.useRef(setIsInput);
     const setTestRef = React.useRef(() => {});
     const faceHeight = sf(300);
     const faceHeightRef = React.useRef(new Animated.Value(0)).current;
     const { client } = useChatSdkContext();
+    console.log('test:', onItemLongPress);
 
     const getMsgListRef = React.useCallback(() => {
       if (messageBubbleList) {
@@ -1236,6 +1243,8 @@ const Content = React.memo(
             earliestId: string | undefined;
           };
           requestHistoryMessage(eventParams.earliestId);
+        } else if (eventType === 'preview_image') {
+          onItemPress?.(event.params);
         }
       });
       const sub2 = DeviceEventEmitter.addListener(
@@ -1269,6 +1278,7 @@ const Content = React.memo(
     }, [
       chatId,
       loadMessage,
+      onItemPress,
       requestHistoryMessage,
       sendImageMessage,
       sendVoiceMessage,
@@ -1430,6 +1440,8 @@ type ChatFragmentProps = {
     >;
   };
   onUpdateReadCount?: (unreadCount: number) => void;
+  onItemPress?: (data: MessageItemType) => void;
+  onItemLongPress?: (data: MessageItemType) => void;
 };
 
 export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
@@ -1439,6 +1451,8 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
     onFace,
     customMessageBubble,
     onUpdateReadCount,
+    onItemPress,
+    onItemLongPress,
   } = props;
   const params = screenParams.params as {
     chatId: string;
@@ -1475,6 +1489,8 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
           onFace={onFace}
           customMessageBubble={customMessageBubble}
           onUpdateReadCount={onUpdateReadCount}
+          onItemPress={onItemPress}
+          onItemLongPress={onItemLongPress}
           // customMessageBubble={{
           //   CustomMessageRenderItemP: CustomMessageRenderItem,
           // }}

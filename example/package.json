@@ -44,6 +44,7 @@
     "react-native-pager-view": "^6.1.1",
     "react-native-paper": "^4.12.5",
     "react-native-permissions": "^3.6.1",
+    "react-native-reanimated": "^3.0.0",
     "react-native-safe-area-context": "^4.4.1",
     "react-native-screens": "^3.18.2",
     "react-native-tab-view": "^3.3.0",
@@ -60,6 +61,9 @@
     "@types/react-native": "~0.70.0",
     "babel-plugin-module-resolver": "^4.1.0",
     "react-native-flipper": "^0.174.0"
+  },
+  "resolutions": {
+    "react-native-reanimated": "^3.0.0" 
   },
   "private": true
 }
