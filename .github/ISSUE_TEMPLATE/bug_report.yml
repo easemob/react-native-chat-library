@@ -1,0 +1,95 @@
+name: 🐛 Bug Report
+description: Report a reproducible bug or regression in React Native Chat SDK.
+labels: ["Needs: Triage :mag:"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide all the information requested. Issues that do not follow this format are likely to stall.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please provide a clear and concise description of what the bug is. Include screenshots if needed. Test using the [latest React Native Chat SDK release](https://github.com/easemob/react-native-chat-library/releases/latest) to make sure your issue has not already been fixed.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What react-native-chat-library version does this appear on? Bear in mind that only issues on will be looked into.
+      placeholder: ex. 1.0.7
+    validations:
+      required: true
+  - type: textarea
+    id: react-native-info
+    attributes:
+      label: Output of `npx react-native info`
+      description: Run `npx react-native info` in your terminal, copy and paste the results here.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide a detailed list of steps that reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Snack, code example, screenshot, or link to a repository
+      description: |
+        Please provide a Snack (https://snack.expo.dev/), a link to a repository on GitHub, or provide a minimal code example that reproduces the problem.
+        You may provide a screenshot of the application if you think it is relevant to your bug report.
+        Here are some tips for providing a minimal example: https://stackoverflow.com/help/mcve
+        Please note that a reproducer is **mandatory**. Issues without reproducer are more likely to stall and will be closed.
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Platform
+      description: |
+        What are the platforms where you see the issue?
+      options:
+        - label: All
+        - label: Android
+        - label: iOS
+  - type: checkboxes
+    attributes:
+      label: SimulatorOrDevice
+      description: |
+        What are the device where you see the issue?
+      options:
+        - label: All
+        - label: Simulator
+        - label: Device
+  - type: checkboxes
+    attributes:
+      label: iOSVersion
+      description: |
+        What are the version where you see the issue?
+      options:
+        - label: All
+        - label: iOS Earlier than 8
+        - label: iOS 8
+        - label: iOS 9
+        - label: iOS 10
+        - label: iOS 11
+        - label: iOS 12
+        - label: iOS 13
+        - label: iOS 14
+        - label: iOS 15
+        - label: iOS 16 or above
+        - label: Android Earlier than API Level 23
+        - label: Android API Level 23
+        - label: Android API Level 24
+        - label: Android API Level 25
+        - label: Android API Level 26
+        - label: Android API Level 27
+        - label: Android API Level 28
+        - label: Android API Level 29
+        - label: Android API Level 30
+        - label: Android API Level 31
+        - label: Android API Level 32
+        - label: Android API Level 33 or above

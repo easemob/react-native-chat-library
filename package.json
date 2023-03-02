@@ -3,7 +3,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AsteriskZuo/react-native-chat-library.git"
+    "url": "git+https://github.com/easemob/react-native-chat-library.git"
   },
   "author": "Asterisk Zuo <zuoyuhsywn@hotmail.com>",
   "private": true,

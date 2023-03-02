@@ -44,13 +44,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/AsteriskZuo/react-native-chat-uikit",
-  "author": "asteriskzuo <zuoyuhsywn@hotmail.com> (https://github.com/AsteriskZuo)",
+  "repository": "https://github.com/easemob/react-native-chat-library",
+  "author": "asteriskzuo <zuoyuhsywn@hotmail.com> (https://github.com/easemob)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AsteriskZuo/react-native-chat-uikit/issues"
+    "url": "https://github.com/easemob/react-native-chat-library/issues"
   },
-  "homepage": "https://github.com/AsteriskZuo/react-native-chat-uikit#readme",
+  "homepage": "https://github.com/easemob/react-native-chat-library#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
