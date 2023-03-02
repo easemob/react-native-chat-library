@@ -2,7 +2,7 @@
 
 ## github
 
-[repo](https://github.com/AsteriskZuo/react-native-chat-library)
+[repo](https://github.com/easemob/react-native-chat-library)
 
 ## install
 

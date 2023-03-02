@@ -420,10 +420,12 @@ PODS:
     - glog
   - react-native-cameraroll (5.2.0):
     - React-Core
+  - react-native-chat-callkit (0.1.0):
+    - React-Core
   - react-native-chat-sdk (1.1.0):
     - HyphenateChat (= 4.0.0)
     - React-Core
-  - react-native-chat-uikit (0.1.0):
+  - react-native-chat-uikit (0.1.1-beta.0):
     - React-Core
   - react-native-create-thumbnail (1.6.3):
     - React-Core
@@ -651,6 +653,7 @@ DEPENDENCIES:
   - React-jsinspector (from `../../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../../node_modules/react-native/ReactCommon/logger`)
   - "react-native-cameraroll (from `../../node_modules/@react-native-camera-roll/camera-roll`)"
+  - react-native-chat-callkit (from `../../packages/react-native-chat-callkit`)
   - react-native-chat-sdk (from `../../node_modules/react-native-chat-sdk`)
   - react-native-chat-uikit (from `../../packages/react-native-chat-uikit`)
   - react-native-create-thumbnail (from `../../node_modules/react-native-create-thumbnail`)
@@ -812,6 +815,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/react-native/ReactCommon/logger"
   react-native-cameraroll:
     :path: "../../node_modules/@react-native-camera-roll/camera-roll"
+  react-native-chat-callkit:
+    :path: "../../packages/react-native-chat-callkit"
   react-native-chat-sdk:
     :path: "../../node_modules/react-native-chat-sdk"
   react-native-chat-uikit:
@@ -951,8 +956,9 @@ SPEC CHECKSUMS:
   React-jsinspector: eb202e43b3879aba9a14f3f65788aec85d4e1ea9
   React-logger: 98f663b292a60967ebbc6d803ae96c1381183b6d
   react-native-cameraroll: 0ff04cc4e0ff5f19a94ff4313e5c8bc4503cd86d
+  react-native-chat-callkit: 459e79ac8d0db690ed9180ebd07bc0809d7c7e3c
   react-native-chat-sdk: b6f6c6c68839d5a5aba050ee451c0ef6c55c671a
-  react-native-chat-uikit: d9e6fd6797706d75f7c8924b7c98e45b1f1af62a
+  react-native-chat-uikit: 437b1e9670038418445f10da84b79e2dc395e234
   react-native-create-thumbnail: 94e68f6cc050a870f830352d1a924c1e8d38b52f
   react-native-document-picker: 958e2bc82e128be69055be261aeac8d872c8d34c
   react-native-file-access: 2105d76b5d584d11db6f5d587b6af98ef9ff8080
@@ -990,6 +996,6 @@ SPEC CHECKSUMS:
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
   ZIPFoundation: b1f0de4eed33e74a676f76e12559ab6b75990197
 
-PODFILE CHECKSUM: 562ec587e9e8d184845abb755f78de5bb98cf25a
+PODFILE CHECKSUM: 3836902756d427aad5b98977486ee915b5f04eb8
 
 COCOAPODS: 1.11.3

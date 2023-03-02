@@ -3,6 +3,7 @@
         "aftertreatment",
         "callkeep",
         "callkit",
+        "commitlint",
         "conv",
         "easemob",
         "IMSDK",
@@ -13,6 +14,9 @@
         "moji",
         "Pressable",
         "tabbar",
-        "uikit"
+        "uikit",
+        "chatcallkit",
+        "gradlew",
+        "podspec"
     ]
 }

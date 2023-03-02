@@ -32,6 +32,8 @@ target 'example' do
   )
 
   pod 'react-native-chat-uikit', :path => '../../packages/react-native-chat-uikit'
+  pod 'react-native-chat-callkit', :path => '../../packages/react-native-chat-callkit'
+
   # https://juejin.cn/post/6914204711935705096
   pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseCore', :modular_headers => true

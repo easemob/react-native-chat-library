@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+dist/
+lib/
+web-build/
+web-report/
+__tests__/
+
+.expo/
+.yarn/
+.vscode/

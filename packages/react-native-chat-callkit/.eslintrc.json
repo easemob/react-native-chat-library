@@ -1,0 +1,24 @@
+{
+  "extends": "satya164",
+  "plugins": ["simple-import-sort"],
+  "settings": {
+    "react": {
+      "version": "16"
+    }
+  },
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error"
+  },
+  "overrides": [
+    {
+      "files": [""],
+      "rules": {
+        "jest/*": 0
+      }
+    }
+  ]
+}

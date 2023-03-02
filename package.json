@@ -9,6 +9,7 @@
   "private": true,
   "workspaces": [
     "packages/react-native-chat-uikit",
+    "packages/react-native-chat-callkit",
     "examples/*",
     "example"
   ],
@@ -65,7 +66,9 @@
     ],
     "modulePathIgnorePatterns": [
       "<rootDir>/packages/react-native-chat-uikit/lib/",
-      "<rootDir>/packages/react-native-chat-uikit/node_modules/"
+      "<rootDir>/packages/react-native-chat-uikit/node_modules/",
+      "<rootDir>/packages/react-native-chat-callkit/lib/",
+      "<rootDir>/packages/react-native-chat-callkit/node_modules/"
     ]
   }
 }

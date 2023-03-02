@@ -20,7 +20,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.rnchatuikit",
+      "bundleIdentifier": "com.hyphenate.rnchatuikit",
       "googleServicesFile": "./ios/example/GoogleService-Info.plist"
     },
     "android": {

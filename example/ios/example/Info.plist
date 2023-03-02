@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>example</string>
+	<string>chatuikitdemo</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -58,30 +58,30 @@
 	<string>documents</string>
 	<key>NSDownloadsFolderUsageDescription</key>
 	<string>downloads</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>faceid</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>locationAlways</string>
 	<key>NSLocationUsageDescription</key>
 	<string>location</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>location2</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>mic</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>photo</string>
-	<key>NSUserNotificationsUsageDescription</key>
-	<string>notifications</string>
-	<key>NSFaceIDUsageDescription</key>
-  	<string>faceid</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-  	<string>locationAlways</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-  	<string>location2</string>
 	<key>NSMotionUsageDescription</key>
-  	<string>motion</string>
+	<string>motion</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>photo2</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>photo</string>
 	<key>NSRemindersUsageDescription</key>
 	<string>reminders</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>speechr</string>
 	<key>NSSiriUsageDescription</key>
 	<string>siri</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>speechr</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>notifications</string>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>track</string>
 	<key>UILaunchStoryboardName</key>
