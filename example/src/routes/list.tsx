@@ -35,11 +35,13 @@ export type BottomTabParamsList = TopTabParamsList & {
 export type RootParamsList = BottomTabParamsList & {
   SignIn: {
     option?: {} | undefined;
-    params?: {} | undefined;
+    params?:
+      | { accountType: 'agora' | 'easemob'; id: string; pass: string }
+      | undefined;
   };
   SignUp: {
     option?: {} | undefined;
-    params?: {} | undefined;
+    params?: { accountType: 'agora' | 'easemob' } | undefined;
   };
   GroupInfo: {
     option?: {} | undefined;

@@ -16,27 +16,33 @@ import {
   getScaleFactor,
   LocalIcon,
   TextInput,
-  useAlert,
 } from 'react-native-chat-uikit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
+import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
 
-export default function SignUpScreen({ navigation }: Props): JSX.Element {
+export default function SignUpScreen({
+  route,
+  navigation,
+}: Props): JSX.Element {
+  const rp = route.params as any;
+  const params = rp?.params as any;
+  const accountType = params.accountType as 'agora' | 'easemob';
   const sf = getScaleFactor();
   const enableKeyboardAvoid = true;
-  const { register, login } = useAppI18nContext();
-  const { openAlert } = useAlert();
+  const { register } = useAppI18nContext();
 
   const [id, setId] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [confirm, setConfirm] = React.useState('');
   const [disabled, setDisabled] = React.useState(true);
-  const [tip, setTip] = React.useState('');
+  const [tip] = React.useState('');
+  const { client } = useAppChatSdkContext();
 
   React.useEffect(() => {
     if (id.length > 0 && password.length > 0 && confirm.length > 0) {
@@ -45,6 +51,22 @@ export default function SignUpScreen({ navigation }: Props): JSX.Element {
       setDisabled(true);
     }
   }, [confirm.length, id.length, password.length]);
+
+  const execRegister = React.useCallback(() => {
+    if (accountType === 'easemob') {
+      client
+        .createAccount(id, password)
+        .then((result) => {
+          console.log('test:execRegister:success:', result);
+          navigation.goBack();
+        })
+        .catch((error) => {
+          console.warn('test:execRegister:error', error);
+        });
+    } else {
+      console.warn('test:', 'Please use the console to register.');
+    }
+  }, [accountType, client, id, navigation, password]);
 
   return (
     <SafeAreaView
@@ -115,22 +137,23 @@ export default function SignUpScreen({ navigation }: Props): JSX.Element {
               disabled={disabled}
               style={styles.button}
               onPress={() => {
-                if (password !== confirm) {
-                  setTip(register.comment(1));
-                } else if (password === '1') {
-                  Keyboard.dismiss();
-                  openAlert({
-                    title: register.comment(5),
-                    buttons: [
-                      {
-                        text: login.button,
-                        onPress: () => {
-                          navigation.goBack();
-                        },
-                      },
-                    ],
-                  });
-                }
+                execRegister();
+                // if (password !== confirm) {
+                //   setTip(register.comment(1));
+                // } else if (password === '1') {
+                //   Keyboard.dismiss();
+                //   openAlert({
+                //     title: register.comment(5),
+                //     buttons: [
+                //       {
+                //         text: login.button,
+                //         onPress: () => {
+                //           navigation.goBack();
+                //         },
+                //       },
+                //     ],
+                //   });
+                // }
               }}
             >
               {register.button}

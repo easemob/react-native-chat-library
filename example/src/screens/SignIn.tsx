@@ -30,18 +30,15 @@ import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
 
-let gid: string = '';
-let gps: string = '';
-
-try {
-  const env = require('../env');
-  gid = env.id;
-  gps = env.ps;
-} catch (error) {
-  console.log('test:error', error);
-}
-
-export default function SignInScreen({ navigation }: Props): JSX.Element {
+export default function SignInScreen({
+  route,
+  navigation,
+}: Props): JSX.Element {
+  const rp = route.params as any;
+  const params = rp?.params as any;
+  const accountType = params.accountType as 'agora' | 'easemob';
+  const gid = params.id;
+  const gps = params.pass;
   const sf = getScaleFactor();
   const enableKeyboardAvoid = true;
   const { defaultStatusBarTranslucent: statusBarTranslucent } =
@@ -55,6 +52,7 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
     'stop'
   );
   const { client, login: loginAction } = useChatSdkContext();
+  console.log('test:SignInScreen:', params);
 
   React.useEffect(() => {
     if (id.length > 0 && password.length > 0) {
@@ -72,7 +70,7 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
     loginAction({
       id: id,
       pass: password,
-      type: 'easemob',
+      type: accountType,
       onResult: (result) => {
         if (result.result === true) {
           console.log('test:login:success');
@@ -191,7 +189,9 @@ export default function SignInScreen({ navigation }: Props): JSX.Element {
                 style={styles.register}
                 onPress={() => {
                   setDisabled(true);
-                  navigation.push('SignUp', { params: undefined });
+                  navigation.push('SignUp', {
+                    params: { accountType: accountType },
+                  });
                 }}
               >
                 {login.register}
