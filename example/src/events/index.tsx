@@ -1,9 +1,33 @@
+export const HomeEvent = 'HomeEvent';
+export type HomeEventType =
+  | 'update_state'
+  | 'update_all_count'
+  | 'update_request'
+  | 'forward_notify_msg';
+export type HomeEventBarType = 'conv' | 'contact' | 'setting';
+
+export const ContactEvent = 'ContactEvent';
+export type ContactEventType = 'update_state';
+export type ContactEventBarType = 'contact' | 'group' | 'request';
+
+export const AppEvent = 'AppEvent';
+export type AppEventType = 'on_initialized' | 'on_logined';
+
+export type NotificationMessageDescriptionType =
+  | 'ContactInvitation'
+  | 'ContactInvitationAccepted'
+  | 'ContactInvitationDeclined'
+  | 'GroupInvitation'
+  | 'GroupInvitationAccepted'
+  | 'GroupInvitationDeclined'
+  | 'GroupRequestJoin'
+  | 'GroupRequestJoinAccepted'
+  | 'GroupRequestJoinDeclined';
+
 export type ToastEvent = 'toast_';
 export type AlertEvent = 'alert_';
 export type SheetEvent = 'sheet_';
 export type PressEvent = 'press' | 'long_press';
-export type MessageEvent = 'message';
-export type ConversationEvent = 'conversion';
 
 export const CreateGroupSettingsEvent = 'CreateGroupSettingsEvent';
 export type CreateGroupSettingsEventType =
@@ -27,10 +51,11 @@ export type ConversationListEventType =
   | ToastEvent
   | AlertEvent
   | SheetEvent
-  | PressEvent
-  | MessageEvent
-  | ConversationEvent
-  | 'create_conversation';
+  | 'press'
+  | 'long_press'
+  | 'conversion'
+  | 'create_conversation'
+  | 'conversation_read';
 
 export const ChatEvent = 'ChatEvent';
 export type ChatEventType =
@@ -39,19 +64,23 @@ export type ChatEventType =
   | 'msg_state'
   | 'msg_progress'
   | 'open_input_extension'
-  | 'send_image_message';
+  | 'send_image_message'
+  | 'send_voice_message'
+  | 'send_custom_message'
+  | 'request_history_message'
+  | 'preview_image';
 
-export const HomeEvent = 'HomeEvent';
-export type HomeEventType =
-  | 'update_state'
-  | 'update_all_count'
-  | 'update_request'
-  | 'forward_notify_msg';
-export type HomeEventBarType = 'conv' | 'contact' | 'setting';
+export const MessageBubbleEvent = 'MessageBubbleEvent';
+export type MessageBubbleEventType = 'on_press' | 'on_long_press';
 
-export const ContactEvent = 'ContactEvent';
-export type ContactEventType = 'update_state';
-export type ContactEventBarType = 'contact' | 'group' | 'request';
+export const LoginEvent = 'LoginEvent';
+export type LoginEventType = 'on_login_end' | 'on_logout_end';
 
-export const AppEvent = 'AppEvent';
-export type AppEventType = 'on_initialized' | 'on_logined';
+export const MessageEvent = 'MessageEvent';
+export type MessageEventType = 'on_send_before' | 'on_send_result';
+
+export type ToastEventType =
+  | 'add_content_success'
+  | 'add_content_fail'
+  | 'request_join_public_group_success'
+  | 'request_join_public_group_fail';

@@ -38,10 +38,13 @@ function TextInput(
   const input = editable ? colors.input.enabled : colors.input.disabled;
   const [_value, setValue] = React.useState('');
   const [height, setHeight] = React.useState(0);
-  const _onChangeText = (text: string) => {
-    setValue(text);
-    onChangeText?.(text);
-  };
+  const _onChangeText = React.useCallback(
+    (text: string) => {
+      setValue(text);
+      onChangeText?.(text);
+    },
+    [onChangeText]
+  );
   const _clearButtonMode = 'never';
   const [_secureTextEntry, setSecureTextEntry] =
     React.useState(secureTextEntry);
@@ -88,7 +91,7 @@ function TextInput(
           return (
             <Pressable
               onPress={() => {
-                setValue('');
+                _onChangeText('');
               }}
               onLayout={(event) => {
                 setHeight(event.nativeEvent.layout.y);
@@ -112,7 +115,7 @@ function TextInput(
         }
       }
     },
-    [_value.length, height, iconSize, iconStyle]
+    [_onChangeText, _value.length, height, iconSize, iconStyle]
   );
 
   return (

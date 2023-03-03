@@ -13,35 +13,36 @@ import {
   ChatMessageType,
   ChatTextMessageBody,
 } from 'react-native-chat-sdk';
+import {
+  type EqualHeightListItemComponent,
+  type EqualHeightListItemData,
+  type EqualHeightListRef,
+  type MessageChatSdkEventType,
+  autoFocus,
+  Badge,
+  createStyleSheet,
+  DefaultAvatar,
+  DefaultListItemSeparator,
+  DefaultListSearchHeader,
+  EqualHeightList,
+  getScaleFactor,
+  LocalIcon,
+  MessageChatSdkEvent,
+  messageTimestamp,
+  queueTask,
+  Services,
+  timestamp,
+  useChatSdkContext,
+} from 'react-native-chat-uikit';
 
-import Badge from '../components/Badge';
-import { DefaultAvatar } from '../components/DefaultAvatars';
 import {
-  default as EqualHeightList,
-  EqualHeightListRef,
-  ItemComponent,
-  ItemData,
-} from '../components/EqualHeightList';
-import { LocalIcon } from '../components/Icon';
-import { ListItemSeparator } from '../components/ListItemSeparator';
-import { ListSearchHeader } from '../components/ListSearchHeader';
-import { useChatSdkContext } from '../contexts';
-import { MessageChatSdkEvent, MessageChatSdkEventType } from '../events';
-import { Services } from '../services';
-import { getScaleFactor } from '../styles/createScaleFactor';
-import createStyleSheet from '../styles/createStyleSheet';
-import { messageTimestamp } from '../utils/format';
-import { queueTask } from '../utils/function';
-import { timestamp } from '../utils/generator';
-import { autoFocus } from '../utils/platform';
-import {
+  type ConversationListEventType,
+  type MessageEventType,
   ConversationListEvent,
-  ConversationListEventType,
   MessageEvent,
-  MessageEventType,
-} from './types';
+} from '../events';
 
-export type ItemDataType = ItemData & {
+export type ItemDataType = EqualHeightListItemData & {
   convId: string;
   convType: ChatConversationType;
   lastMsg?: ChatMessage;
@@ -55,7 +56,7 @@ export type ItemDataType = ItemData & {
   };
 };
 
-const Item: ItemComponent = (props) => {
+const Item: EqualHeightListItemComponent = (props) => {
   const sf = getScaleFactor();
   const item = props.data as ItemDataType;
   const { width: screenWidth } = useWindowDimensions();
@@ -262,24 +263,14 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           }
         }
       } else {
-        return 0;
+        if (newMsg) {
+          return 1;
+        } else {
+          return 0;
+        }
       }
     },
     [data]
-  );
-
-  const removeConversation = React.useCallback(
-    (convId: string) => {
-      client.chatManager
-        .deleteConversation(convId, true)
-        .then((result) => {
-          console.log('test:result:', result);
-        })
-        .catch((error) => {
-          console.warn('test:error:', error);
-        });
-    },
-    [client.chatManager]
   );
 
   const manualRefresh = React.useCallback(
@@ -303,7 +294,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           },
           {
             type: 'add',
-            data: params.items as ItemData[],
+            data: params.items as EqualHeightListItemData[],
             enableSort: true,
             sortDirection: 'asc',
           },
@@ -316,7 +307,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           },
           {
             type: 'add',
-            data: params.items as ItemData[],
+            data: params.items as EqualHeightListItemData[],
             enableSort: true,
             sortDirection: 'asc',
           },
@@ -325,7 +316,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         listRef.current?.manualRefresh([
           {
             type: 'add',
-            data: params.items as ItemData[],
+            data: params.items as EqualHeightListItemData[],
             enableSort: true,
             sortDirection: 'asc',
           },
@@ -335,7 +326,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         listRef.current?.manualRefresh([
           {
             type: 'del',
-            data: params.items as ItemData[],
+            data: params.items as EqualHeightListItemData[],
             enableSort: false,
           },
         ]);
@@ -357,7 +348,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         listRef.current?.manualRefresh([
           {
             type: 'update',
-            data: params.items as ItemData[],
+            data: params.items as EqualHeightListItemData[],
             enableSort: true,
             sortDirection: 'asc',
           },
@@ -385,6 +376,25 @@ export default function ConversationListFragment(props: Props): JSX.Element {
     [data, getCurrentId, onData]
   );
 
+  const removeConversation = React.useCallback(
+    (data: ItemDataType) => {
+      manualRefresh({
+        type: 'del-one',
+        items: [{ ...data } as ItemDataType],
+      });
+
+      client.chatManager
+        .deleteConversation(data.convId, true)
+        .then((result) => {
+          console.log('test:result:', result);
+        })
+        .catch((error) => {
+          console.warn('test:error:', error);
+        });
+    },
+    [client.chatManager, manualRefresh]
+  );
+
   const standardizedData = React.useCallback(
     (item: Omit<ItemDataType, 'onLongPress' | 'onPress'>): ItemDataType => {
       const time = item.lastMsg ? item.lastMsg.serverTime : timestamp();
@@ -406,17 +416,13 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         actions: {
           onMute: (_) => {},
           onDelete: (data) => {
-            manualRefresh({
-              type: 'del-one',
-              items: [{ ...data } as ItemDataType],
-            });
-            removeConversation(data.convId);
+            removeConversation(data);
           },
         },
       } as ItemDataType;
       return r;
     },
-    [getContent, manualRefresh, onLongPress, onPress, removeConversation, sf]
+    [getContent, onLongPress, onPress, removeConversation, sf]
   );
 
   const getConv = React.useCallback(
@@ -450,7 +456,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
               convId: conv.convId,
               convType: conv.convType,
               lastMsg: msg,
-              count: getConvCount(conv.convId),
+              count: getConvCount(conv.convId, msg),
             } as ItemDataType);
           } else {
             return standardizedData({
@@ -496,6 +502,84 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       });
   }, [client.chatManager, onUpdateReadCount]);
 
+  const createConversation = React.useCallback(
+    (params: { convId: string; convType: ChatConversationType }) => {
+      if (duplicateCheck(params.convId)) {
+        return;
+      }
+      manualRefresh({
+        type: 'add',
+        items: [
+          standardizedData({
+            key: params.convId,
+            convId: params.convId,
+            convType: params.convType,
+            lastMsg: undefined,
+            count: 0,
+          } as ItemDataType),
+        ],
+      });
+    },
+    [duplicateCheck, manualRefresh, standardizedData]
+  );
+
+  const updateConversationFromMessage = React.useCallback(
+    async (msg: ChatMessage) => {
+      const convId = getConvId(msg);
+      const convType = msg.chatType as number as ChatConversationType;
+      let conv = getExisted(convId);
+      if (conv === undefined) {
+        conv = await getConvIfNot(convId, convType);
+        if (conv) {
+          manualRefresh({
+            type: 'add',
+            items: [conv],
+          });
+        }
+      } else {
+        manualRefresh({
+          type: 'update-one',
+          items: [
+            standardizedData({
+              key: convId,
+              convId: convId,
+              convType: convType,
+              lastMsg: msg,
+              count: getConvCount(convId, msg),
+            } as ItemDataType),
+          ],
+        });
+      }
+    },
+    [
+      getConvCount,
+      getConvId,
+      getConvIfNot,
+      getExisted,
+      manualRefresh,
+      standardizedData,
+    ]
+  );
+
+  const conversationRead = React.useCallback(
+    (params: { convId: string; convType: ChatConversationType }) => {
+      const conv = getConv(params.convId);
+      if (conv === undefined) {
+        return;
+      }
+      manualRefresh({
+        type: 'update-one',
+        items: [
+          standardizedData({
+            ...conv,
+            count: 0,
+          } as ItemDataType),
+        ],
+      });
+    },
+    [getConv, manualRefresh, standardizedData]
+  );
+
   const addListeners = React.useCallback(() => {
     const sub = DeviceEventEmitter.addListener(
       ConversationListEvent,
@@ -503,42 +587,10 @@ export default function ConversationListFragment(props: Props): JSX.Element {
         const eventType = event.type as ConversationListEventType;
         switch (eventType) {
           case 'create_conversation':
-            {
-              const eventParams = event.params;
-              if (duplicateCheck(eventParams.convId)) {
-                return;
-              }
-              manualRefresh({
-                type: 'add',
-                items: [
-                  standardizedData({
-                    key: eventParams.convId,
-                    convId: eventParams.convId,
-                    convType: eventParams.convType,
-                    lastMsg: undefined,
-                    count: 0,
-                  } as ItemDataType),
-                ],
-              });
-            }
+            createConversation(event.params);
             break;
           case 'conversation_read':
-            {
-              const eventParams = event.params;
-              const conv = getConv(eventParams.convId);
-              if (conv === undefined) {
-                return;
-              }
-              manualRefresh({
-                type: 'update-one',
-                items: [
-                  standardizedData({
-                    ...conv,
-                    count: 0,
-                  } as ItemDataType),
-                ],
-              });
-            }
+            conversationRead(event.params);
             break;
           default:
             break;
@@ -557,25 +609,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
               const messages = eventParams.messages;
               console.log('test:onMessagesReceived:', messages.length);
               for (const msg of messages) {
-                const convId = getConvId(msg);
-                const convType = msg.chatType as number as ChatConversationType;
-                const conv = getExisted(convId);
-                if (conv === undefined) {
-                  await getConvIfNot(convId, convType);
-                }
-                const count = getConvCount(convId, msg);
-                manualRefresh({
-                  type: 'update-one',
-                  items: [
-                    standardizedData({
-                      key: convId,
-                      convId: convId,
-                      convType: convType,
-                      lastMsg: msg,
-                      count: count,
-                    } as ItemDataType),
-                  ],
-                });
+                updateConversationFromMessage(msg);
               }
               updateAllUnreadCount();
             }
@@ -585,31 +619,31 @@ export default function ConversationListFragment(props: Props): JSX.Element {
               /// todo: !!! 10000 message count ???
               const messages = eventParams.messages;
               console.log('test:onMessagesRead:', messages.length);
-              for (const msg of messages) {
-                const convId = getConvId(msg);
-                const convType = msg.chatType as number as ChatConversationType;
-                const conv = getExisted(convId);
-                if (conv === undefined) {
-                  return;
-                }
-                const count =
-                  await client.chatManager.getConversationUnreadCount(
-                    convId,
-                    convType
-                  );
-                manualRefresh({
-                  type: 'update-one',
-                  items: [
-                    standardizedData({
-                      key: convId,
-                      convId: convId,
-                      convType: convType,
-                      lastMsg: msg,
-                      count: count,
-                    } as ItemDataType),
-                  ],
-                });
-              }
+              // for (const msg of messages) {
+              //   const convId = getConvId(msg);
+              //   const convType = msg.chatType as number as ChatConversationType;
+              //   const conv = getExisted(convId);
+              //   if (conv === undefined) {
+              //     return;
+              //   }
+              //   const count =
+              //     await client.chatManager.getConversationUnreadCount(
+              //       convId,
+              //       convType
+              //     );
+              //   manualRefresh({
+              //     type: 'update-one',
+              //     items: [
+              //       standardizedData({
+              //         key: convId,
+              //         convId: convId,
+              //         convType: convType,
+              //         lastMsg: msg,
+              //         count: count,
+              //       } as ItemDataType),
+              //     ],
+              //   });
+              // }
             }
             break;
           default:
@@ -671,16 +705,13 @@ export default function ConversationListFragment(props: Props): JSX.Element {
       sub3.remove();
     };
   }, [
-    client.chatManager,
-    duplicateCheck,
-    getConv,
-    getConvCount,
-    getConvId,
-    getConvIfNot,
-    getExisted,
+    createConversation,
+    conversationRead,
+    updateAllUnreadCount,
+    updateConversationFromMessage,
     manualRefresh,
     standardizedData,
-    updateAllUnreadCount,
+    getConv,
   ]);
 
   const initDirs = React.useCallback((convIds: string[]) => {
@@ -762,7 +793,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
 
   return (
     <React.Fragment>
-      <ListSearchHeader
+      <DefaultListSearchHeader
         autoFocus={autoFocus()}
         onChangeText={(text) => {
           queueTask(() => {
@@ -803,7 +834,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
             borderRadius: sf(8),
           },
         }}
-        ItemSeparatorComponent={ListItemSeparator}
+        ItemSeparatorComponent={DefaultListItemSeparator}
         onRefresh={(type) => {
           if (type === 'started') {
             initList();

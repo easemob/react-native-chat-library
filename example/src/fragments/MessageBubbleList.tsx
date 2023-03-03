@@ -10,18 +10,20 @@ import {
   View,
 } from 'react-native';
 import { ChatMessageType } from 'react-native-chat-sdk';
-
-import { type ChatEventType, ChatEvent } from '../fragments';
-import { getScaleFactor } from '../styles/createScaleFactor';
-import createStyleSheet from '../styles/createStyleSheet';
-import { wait } from '../utils/function';
-import { DefaultAvatar } from './DefaultAvatars';
-import DynamicHeightList, {
+import {
   type DynamicHeightListRef,
-} from './DynamicHeightList';
-import { type LocalIconName, LocalIcon } from './Icon';
-import Image from './Image';
-import Loading from './Loading';
+  type LocalIconName,
+  createStyleSheet,
+  DefaultAvatar,
+  DynamicHeightList,
+  getScaleFactor,
+  Image,
+  Loading,
+  LocalIcon,
+  wait,
+} from 'react-native-chat-uikit';
+
+import { type ChatEventType, ChatEvent } from '../events';
 
 export type MessageItemStateType =
   | 'unread'
@@ -590,7 +592,7 @@ const MessageBubbleList = (
 
   const addListeners = React.useCallback(() => {
     const sub1 = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-      // console.log('test:addListeners:msg_state:', event);
+      console.log('test:addListeners:msg_state:', event);
       const eventType = event.type as ChatEventType;
       switch (eventType) {
         case 'msg_state':

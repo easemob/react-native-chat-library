@@ -2,17 +2,17 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import { ChatMessageType } from 'react-native-chat-sdk';
-import {
-  type DefaultMessageBubbleListProps,
-  ChatFragment,
-  DefaultMessageBubbleList,
-  ImageMessageItemType,
-  MessageItemType,
-  ScreenContainer,
-} from 'react-native-chat-uikit';
+import { ScreenContainer } from 'react-native-chat-uikit';
 
 import { CustomMessageRenderItem } from '../components/CustomMessageBubble';
 import { HomeEvent, HomeEventType } from '../events';
+import ChatFragment from '../fragments/Chat';
+import type {
+  ImageMessageItemType,
+  MessageBubbleListProps,
+  MessageItemType,
+} from '../fragments/MessageBubbleList';
+import MessageBubbleList from '../fragments/MessageBubbleList';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
@@ -28,8 +28,7 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
   const rp = route.params as any;
   const params = rp?.params as { chatId: string; chatType: number };
   const chatId = params.chatId;
-  const messageBubbleListRefP =
-    React.useRef<typeof DefaultMessageBubbleList>(null);
+  const messageBubbleListRefP = React.useRef<typeof MessageBubbleList>(null);
 
   const onItemPress = React.useCallback(
     (data: MessageItemType) => {
@@ -56,10 +55,10 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
       <ChatFragment
         screenParams={route.params}
         messageBubbleList={{
-          MessageBubbleListP: DefaultMessageBubbleList,
+          MessageBubbleListP: MessageBubbleList,
           MessageBubbleListPropsP: {
             onPressed: () => {},
-          } as DefaultMessageBubbleListProps,
+          } as MessageBubbleListProps,
           MessageBubbleListRefP: messageBubbleListRefP as any,
         }}
         onFace={() => {}}

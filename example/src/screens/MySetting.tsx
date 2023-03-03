@@ -75,10 +75,10 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   const memberCount = 5;
   const [name, setName] = React.useState('NickName');
   const [id, setId] = React.useState('Agora ID: xx');
-  const sdkVersion = 'AgoraChat v1.0.0';
-  const uiVersion = 'AgoraChat v1.0.0';
+  const sdkVersion = 'AgoraChat v0.0.0';
+  const uiVersion = 'AgoraChat v0.0.0';
   const urlName = 'agora.io';
-  const { client, getCurrentId } = useAppChatSdkContext();
+  const { client, getCurrentId, logout: logoutAction } = useAppChatSdkContext();
 
   const D = () => (
     <Divider
@@ -136,15 +136,16 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   }, [navigation]);
 
   const _logout = () => {
-    client
-      .logout()
-      .then(() => {
-        console.log('test:logout:success');
-        navigation.dispatch(CommonActions.navigate('Login', { params: {} }));
-      })
-      .catch((error) => {
-        console.log('test:error:', error);
-      });
+    logoutAction({
+      onResult: ({ result, error }) => {
+        if (result === true) {
+          console.log('test:logout:success');
+          navigation.dispatch(CommonActions.navigate('Login', { params: {} }));
+        } else {
+          console.log('test:error:', error);
+        }
+      },
+    });
   };
 
   const initList = React.useCallback(() => {

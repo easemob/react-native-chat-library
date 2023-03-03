@@ -1,13 +1,13 @@
 import * as React from 'react';
 import {
   Animated,
+  // Button as RNButton,
   DeviceEventEmitter,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   Text,
   TextInput as RNTextInput,
-  TextInput,
   TouchableOpacity,
   // TouchableWithoutFeedback,
   useWindowDimensions,
@@ -36,25 +36,25 @@ import {
   ChatTextMessageBody,
   ChatVoiceMessageBody,
 } from 'react-native-chat-sdk';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import moji from 'twemoji';
-
-import Button from '../components/Button';
-import { FaceList } from '../components/FaceList';
-import { type LocalIconName, LocalIcon } from '../components/Icon';
-import type {
-  CustomMessageItemType,
-  ImageMessageItemType,
-  MessageBubbleListProps,
-  MessageBubbleListRef,
-  MessageItemStateType,
-  MessageItemType,
-  TextMessageItemType,
-  VoiceMessageItemType,
-} from '../components/MessageBubbleList';
-import MessageBubbleList from '../components/MessageBubbleList';
-import { FragmentContainer } from '../containers';
 import {
+  type LocalIconName,
+  type MessageChatSdkEventType,
+  Button,
+  createStyleSheet,
+  FaceList,
+  FragmentContainer,
+  getFileExtension,
+  getScaleFactor,
+  LocalIcon,
+  localUrl,
+  MessageChatSdkEvent,
+  playUrl,
+  removeFileHeader,
+  seqId,
+  Services,
+  TextInput,
+  timeoutTask,
+  timestamp,
   useActionMenu,
   useAlert,
   useBottomSheet,
@@ -63,25 +63,31 @@ import {
   useI18nContext,
   useThemeContext,
   useToastContext,
-} from '../contexts';
-import { MessageChatSdkEvent, MessageChatSdkEventType } from '../events';
-import { Services } from '../services';
-import { getScaleFactor } from '../styles/createScaleFactor';
-import createStyleSheet from '../styles/createStyleSheet';
-import { getFileExtension } from '../utils/file';
-import { timeoutTask } from '../utils/function';
-import { seqId, timestamp, uuid } from '../utils/generator';
-import { localUrl, playUrl, removeFileHeader } from '../utils/platform';
+  uuid,
+} from 'react-native-chat-uikit';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import moji from 'twemoji';
+
 import {
   type ChatEventType,
+  type ConversationListEventType,
+  type MessageBubbleEventType,
+  type MessageEventType,
   ChatEvent,
   ConversationListEvent,
-  ConversationListEventType,
   MessageBubbleEvent,
-  MessageBubbleEventType,
   MessageEvent,
-  MessageEventType,
-} from './types';
+} from '../events';
+import MessageBubbleList, {
+  type CustomMessageItemType,
+  type ImageMessageItemType,
+  type MessageBubbleListProps,
+  type MessageBubbleListRef,
+  type MessageItemStateType,
+  type MessageItemType,
+  type TextMessageItemType,
+  type VoiceMessageItemType,
+} from './MessageBubbleList';
 
 const InvisiblePlaceholder = React.memo(() => {
   const sheet = useBottomSheet();
@@ -852,6 +858,7 @@ const Content = React.memo(
         client.chatManager
           .sendMessage(msg, {
             onProgress: (localMsgId: string, progress: number): void => {
+              console.log('test:sendToServer:onProgress', localMsgId);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_progress' as ChatEventType,
                 params: {
@@ -861,6 +868,7 @@ const Content = React.memo(
               });
             },
             onError: (localMsgId: string, error: ChatError): void => {
+              console.log('test:sendToServer:onError', localMsgId);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_state' as ChatEventType,
                 params: {
@@ -869,10 +877,14 @@ const Content = React.memo(
                   reason: error,
                 },
               });
-              msg.status = ChatMessageStatus.FAIL;
-              onSendResult(msg);
+              // msg.status = ChatMessageStatus.FAIL; // !!! Error: You attempted to set the key `status` with the value `3` on an object that is meant to be immutable and has been frozen.
+              onSendResult({
+                ...msg,
+                status: ChatMessageStatus.FAIL,
+              } as ChatMessage);
             },
             onSuccess: (message: ChatMessage): void => {
+              console.log('test:sendToServer:onSuccess', message.localMsgId);
               DeviceEventEmitter.emit(ChatEvent, {
                 type: 'msg_state' as ChatEventType,
                 params: {

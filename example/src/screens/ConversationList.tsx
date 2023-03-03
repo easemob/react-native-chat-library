@@ -16,8 +16,6 @@ import * as React from 'react';
 import { DeviceEventEmitter, Pressable, View } from 'react-native';
 import {
   Blank,
-  ConversationListFragment,
-  ConversationListItemDataType,
   FragmentContainer,
   getScaleFactor,
   LocalIcon,
@@ -36,6 +34,9 @@ import {
   HomeEvent,
   HomeEventType,
 } from '../events';
+import ConversationListFragment, {
+  ItemDataType as ConversationListItemDataType,
+} from '../fragments/ConversationList';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type {
   BottomTabParamsList,

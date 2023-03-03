@@ -72,17 +72,6 @@ export { default as Loading } from './components/Loading';
 export { default as LoadingButton } from './components/LoadingButton';
 export { default as LoadingRN } from './components/LoadingRN';
 export { default as MenuBar } from './components/MenuBar';
-export {
-  CustomMessageItemType,
-  default as DefaultMessageBubbleList,
-  MessageBubbleListProps as DefaultMessageBubbleListProps,
-  MessageBubbleListRef as DefaultMessageBubbleListRef,
-  ImageMessageItemType,
-  MessageItemStateType,
-  MessageItemType,
-  TextMessageItemType,
-  VoiceMessageItemType,
-} from './components/MessageBubbleList';
 export { default as Modal } from './components/Modal';
 export { default as Prompt } from './components/Prompt';
 export { default as RadioButton } from './components/RadioButton';
@@ -93,7 +82,7 @@ export { default as Toast } from './components/Toast';
 export * from './containers';
 export * from './contexts';
 export * from './events';
-export * from './fragments';
+// export * from './fragments';
 export { useAsyncTask, useDeferredValue, useForceUpdate } from './hooks';
 export { createStringSetEn, createStringSetFEn } from './I18n/StringSet.en';
 export { CreateStringSet, StringSetOptions } from './I18n/StringSet.type';
@@ -126,6 +115,7 @@ export { default as LightTheme } from './theme/LightTheme';
 export * from './types';
 export { darkPalette, lightPalette } from './utils/defaultColorPalette';
 export { default as defaultHeaderHeight } from './utils/defaultHeaderHeight';
+export { generateFileName, getFileExtension } from './utils/file';
 export {
   getDateTimePoint,
   messageTimestamp,
@@ -144,7 +134,12 @@ export {
   wait,
 } from './utils/function';
 export { seqId, timestamp, uuid } from './utils/generator';
-export { autoFocus, localUrl, playUrl } from './utils/platform';
+export {
+  autoFocus,
+  localUrl,
+  playUrl,
+  removeFileHeader,
+} from './utils/platform';
 export { throttle } from './utils/throttle';
 
 // declare module 'example/src/common' {

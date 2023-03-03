@@ -346,6 +346,7 @@ export default function SearchScreen({
 
   const sendContactRequest = React.useCallback(
     (id: string) => {
+      console.log('test:id:', id);
       client.contactManager
         .addContact(id, 'Request to be a friend.')
         .then()
@@ -473,8 +474,8 @@ export default function SearchScreen({
           r.push(
             standardizedData({
               key: params.id,
-              itemId: params.name,
-              itemName: '',
+              itemId: params.id,
+              itemName: params.name,
               actionType: params.type,
               action: {
                 addContact: {
@@ -516,8 +517,8 @@ export default function SearchScreen({
           r.push(
             standardizedData({
               key: params.id,
-              itemId: params.name,
-              itemName: '',
+              itemId: params.id,
+              itemName: params.name,
               actionType: params.type,
               action: {
                 searchPublicGroupInfo: {

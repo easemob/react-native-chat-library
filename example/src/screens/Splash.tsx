@@ -3,15 +3,24 @@ import {
   CommonActions,
   StackActions,
 } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { DeviceEventEmitter, View } from 'react-native';
-import { getScaleFactor, Loading, Services } from 'react-native-chat-uikit';
+import {
+  ConnectStateChatSdkEvent,
+  ConnectStateChatSdkEventType,
+  getScaleFactor,
+  Loading,
+  Services,
+} from 'react-native-chat-uikit';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { AppEvent, AppEventType } from '../events';
 import type { RootParamsList } from '../routes';
 
-export function SplashScreen(): JSX.Element {
+export function SplashScreen({
+  navigation,
+}: NativeStackScreenProps<RootParamsList, 'Splash'>): JSX.Element {
   const sf = getScaleFactor();
   const {
     autoLogin: autoLoginAction,
@@ -27,6 +36,33 @@ export function SplashScreen(): JSX.Element {
       );
     }
   }, [client.options, getCurrentId]);
+
+  const onDisconnected = React.useCallback(
+    (errorCode?: number) => {
+      console.warn('test:onDisconnected:', errorCode);
+      if (
+        errorCode === 202 ||
+        errorCode === 206 ||
+        errorCode === 207 ||
+        errorCode === 214 ||
+        errorCode === 216 ||
+        errorCode === 217 ||
+        errorCode === 305
+      ) {
+        navigation.navigate('Login', { params: {} });
+      }
+    },
+    [navigation]
+  );
+
+  const onTokenDidExpire = React.useCallback(() => {
+    console.log('test:onTokenDidExpire:');
+    navigation.navigate('Login', { params: {} });
+  }, [navigation]);
+
+  const onTokenWillExpire = React.useCallback(() => {
+    console.log('test:onTokenWillExpire:');
+  }, []);
 
   const addListeners = React.useCallback(() => {
     const sub = DeviceEventEmitter.addListener(AppEvent, (event) => {
@@ -72,10 +108,43 @@ export function SplashScreen(): JSX.Element {
           break;
       }
     });
+    const sub2 = DeviceEventEmitter.addListener(
+      ConnectStateChatSdkEvent,
+      (event) => {
+        console.log('test:SplashScreen:addListener:', event);
+        const eventType = event.type as ConnectStateChatSdkEventType;
+        switch (eventType) {
+          case 'onConnected':
+            break;
+          case 'onDisconnected':
+            {
+              const eventParams = event.params as { error: number | undefined };
+              onDisconnected(eventParams.error);
+            }
+            break;
+          case 'onTokenDidExpire':
+            onTokenDidExpire();
+            break;
+          case 'onTokenWillExpire':
+            onTokenWillExpire();
+            break;
+
+          default:
+            break;
+        }
+      }
+    );
     return () => {
       sub.remove();
+      sub2.remove();
     };
-  }, [autoLoginAction, createUserDir]);
+  }, [
+    autoLoginAction,
+    createUserDir,
+    onDisconnected,
+    onTokenDidExpire,
+    onTokenWillExpire,
+  ]);
 
   React.useEffect(() => {
     const load = () => {
