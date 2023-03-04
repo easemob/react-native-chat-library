@@ -35,8 +35,6 @@ login({
 });
 ```
 
-[sample code](example/src/screens/SignIn.tsx)
-
 ## 自动登录
 
 如果设置了自动登录，那么在登录成功之后，后续的登录就会自动进行。
@@ -63,4 +61,4 @@ autoLogin({
 
 登录页面没有复杂交互逻辑，仅包括 id 或者 password 输入组件，登录按钮组件等。
 组件样式和写法都是通用 `react-native`, 对于刚入门的开发者请多参考，对于有经验的开发者可以忽略不计。
-[sample code](example/src/screens/SignIn.tsx)
+[sample code](https://github.com/easemob/react-native-chat-library/tree/dev/example/src/screens/SignIn.tsx)

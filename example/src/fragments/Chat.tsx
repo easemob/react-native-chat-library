@@ -41,7 +41,7 @@ import {
   type MessageChatSdkEventType,
   Button,
   createStyleSheet,
-  FaceList,
+  FaceList as ChatFaceList,
   FragmentContainer,
   getFileExtension,
   getScaleFactor,
@@ -272,14 +272,14 @@ const InvisiblePlaceholder = React.memo(() => {
   return <></>;
 });
 
-type BaseType = {
+type BaseProps = {
   chatId: string;
   chatType: ChatMessageChatType;
   onFace?: (value?: 'face' | 'key') => void;
   inputRef?: React.RefObject<RNTextInput>;
 };
 
-type InputType = BaseType & {
+type ChatInputProps = BaseProps & {
   onSendTextMessage?: ({ content }: { content: string }) => void;
   onInit?: ({
     setIsInput,
@@ -294,7 +294,7 @@ type InputType = BaseType & {
   }) => void;
 };
 
-type ContentType = BaseType & {
+type ChatContentProps = BaseProps & {
   messageBubbleList?: {
     MessageBubbleListP: React.ForwardRefExoticComponent<
       MessageBubbleListProps & React.RefAttributes<MessageBubbleListRef>
@@ -312,7 +312,7 @@ type ContentType = BaseType & {
   onItemLongPress?: (data: MessageItemType) => void;
 };
 
-const Input = React.memo((props: InputType) => {
+const ChatInput = React.memo((props: ChatInputProps) => {
   const { onFace, onSendTextMessage, onInit, inputRef, chatId, ...others } =
     props;
   const sf = getScaleFactor();
@@ -538,7 +538,7 @@ const Input = React.memo((props: InputType) => {
   );
 });
 
-const Content = React.memo(
+const ChatContent = React.memo(
   ({
     chatId,
     chatType,
@@ -549,7 +549,7 @@ const Content = React.memo(
     onUpdateReadCount,
     onItemPress,
     onItemLongPress,
-  }: ContentType) => {
+  }: ChatContentProps) => {
     const sf = getScaleFactor();
     const TextInputRef = React.useRef<RNTextInput>(null);
     const msgListRef = React.useRef<MessageBubbleListRef>(null);
@@ -1361,7 +1361,7 @@ const Content = React.memo(
       chatId,
     ]);
 
-    const MessageBubbleListM = React.memo(() =>
+    const ChatMessageBubbleList = React.memo(() =>
       messageBubbleList ? (
         <messageBubbleList.MessageBubbleListP
           ref={messageBubbleList.MessageBubbleListRefP}
@@ -1394,10 +1394,10 @@ const Content = React.memo(
             // backgroundColor: '#fff8dc',
           }}
         >
-          <MessageBubbleListM />
+          <ChatMessageBubbleList />
         </View>
 
-        <Input
+        <ChatInput
           inputRef={inputRef ? inputRef : TextInputRef}
           chatId={chatId}
           chatType={chatType}
@@ -1430,14 +1430,19 @@ const Content = React.memo(
           }}
         />
 
-        <FaceList height={faceHeightRef} />
+        <ChatFaceList height={faceHeightRef} />
       </View>
     );
   }
 );
 
 type ChatFragmentProps = {
-  screenParams: any;
+  screenParams: {
+    params: {
+      chatId: string;
+      chatType: number;
+    };
+  };
   messageBubbleList?: {
     MessageBubbleListP: React.ForwardRefExoticComponent<
       MessageBubbleListProps & React.RefAttributes<MessageBubbleListRef>
@@ -1494,7 +1499,7 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
       _onFace('face');
     }}
   > */}
-        <Content
+        <ChatContent
           chatId={chatId}
           chatType={chatType}
           messageBubbleList={messageBubbleList}

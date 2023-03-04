@@ -59,9 +59,6 @@ export default function App() {
 }
 ```
 
-实际使用版本:
-[sample code](example/src/App.tsx)
-
 ### 本地环境
 
 在 `初始化` 项目的时候，会自动创建 `env.ts` , 里面的参数可选。
@@ -74,4 +71,4 @@ export const ps = ''; // default password or token
 export const accountType = 'agora'; // 'easemob' or 'agora'
 ```
 
-[sample code](example/src/App.tsx)
+[sample code](https://github.com/easemob/react-native-chat-library/tree/dev/example/src/App.tsx)

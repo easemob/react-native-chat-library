@@ -53,7 +53,7 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
   return (
     <ScreenContainer mode="padding" edges={['right', 'left', 'bottom']}>
       <ChatFragment
-        screenParams={route.params}
+        screenParams={route.params as any}
         messageBubbleList={{
           MessageBubbleListP: MessageBubbleList,
           MessageBubbleListPropsP: {

@@ -24,7 +24,7 @@ import {
   DefaultAvatar,
   DefaultListItemSeparator,
   DefaultListSearchHeader,
-  EqualHeightList,
+  EqualHeightList as ConversationList,
   getScaleFactor,
   LocalIcon,
   MessageChatSdkEvent,
@@ -162,13 +162,15 @@ const Item: EqualHeightListItemComponent = (props) => {
   );
 };
 
-export type Props = {
+type ConversationListFragmentProps = {
   onLongPress?: (data?: ItemDataType) => void;
   onPress?: (data?: ItemDataType) => void;
   onData?: (data: ItemDataType[]) => void;
   onUpdateReadCount?: (unreadCount: number) => void;
 };
-export default function ConversationListFragment(props: Props): JSX.Element {
+export default function ConversationListFragment(
+  props: ConversationListFragmentProps
+): JSX.Element {
   console.log('test:ConversationListFragment:', props);
   const { onLongPress, onPress, onData, onUpdateReadCount } = props;
 
@@ -816,7 +818,7 @@ export default function ConversationListFragment(props: Props): JSX.Element {
           });
         }}
       />
-      <EqualHeightList
+      <ConversationList
         parentName="ConversationList"
         ref={listRef}
         items={data}

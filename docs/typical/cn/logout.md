@@ -50,4 +50,4 @@ DeviceEventEmitter.addListener(ConnectStateChatSdkEvent, (event) => {
 ```
 
 退出按钮目前在我的设置页面。
-[sample code](example/src/screens/MySetting.tsx)
+[sample code](https://github.com/easemob/react-native-chat-library/tree/dev/example/src/screens/MySetting.tsx)
