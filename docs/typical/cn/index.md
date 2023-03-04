@@ -1,3 +1,7 @@
+# global
+
+[global](./global.md)
+
 # 典型应用场景
 
 ## 初始化
