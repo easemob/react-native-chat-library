@@ -12,7 +12,6 @@ import {
   autoFocus,
   Button,
   createStyleSheet,
-  defaultScaleFactor as scaleFactor,
   getScaleFactor,
   LocalIcon,
   TextInput,
@@ -41,8 +40,9 @@ export default function SignUpScreen({
   const [password, setPassword] = React.useState('');
   const [confirm, setConfirm] = React.useState('');
   const [disabled, setDisabled] = React.useState(true);
-  const [tip] = React.useState('');
+  const [tip, setTip] = React.useState('');
   const { client } = useAppChatSdkContext();
+  console.log('test:SignUpScreen:', params);
 
   React.useEffect(() => {
     if (id.length > 0 && password.length > 0 && confirm.length > 0) {
@@ -53,6 +53,10 @@ export default function SignUpScreen({
   }, [confirm.length, id.length, password.length]);
 
   const execRegister = React.useCallback(() => {
+    if (password !== confirm) {
+      setTip(register.comment(1));
+      return;
+    }
     if (accountType === 'easemob') {
       client
         .createAccount(id, password)
@@ -62,11 +66,12 @@ export default function SignUpScreen({
         })
         .catch((error) => {
           console.warn('test:execRegister:error', error);
+          setTip(error.description);
         });
     } else {
       console.warn('test:', 'Please use the console to register.');
     }
-  }, [accountType, client, id, navigation, password]);
+  }, [accountType, client, confirm, id, navigation, password, register]);
 
   return (
     <SafeAreaView
@@ -99,7 +104,7 @@ export default function SignUpScreen({
               />
             </View>
             <View style={[styles.tip, { opacity: tip.length > 0 ? 1 : 0 }]}>
-              <LocalIcon name="loginFail" size={scaleFactor(14)} />
+              <LocalIcon name="loginFail" size={sf(14)} />
               <Text style={styles.comment}>{tip}</Text>
             </View>
             <TextInput

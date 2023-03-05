@@ -298,15 +298,6 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         </Pressable>
         <D />
         <Pressable onPress={() => {}} style={styles.listItem}>
-          <Text style={styles.listItemText1}>{settings.policy}</Text>
-          <LocalIcon
-            name="go_small_black_mobile"
-            size={sf(14)}
-            color="#A9A9A9"
-          />
-        </Pressable>
-        <D />
-        <Pressable onPress={() => {}} style={styles.listItem}>
           <Text style={styles.listItemText1}>{settings.more}</Text>
           <TouchableOpacity
             onPress={() => {

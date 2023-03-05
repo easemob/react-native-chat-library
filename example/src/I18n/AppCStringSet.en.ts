@@ -1,9 +1,8 @@
 import type { Locale } from 'date-fns';
 import en from 'date-fns/locale/en-US';
-import {
-  NotificationMessageDescriptionType,
-  UIKitStringSet2,
-} from 'react-native-chat-uikit';
+import { UIKitStringSet2 } from 'react-native-chat-uikit';
+
+import type { NotificationMessageDescriptionType } from '../events';
 
 export class AppStringSet extends UIKitStringSet2 {
   header: {

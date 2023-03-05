@@ -32,3 +32,10 @@ export function generateFileName(fileName: string, extension: string) {
     }
   }
 }
+
+export function passwordRuleCheck(): boolean {
+  return false;
+}
+export function idRuleCheck(): boolean {
+  return false;
+}

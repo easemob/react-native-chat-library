@@ -3,6 +3,7 @@ import * as React from 'react';
 import {
   DeviceEventEmitter,
   TextInput as RNTextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
@@ -21,9 +22,8 @@ import {
   getScaleFactor,
   GroupChatSdkEvent,
   GroupChatSdkEventType,
+  LocalIcon,
   SearchBar,
-  ToastEvent,
-  ToastEventType,
   useToastContext,
 } from 'react-native-chat-uikit';
 import { Text } from 'react-native-paper';
@@ -31,6 +31,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
+import type { ToastEvent, ToastEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 import type { SearchActionType, Undefinable } from '../types';
@@ -793,13 +794,23 @@ export default function SearchScreen({
     manualRefresh({ type: 'clear', items: [] });
   };
 
+  const onReturn = () => {
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView
       mode="padding"
       style={useStyleSheet().safe}
       edges={['top', 'right', 'left']}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { flexDirection: 'row' }]}>
+        <TouchableOpacity
+          style={{ justifyContent: 'center' }}
+          onPress={onReturn}
+        >
+          <LocalIcon name="gray_goBack" />
+        </TouchableOpacity>
         <SearchBar
           ref={inputRef}
           enableCancel={enableCancel}

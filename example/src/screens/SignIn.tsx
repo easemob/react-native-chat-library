@@ -19,7 +19,6 @@ import {
   TextInput,
   useChatSdkContext,
   useHeaderContext,
-  useToastContext,
 } from 'react-native-chat-uikit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -45,9 +44,11 @@ export default function SignInScreen({
     useHeaderContext();
   const { login } = useAppI18nContext();
   const [id, setId] = React.useState(gid);
+  const [tip, setTip] = React.useState('');
   const [password, setPassword] = React.useState(gps);
-  const [disabled, setDisabled] = React.useState(true);
-  const toast = useToastContext();
+  const [disabled, setDisabled] = React.useState(
+    id.length > 0 && password.length > 0 ? false : true
+  );
   const [buttonState, setButtonState] = React.useState<'loading' | 'stop'>(
     'stop'
   );
@@ -62,7 +63,7 @@ export default function SignInScreen({
     }
   }, [id, password]);
 
-  const _manualLogin = (state: 'loading' | 'stop') => {
+  const execLogin = (state: 'loading' | 'stop') => {
     if (state === 'loading') {
       return;
     }
@@ -90,7 +91,8 @@ export default function SignInScreen({
             });
             navigation.dispatch(StackActions.push('Home', { params: {} }));
           } else {
-            toast.showToast('Login Failed');
+            setTip(result.error.description);
+            // toast.showToast('Login Failed');
           }
         }
       },
@@ -151,6 +153,12 @@ export default function SignInScreen({
                 style={{ borderRadius: 0 }}
               />
             </View>
+            <View
+              style={[styles.errorTip, { opacity: tip.length > 0 ? 1 : 0 }]}
+            >
+              <LocalIcon name="loginFail" size={sf(14)} />
+              <Text style={styles.comment}>{tip}</Text>
+            </View>
             <TextInput
               autoFocus={autoFocus()}
               multiline={false}
@@ -180,7 +188,7 @@ export default function SignInScreen({
               state={buttonState}
               onChangeState={(state) => {
                 console.log('test:state:', state);
-                _manualLogin(state);
+                execLogin(state);
               }}
             />
             <View style={styles.tr}>
@@ -188,7 +196,6 @@ export default function SignInScreen({
               <Text
                 style={styles.register}
                 onPress={() => {
-                  setDisabled(true);
                   navigation.push('SignUp', {
                     params: { accountType: accountType },
                   });
@@ -231,5 +238,13 @@ const styles = createStyleSheet({
     paddingLeft: 10,
     color: 'rgba(17, 78, 255, 1)',
     fontWeight: '600',
+  },
+  errorTip: {
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginBottom: 18,
+  },
+  comment: {
+    marginLeft: 5,
   },
 });
