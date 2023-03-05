@@ -34,7 +34,8 @@ export function ContactInfoScreenInternal({
   const alert = useAlert();
   const toast = useToastContext();
   const userId = params.userId;
-  console.log('test:ContactInfoScreen:', params);
+  const [name, setName] = React.useState(contactInfo.name('NickName'));
+  console.log('test:ContactInfoScreen:', params, name);
 
   const removeContact = (
     userId: string,
@@ -90,10 +91,28 @@ export function ContactInfoScreenInternal({
     };
   }, [navigation]);
 
+  const init = React.useCallback(() => {
+    client.userManager
+      .fetchUserInfoById([userId])
+      .then((result) => {
+        if (result) {
+          const info = result.get(userId);
+          console.log('test:info:', info);
+          if (info) {
+            setName(info.nickName ?? '');
+          }
+        }
+      })
+      .catch((error) => {
+        console.warn('test:error:', error);
+      });
+  }, [client.userManager, userId]);
+
   React.useEffect(() => {
     const load = () => {
       console.log('test:load:', ContactInfoScreen.name);
       const unsubscribe = addListeners();
+      init();
       return {
         unsubscribe: unsubscribe,
       };
@@ -105,7 +124,7 @@ export function ContactInfoScreenInternal({
 
     const res = load();
     return () => unload(res);
-  }, [addListeners]);
+  }, [addListeners, init]);
 
   return (
     <View style={styles.container}>
@@ -113,7 +132,7 @@ export function ContactInfoScreenInternal({
         <Avatar uri="" size={sf(100)} radius={sf(50)} />
       </View>
       <View style={styles.top}>
-        <Text style={styles.name}>{contactInfo.name('NickName')}</Text>
+        <Text style={styles.name}>{name}</Text>
       </View>
       <View style={{ marginTop: sf(10) }}>
         <Text style={styles.id}>{userId}</Text>
@@ -178,7 +197,7 @@ export function ContactInfoScreenInternal({
         style={styles.listItem}
         onPress={() => {
           alert.openAlert({
-            title: contactInfo.deleteAlert.title,
+            title: `Block ${name}`,
             message: contactInfo.deleteAlert.message,
             buttons: [
               {
