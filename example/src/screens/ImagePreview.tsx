@@ -5,6 +5,7 @@ import {
   createStyleSheet,
   Image,
   LocalIcon,
+  onceEx,
   timestamp,
 } from 'react-native-chat-uikit';
 // import {
@@ -16,6 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
+
+const initOriginalSize = onceEx((exec: () => void) => {
+  exec();
+});
 
 type Props = NativeStackScreenProps<RootScreenParamsList, 'ImagePreview'>;
 
@@ -32,16 +37,40 @@ const ImagePreview = React.memo((props: ImagePreviewProps) => {
   const originalHeight = React.useRef(0);
   const horizontal = true;
   const startTimestamp = React.useRef(0);
+  const is1v1 = React.useRef(false);
+  console.log(
+    'test:ImagePreview:',
+    initHeight,
+    initWidth,
+    originalHeight.current,
+    originalWidth.current
+  );
+
   const onTouchEnd = () => {
     const currentTimestamp = timestamp();
     if (currentTimestamp < startTimestamp.current) {
-      console.log('test:startTimestamp:timeout:no');
+      console.log(
+        'test:startTimestamp:timeout:no',
+        Math.round(_width),
+        Math.round(originalWidth.current)
+      );
       startTimestamp.current = 0;
+      if (is1v1.current === true) {
+        setWidth(initWidth);
+        setHeight(initHeight);
+      } else {
+        setWidth(originalWidth.current);
+        setHeight(originalHeight.current);
+      }
       setWidth(
-        _width === originalWidth.current ? initWidth : originalWidth.current
+        Math.round(_width) === Math.round(originalWidth.current)
+          ? initWidth
+          : originalWidth.current
       );
       setHeight(
-        _height === originalHeight.current ? initHeight : originalHeight.current
+        Math.round(_height) === Math.round(originalHeight.current)
+          ? initHeight
+          : originalHeight.current
       );
     } else {
       if (startTimestamp.current === 0) {
@@ -66,8 +95,11 @@ const ImagePreview = React.memo((props: ImagePreviewProps) => {
             style={{ height: _height, width: _width }}
             onLoad={(e) => {
               console.log(e);
-              originalWidth.current = e.width;
-              originalHeight.current = e.height;
+              initOriginalSize(() => {
+                console.log('test:initOriginalSize', e);
+                originalWidth.current = e.width;
+                originalHeight.current = e.height;
+              });
             }}
             onError={(e) => {
               console.log(e);
@@ -123,17 +155,16 @@ export default function ImagePreviewScreen({
         onPress={() => {
           navigation.goBack();
         }}
+        style={{
+          // backgroundColor: 'green',
+          position: 'absolute',
+          left: 10,
+        }}
       >
         <LocalIcon
           style={{
-            position: 'absolute',
             width: 40,
             height: 40,
-            // top: -100,
-            // left: 100,
-            alignSelf: 'flex-start',
-            top: -height + 44,
-            left: 10,
           }}
           name="gray_goBack"
         />
