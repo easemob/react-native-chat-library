@@ -44,7 +44,7 @@ export type ContactListEventType =
   | 'create_group_result_fail';
 
 export const GroupInfoEvent = 'GroupInfoEvent';
-export type GroupInfoEventType = 'destroy_group';
+export type GroupInfoEventType = 'destroy_group' | 'modify_group_name';
 
 export const ConversationListEvent = 'ConversationListEvent';
 export type ConversationListEventType =

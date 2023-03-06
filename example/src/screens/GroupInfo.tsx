@@ -1,6 +1,7 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import { DeviceEventEmitter, Pressable, Text, View } from 'react-native';
+import { ChatConversationType } from 'react-native-chat-sdk';
 import {
   Avatar,
   createStyleSheet,
@@ -17,7 +18,7 @@ import {
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import { GroupInfoEvent } from '../events';
+import { GroupInfoEvent, GroupInfoEventType } from '../events';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
@@ -50,6 +51,54 @@ export function GroupInfoScreenInternal({
     setIsAllMemberMuted(isMute);
   };
 
+  const onChangeName = React.useCallback(
+    (groupId: string, groupName: string) => {
+      if (groupName.length > 0) {
+        client.groupManager
+          .changeGroupName(groupId, groupName)
+          .then(() => {
+            console.log('test:onChangeName:');
+            setGroupName(groupName);
+            DeviceEventEmitter.emit(GroupInfoEvent, {
+              type: 'modify_group_name' as GroupInfoEventType,
+              params: { groupId, groupName },
+            });
+          })
+          .catch((error) => {
+            console.warn('test:onChangeName:error:', error);
+            toast.showToast(error.toString());
+          });
+      }
+    },
+    [client.groupManager, toast]
+  );
+  const onChangeDescription = React.useCallback(
+    (groupId: string, groupDescription: string) => {
+      if (groupDescription.length > 0) {
+        client.groupManager
+          .changeGroupDescription(groupId, groupDescription)
+          .then(() => {
+            console.log('test:onChangeDescription:');
+            setGroupDesc(groupDescription);
+          })
+          .catch((error) => {
+            console.warn('test:onChangeDescription:error:', error);
+            toast.showToast(error.toString());
+          });
+      }
+    },
+    [client.groupManager, toast]
+  );
+
+  const onChat = React.useCallback(
+    (groupId: string) => {
+      navigation.navigate('Chat', {
+        params: { chatId: groupId, chatType: ChatConversationType.GroupChat },
+      });
+    },
+    [navigation]
+  );
+
   const onHeader = () => {
     sheet.openSheet({
       sheetItems: [
@@ -64,6 +113,7 @@ export function GroupInfoScreenInternal({
               cancelLabel: groupInfo.modify.namePrompt.cancel,
               onSubmit: (text: string) => {
                 console.log('test:onSubmit:', text);
+                onChangeName(groupId, text);
               },
               onCancel() {
                 console.log('test:onCancel:');
@@ -82,6 +132,7 @@ export function GroupInfoScreenInternal({
               cancelLabel: groupInfo.modify.descriptionPrompt.cancel,
               onSubmit: (text: string) => {
                 console.log('test:onSubmit:', text);
+                onChangeDescription(groupId, text);
               },
               onCancel() {
                 console.log('test:onCancel:');
@@ -105,19 +156,21 @@ export function GroupInfoScreenInternal({
   };
 
   const onInvite = () => {
-    navigation.push('ContactList', {
-      params: {
-        type: 'group_invite',
-      },
-    });
+    // TODO: developer
+    // navigation.push('ContactList', {
+    //   params: {
+    //     type: 'group_invite',
+    //   },
+    // });
   };
 
   const onMembers = () => {
-    navigation.push('ContactList', {
-      params: {
-        type: 'group_member',
-      },
-    });
+    // TODO: developer
+    // navigation.push('ContactList', {
+    //   params: {
+    //     type: 'group_member',
+    //   },
+    // });
   };
 
   const onDestroyGroup = React.useCallback(
@@ -227,9 +280,7 @@ export function GroupInfoScreenInternal({
         <View>
           <Pressable
             onPress={() => {
-              navigation.navigate('Chat', {
-                params: { chatId: 'xxx', chatType: 0 },
-              });
+              onChat(groupId);
             }}
             style={styles.chatButton}
           >

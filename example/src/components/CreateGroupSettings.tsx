@@ -27,8 +27,8 @@ export const CreateGroupSettings = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   console.log('test:CreateGroupSettings:', route.key);
-  const [isPublic, setIsPublic] = React.useState(false);
-  const [isInvite, setIsInvite] = React.useState(false);
+  const [isPublic, setIsPublic] = React.useState(true);
+  const [isInvite, setIsInvite] = React.useState(true);
   const sf = getScaleFactor();
   const { contactList } = useAppI18nContext();
   const { width: screenWidth } = useWindowDimensions();

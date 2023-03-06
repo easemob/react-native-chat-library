@@ -155,73 +155,8 @@ const InvisiblePlaceholder = React.memo(
     const { groupInfo } = useAppI18nContext();
     const theme = useThemeContext();
     const sf = getScaleFactor();
-    const { client, getCurrentId } = useAppChatSdkContext();
 
     const navigation = useNavigation<NavigationProp>();
-
-    const isPublic = React.useRef(false);
-    const isInvite = React.useRef(false);
-
-    const createGroup = React.useCallback(
-      async (data: ItemDataType[]) => {
-        console.log('test:createGroup:', data);
-        const r = [];
-        for (const item of data) {
-          const i = item.action as ItemActionCreateGroupDataType;
-          if (i?.createGroup && i.createGroup.isInvited === true) {
-            r.push(item.contactID);
-          }
-        }
-        if (r.length === 0) {
-          DeviceEventEmitter.emit(ContactListEvent, {
-            type: 'create_group_result' as ContactListEventType,
-            params: {
-              result: false,
-              error: 'The number of members cannot be less than 1.',
-            },
-          });
-          return;
-        }
-        const currentId = getCurrentId();
-        r.push(currentId);
-        client.groupManager
-          .createGroup(
-            new ChatGroupOptions({
-              style:
-                isPublic.current === true
-                  ? ChatGroupStyle.PublicJoinNeedApproval
-                  : ChatGroupStyle.PrivateMemberCanInvite,
-              maxCount: 200,
-              inviteNeedConfirm: isInvite.current,
-            }),
-            'New Group',
-            'This is new group.',
-            r,
-            'Welcome to group'
-          )
-          .then((result) => {
-            console.log('test:createGroup:success:', result);
-            DeviceEventEmitter.emit(ContactListEvent, {
-              type: 'create_group_result' as ContactListEventType,
-              params: {
-                result: true,
-                id: result.groupId,
-              },
-            });
-          })
-          .catch((error) => {
-            console.warn('test:createGroup:fail:', error);
-            DeviceEventEmitter.emit(ContactListEvent, {
-              type: 'create_group_result' as ContactListEventType,
-              params: {
-                result: false,
-                error: error,
-              },
-            });
-          });
-      },
-      [client.groupManager, getCurrentId]
-    );
 
     React.useEffect(() => {
       const sub = DeviceEventEmitter.addListener(ContactListEvent, (event) => {
@@ -425,20 +360,8 @@ const InvisiblePlaceholder = React.memo(
             break;
         }
       });
-      const sub4 = DeviceEventEmitter.addListener(
-        CreateGroupSettingsEvent,
-        (event) => {
-          console.log('test:CreateGroupSettingsEvent:sub4:', event);
-          if (event.type === 'create_new_group') {
-            isInvite.current = event.params.isInvite;
-            isPublic.current = event.params.isPublic;
-            createGroup(getData());
-          }
-        }
-      );
       return () => {
         sub.remove();
-        sub4.remove();
       };
     }, [
       toast,
@@ -455,7 +378,6 @@ const InvisiblePlaceholder = React.memo(
       navigation,
       theme.colors.primary,
       sf,
-      createGroup,
       getData,
     ]);
 
@@ -597,7 +519,9 @@ export function ContactListScreenInternal({
   const enableHeader = false;
   const data: ItemDataType[] = React.useMemo(() => [], []); // for search
   const [isEmpty, setIsEmpty] = React.useState(true);
-  const { client } = useAppChatSdkContext();
+  const { client, getCurrentId } = useAppChatSdkContext();
+  const isInvite = React.useRef(true);
+  const isPublic = React.useRef(true);
 
   const getData = React.useCallback(() => {
     return data;
@@ -875,29 +799,6 @@ export function ContactListScreenInternal({
             );
           } else if (type === 'group_member_modify') {
             const _addMember = () => {
-              // alert.openAlert({
-              //   title: groupInfo.inviteAlert.title,
-              //   message: groupInfo.inviteAlert.message,
-              //   buttons: [
-              //     {
-              //       text: groupInfo.inviteAlert.cancelButton,
-              //       onPress: () => {
-              //         navigation.goBack();
-              //       },
-              //     },
-              //     {
-              //       text: groupInfo.inviteAlert.confirmButton,
-              //       onPress: () => {
-              //         navigation.goBack();
-              //         // toast.showToast(groupInfo.toast[0]!);
-              //         DeviceEventEmitter.emit('toast_', {
-              //           type: 'toast_custom',
-              //           content: groupInfo.toast[0]!,
-              //         });
-              //       },
-              //     },
-              //   ],
-              // });
               DeviceEventEmitter.emit(ContactListEvent, {
                 type: 'alert_' as ContactListEventType,
                 params: {
@@ -930,29 +831,6 @@ export function ContactListScreenInternal({
                 params: { type: 'group_member_modify' },
               });
             } else {
-              // alert.openAlert({
-              //   title: groupInfo.inviteAlert.title,
-              //   message: groupInfo.inviteAlert.message,
-              //   buttons: [
-              //     {
-              //       text: groupInfo.inviteAlert.cancelButton,
-              //       onPress: () => {
-              //         navigation.goBack();
-              //       },
-              //     },
-              //     {
-              //       text: groupInfo.inviteAlert.confirmButton,
-              //       onPress: () => {
-              //         navigation.goBack();
-              //         // toast.showToast(groupInfo.toast[0]!);
-              //         DeviceEventEmitter.emit('toast_', {
-              //           type: 'toast_custom',
-              //           content: groupInfo.toast[0]!,
-              //         });
-              //       },
-              //     },
-              //   ],
-              // });
               DeviceEventEmitter.emit(ContactListEvent, {
                 type: 'alert_' as ContactListEventType,
                 params: {
@@ -987,6 +865,67 @@ export function ContactListScreenInternal({
       headerBackTitleVisible: false,
     });
   }, [NavigationHeaderRight, navigation, type]);
+
+  const createGroup = React.useCallback(
+    async (data: ItemDataType[]) => {
+      console.log('test:createGroup:', data);
+      const r = [];
+      for (const item of data) {
+        const i = item.action as ItemActionCreateGroupDataType;
+        if (i?.createGroup && i.createGroup.isInvited === true) {
+          r.push(item.contactID);
+        }
+      }
+      if (r.length === 0) {
+        DeviceEventEmitter.emit(ContactListEvent, {
+          type: 'create_group_result' as ContactListEventType,
+          params: {
+            result: false,
+            error: 'The number of members cannot be less than 1.',
+          },
+        });
+        return;
+      }
+      const currentId = getCurrentId();
+      r.push(currentId);
+      client.groupManager
+        .createGroup(
+          new ChatGroupOptions({
+            style:
+              isPublic.current === true
+                ? ChatGroupStyle.PublicJoinNeedApproval
+                : ChatGroupStyle.PrivateMemberCanInvite,
+            maxCount: 200,
+            inviteNeedConfirm: isInvite.current,
+          }),
+          'New Group',
+          'This is new group.',
+          r,
+          'Welcome to group'
+        )
+        .then((result) => {
+          console.log('test:createGroup:success:', result);
+          DeviceEventEmitter.emit(ContactListEvent, {
+            type: 'create_group_result' as ContactListEventType,
+            params: {
+              result: true,
+              id: result.groupId,
+            },
+          });
+        })
+        .catch((error) => {
+          console.warn('test:createGroup:fail:', error);
+          DeviceEventEmitter.emit(ContactListEvent, {
+            type: 'create_group_result' as ContactListEventType,
+            params: {
+              result: false,
+              error: error,
+            },
+          });
+        });
+    },
+    [client.groupManager, getCurrentId]
+  );
 
   const initList = React.useCallback(
     (type: Undefinable<ContactActionType>) => {
@@ -1105,11 +1044,23 @@ export function ContactListScreenInternal({
           }
         }
       );
+      const sub4 = DeviceEventEmitter.addListener(
+        CreateGroupSettingsEvent,
+        (event) => {
+          console.log('test:CreateGroupSettingsEvent:sub4:', event);
+          if (event.type === 'create_new_group') {
+            isInvite.current = event.params.isInvite;
+            isPublic.current = event.params.isPublic;
+            createGroup(data);
+          }
+        }
+      );
       return () => {
         sub.remove();
+        sub4.remove();
       };
     },
-    [duplicateCheck, manualRefresh, standardizedData, type]
+    [createGroup, data, duplicateCheck, manualRefresh, standardizedData, type]
   );
 
   React.useEffect(() => {

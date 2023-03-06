@@ -239,15 +239,31 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
     [client.groupManager, manualRefresh]
   );
 
-  const addListeners = React.useCallback(() => {
-    const duplicateCheck = (id: string) => {
-      for (const item in data) {
-        if (item.includes(id)) {
+  const duplicateCheck = React.useCallback(
+    (groupId: string) => {
+      for (const item of data) {
+        if (item.groupID === groupId) {
           return true;
         }
       }
       return false;
-    };
+    },
+    [data]
+  );
+
+  const getData = React.useCallback(
+    (groupId: string) => {
+      for (const item of data) {
+        if (item.groupID === groupId) {
+          return item;
+        }
+      }
+      return undefined;
+    },
+    [data]
+  );
+
+  const addListeners = React.useCallback(() => {
     const groupEventListener: ChatGroupEventListener = {
       onRequestToJoinAccepted: (params: {
         groupId: string;
@@ -335,10 +351,44 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
       },
     };
     client.groupManager.addGroupListener(groupEventListener);
+    const sub = DeviceEventEmitter.addListener(GroupInfoEvent, (event) => {
+      console.log('test:GroupInfoEvent:', event);
+      const eventType = event.type as GroupInfoEventType;
+      switch (eventType) {
+        case 'modify_group_name':
+          {
+            const eventParams = event.params as {
+              groupId: string;
+              groupName: string;
+            };
+            const d = getData(eventParams.groupId);
+            if (d) {
+              manualRefresh({
+                type: 'update-one',
+                items: [
+                  standardizedData({ ...d, groupName: eventParams.groupName }),
+                ],
+              });
+            }
+          }
+          break;
+
+        default:
+          break;
+      }
+    });
     return () => {
       client.groupManager.removeGroupListener(groupEventListener);
+      sub.remove();
     };
-  }, [client.groupManager, data, manualRefresh, requestGroupInfo]);
+  }, [
+    client.groupManager,
+    duplicateCheck,
+    getData,
+    manualRefresh,
+    requestGroupInfo,
+    standardizedData,
+  ]);
 
   React.useEffect(() => {
     const load = () => {
