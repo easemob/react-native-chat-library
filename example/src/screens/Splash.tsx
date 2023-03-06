@@ -21,6 +21,7 @@ import type { RootParamsList } from '../routes';
 export function SplashScreen({
   navigation,
 }: NativeStackScreenProps<RootParamsList, 'Splash'>): JSX.Element {
+  console.log('test:SplashScreen:');
   const sf = getScaleFactor();
   const {
     autoLogin: autoLoginAction,
@@ -169,6 +170,7 @@ export function SplashScreen({
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
+        // backgroundColor: 'red',
       }}
     >
       <Loading color="rgba(15, 70, 230, 1)" size={sf(45)} />

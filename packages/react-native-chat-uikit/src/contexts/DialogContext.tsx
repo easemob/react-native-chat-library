@@ -5,7 +5,7 @@ import ActionMenu from '../components/ActionMenu';
 import Alert from '../components/Alert';
 import BottomSheet from '../components/BottomSheet';
 import Prompt from '../components/Prompt';
-import { CustomEvents } from '../events';
+import { CustomEvents } from '../nativeEvents';
 import { useForceUpdate } from '../hooks';
 import type { DialogPropsT, DialogTask } from '../types';
 import type { DialogContextType } from './types';

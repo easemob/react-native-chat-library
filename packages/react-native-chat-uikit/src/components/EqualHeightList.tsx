@@ -19,7 +19,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { CustomEvents } from '../events';
+import { CustomEvents } from '../nativeEvents';
 import createStyleSheet from '../styles/createStyleSheet';
 import { arraySort, wait } from '../utils/function';
 import { timestamp } from '../utils/generator';

@@ -81,7 +81,7 @@ export { default as TextInput } from './components/TextInput';
 export { default as Toast } from './components/Toast';
 export * from './containers';
 export * from './contexts';
-export * from './events';
+export * from './nativeEvents';
 // export * from './fragments';
 export { useAsyncTask, useDeferredValue, useForceUpdate } from './hooks';
 export { createStringSetEn, createStringSetFEn } from './I18n/StringSet.en';
