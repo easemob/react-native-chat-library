@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {
   Animated,
-  DeviceEventEmitter,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -15,7 +14,7 @@ import createStyleSheet from '../styles/createStyleSheet';
 
 type FaceListProps = {
   height: Animated.Value;
-  // onPress?: (face: string) => void;
+  onFace?: (face: string) => void;
 };
 
 export const FaceList = React.memo(
@@ -33,8 +32,7 @@ export const FaceList = React.memo(
                   key={face}
                   style={{ padding: sf(5) }}
                   onPress={() => {
-                    // onPress?.(face);
-                    DeviceEventEmitter.emit('onFace', face);
+                    props.onFace?.(face);
                   }}
                 >
                   <Text style={{ fontSize: sf(32) }}>

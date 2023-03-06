@@ -1,11 +1,10 @@
 import React from 'react';
-import { DeviceEventEmitter, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
 import ActionMenu from '../components/ActionMenu';
 import Alert from '../components/Alert';
 import BottomSheet from '../components/BottomSheet';
 import Prompt from '../components/Prompt';
-import { CustomEvents } from '../nativeEvents';
 import { useForceUpdate } from '../hooks';
 import type { DialogPropsT, DialogTask } from '../types';
 import type { DialogContextType } from './types';
@@ -136,14 +135,6 @@ export const DialogContextProvider = ({
     updateToShow,
   ]);
   const manualClose = updateToHide;
-
-  React.useEffect(() => {
-    const subscription = DeviceEventEmitter.addListener(
-      CustomEvents.closeDialog.key,
-      async (_) => manualClose()
-    );
-    return () => subscription.remove();
-  }, [manualClose]);
 
   return (
     <AlertContext.Provider value={{ openAlert }}>

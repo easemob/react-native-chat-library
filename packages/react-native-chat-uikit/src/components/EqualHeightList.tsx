@@ -19,10 +19,20 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { CustomEvents } from '../nativeEvents';
 import createStyleSheet from '../styles/createStyleSheet';
 import { arraySort, wait } from '../utils/function';
 import { timestamp } from '../utils/generator';
+
+const CustomEvents = {
+  closeEditable: {
+    key: 'closeEditable',
+    params: undefined,
+  },
+  closeDialog: {
+    key: 'closeDialog',
+    params: undefined,
+  },
+};
 
 export type ListItemType = 'default' | 'sideslip';
 

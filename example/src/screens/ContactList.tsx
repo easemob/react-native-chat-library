@@ -616,6 +616,7 @@ export function ContactListScreenInternal({
       } else {
         return;
       }
+      setIsEmpty(data.length === 0);
     },
     [data]
   );
@@ -933,7 +934,6 @@ export function ContactListScreenInternal({
         client.contactManager
           .getAllContactsFromServer()
           .then((result) => {
-            setIsEmpty(result.length === 0);
             initData(
               result.map((id) => {
                 return {
@@ -954,7 +954,6 @@ export function ContactListScreenInternal({
           .getAllContactsFromServer()
           .then((result) => {
             console.log('test:ContactListScreen:success:', result);
-            setIsEmpty(result.length === 0);
             initData(
               result.map((id) => {
                 return {

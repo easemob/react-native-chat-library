@@ -2,9 +2,19 @@ import type { Locale } from 'date-fns';
 import en from 'date-fns/locale/en-US';
 
 import type { StringSetContextType } from '../contexts';
-import type { NotificationMessageDescriptionType } from '../fragments';
 import { messageTimestamp } from '../utils/format';
 import type { CreateStringSet, StringSetOptions } from './CStringSet.type';
+
+export type NotificationMessageDescriptionType =
+  | 'ContactInvitation'
+  | 'ContactInvitationAccepted'
+  | 'ContactInvitationDeclined'
+  | 'GroupInvitation'
+  | 'GroupInvitationAccepted'
+  | 'GroupInvitationDeclined'
+  | 'GroupRequestJoin'
+  | 'GroupRequestJoinAccepted'
+  | 'GroupRequestJoinDeclined';
 
 export class UIKitStringSet implements StringSetContextType {
   xxx: { yyy: string; zzz: (a: Date) => string };

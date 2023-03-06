@@ -1198,6 +1198,13 @@ const ChatContent = React.memo(
         });
     }, [chatId, chatType, client.chatManager, updateAllUnreadCount]);
 
+    const onFaceInternal = React.useCallback((face: string) => {
+      const content = getContentRef.current();
+      const s = content + moji.convert.fromCodePoint(face);
+      setContentRef.current(s);
+      setIsInputRef.current(true);
+    }, []);
+
     React.useEffect(() => {
       const subscription1 = Keyboard.addListener('keyboardWillHide', (_) => {
         setIsInputRef.current(false);
@@ -1430,7 +1437,7 @@ const ChatContent = React.memo(
           }}
         />
 
-        <ChatFaceList height={faceHeightRef} />
+        <ChatFaceList height={faceHeightRef} onFace={onFaceInternal} />
       </View>
     );
   }

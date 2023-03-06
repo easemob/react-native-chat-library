@@ -163,6 +163,7 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
         console.warn('test:');
         return;
       }
+      setIsEmpty(data.length === 0);
     },
     [data]
   );
@@ -197,7 +198,6 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
       .getJoinedGroups()
       .then((result) => {
         console.log('test:GroupListScreen:success:', result);
-        setIsEmpty(result.length === 0);
         initData(
           result.map((item) => {
             return standardizedData({

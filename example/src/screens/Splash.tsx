@@ -16,6 +16,7 @@ import {
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { AppEvent, AppEventType } from '../events';
+import { ModalPlaceholder } from '../events2';
 import type { RootParamsList } from '../routes';
 
 export function SplashScreen({
@@ -165,15 +166,17 @@ export function SplashScreen({
   }, [addListeners]);
 
   return (
-    <View
-      style={{
-        alignItems: 'center',
-        justifyContent: 'center',
-        flex: 1,
-        // backgroundColor: 'red',
-      }}
-    >
-      <Loading color="rgba(15, 70, 230, 1)" size={sf(45)} />
-    </View>
+    <ModalPlaceholder>
+      <View
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+          // backgroundColor: 'red',
+        }}
+      >
+        <Loading color="rgba(15, 70, 230, 1)" size={sf(45)} />
+      </View>
+    </ModalPlaceholder>
   );
 }
