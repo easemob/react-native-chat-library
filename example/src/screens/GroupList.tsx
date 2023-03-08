@@ -23,7 +23,7 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import type { BizEventType, DataActionEventType } from '../events2';
+import type { BizEventType, DataActionEventType } from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
 

@@ -16,7 +16,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { BizEventType, DataActionEventType } from '../events2';
+import type { BizEventType, DataActionEventType } from '../events';
 import type { RootParamsList } from '../routes';
 
 export function SplashScreen({

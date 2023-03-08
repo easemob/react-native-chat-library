@@ -4,7 +4,7 @@ import { ChatMessageType } from 'react-native-chat-sdk';
 import { ScreenContainer } from 'react-native-chat-uikit';
 
 import { CustomMessageRenderItem } from '../components/CustomMessageBubble';
-import { sendEvent } from '../events2/sendEvent';
+import { sendEvent } from '../events/sendEvent';
 import ChatFragment from '../fragments/Chat';
 import type {
   ImageMessageItemType,

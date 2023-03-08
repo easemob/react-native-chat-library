@@ -22,8 +22,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HomeHeaderTitle from '../components/HomeHeaderTitle';
-import type { BizEventType, DataActionEventType } from '../events2';
-import { type sendEventProps, sendEvent } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { type sendEventProps, sendEvent } from '../events/sendEvent';
 import ConversationListFragment, {
   ItemDataType as ConversationListItemDataType,
 } from '../fragments/ConversationList';

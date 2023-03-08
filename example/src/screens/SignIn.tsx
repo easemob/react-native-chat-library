@@ -22,7 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
-import { type sendEventProps, sendEvent } from '../events2/sendEvent';
+import { type sendEventProps, sendEvent } from '../events/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 

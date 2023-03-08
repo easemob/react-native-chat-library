@@ -37,7 +37,7 @@ import {
   useChatSdkContext,
 } from 'react-native-chat-uikit';
 
-import type { BizEventType, DataActionEventType } from '../events2';
+import type { BizEventType, DataActionEventType } from '../events';
 
 export type ItemDataType = EqualHeightListItemData & {
   convId: string;

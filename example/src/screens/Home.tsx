@@ -17,8 +17,8 @@ import {
 
 import TabBarIcon from '../components/TabBarIcon';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { BizEventType, DataActionEventType } from '../events2';
-import { type sendEventProps, sendEvent } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { type sendEventProps, sendEvent } from '../events/sendEvent';
 import type { RootParamsList } from '../routes';
 import ContactScreen from './Contact';
 import ConversationList from './ConversationList';

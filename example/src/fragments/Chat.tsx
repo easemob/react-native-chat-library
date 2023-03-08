@@ -61,8 +61,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moji from 'twemoji';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { BizEventType, DataActionEventType } from '../events2';
-import { sendEvent, sendEventProps } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { sendEvent, sendEventProps } from '../events/sendEvent';
 import MessageBubbleList, {
   type CustomMessageItemType,
   type ImageMessageItemType,

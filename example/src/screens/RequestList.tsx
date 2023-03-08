@@ -28,11 +28,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { NotificationMessageDescriptionType } from '../events';
-import type { BizEventType, DataActionEventType } from '../events2';
-import { sendEvent } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { sendEvent } from '../events/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
+import type { NotificationMessageDescriptionType } from '../types';
 
 type Props = MaterialTopTabScreenProps<RootParamsList>;
 

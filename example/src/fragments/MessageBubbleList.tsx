@@ -24,8 +24,8 @@ import {
   wait,
 } from 'react-native-chat-uikit';
 
-import type { BizEventType, DataActionEventType } from '../events2';
-import { sendEvent } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { sendEvent } from '../events/sendEvent';
 
 export type MessageItemStateType =
   | 'unread'

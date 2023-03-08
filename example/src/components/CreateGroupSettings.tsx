@@ -15,8 +15,8 @@ import {
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
-import type { BizEventType, DataActionEventType } from '../events2';
-import { type sendEventProps, sendEvent } from '../events2/sendEvent';
+import type { BizEventType, DataActionEventType } from '../events';
+import { type sendEventProps, sendEvent } from '../events/sendEvent';
 
 const sendGroupSettingEvent = (
   params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>

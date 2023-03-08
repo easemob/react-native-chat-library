@@ -14,3 +14,14 @@ export type SearchActionType =
   | 'add_contact'
   | 'join_public_group'
   | 'search_public_group_info';
+
+export type NotificationMessageDescriptionType =
+  | 'ContactInvitation'
+  | 'ContactInvitationAccepted'
+  | 'ContactInvitationDeclined'
+  | 'GroupInvitation'
+  | 'GroupInvitationAccepted'
+  | 'GroupInvitationDeclined'
+  | 'GroupRequestJoin'
+  | 'GroupRequestJoinAccepted'
+  | 'GroupRequestJoinDeclined';
