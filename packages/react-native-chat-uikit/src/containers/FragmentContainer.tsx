@@ -9,34 +9,40 @@ import {
 
 export type FragmentContainerProps = {
   children?: React.ReactNode;
+  enableModals?: boolean;
 };
 
 export function FragmentContainer({
   children,
+  enableModals,
 }: FragmentContainerProps): JSX.Element {
   console.log('test:FragmentContainer:');
 
-  return (
-    <DialogContextProvider>
-      <ToastContextProvider>
-        <ContentStateContextProvider
-          content={{
-            children: (
-              <Text
-                style={{
-                  height: 100,
-                  width: 100,
-                  backgroundColor: 'purple',
-                }}
-              >
-                hh
-              </Text>
-            ),
-          }}
-        >
-          {children}
-        </ContentStateContextProvider>
-      </ToastContextProvider>
-    </DialogContextProvider>
-  );
+  if (enableModals === true) {
+    return (
+      <DialogContextProvider>
+        <ToastContextProvider>
+          <ContentStateContextProvider
+            content={{
+              children: (
+                <Text
+                  style={{
+                    height: 100,
+                    width: 100,
+                    backgroundColor: 'purple',
+                  }}
+                >
+                  hh
+                </Text>
+              ),
+            }}
+          >
+            {children}
+          </ContentStateContextProvider>
+        </ToastContextProvider>
+      </DialogContextProvider>
+    );
+  } else {
+    return <>{children}</>;
+  }
 }
