@@ -2,10 +2,9 @@ import type {
   MaterialBottomTabNavigationProp,
   MaterialBottomTabScreenProps,
 } from '@react-navigation/material-bottom-tabs';
-import {
+import type {
   CompositeNavigationProp,
   CompositeScreenProps,
-  useNavigation,
 } from '@react-navigation/native';
 import type {
   HeaderButtonProps,
@@ -16,24 +15,16 @@ import * as React from 'react';
 import { DeviceEventEmitter, Pressable, View } from 'react-native';
 import {
   Blank,
-  FragmentContainer,
+  DataEventType,
   getScaleFactor,
   LocalIcon,
-  useAlert,
-  useBottomSheet,
-  useThemeContext,
-  useToastContext,
 } from 'react-native-chat-uikit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HomeHeaderTitle from '../components/HomeHeaderTitle';
-import { useAppI18nContext } from '../contexts/AppI18nContext';
-import {
-  type ConversationListEventType,
-  ConversationListEvent,
-  HomeEvent,
-  HomeEventType,
-} from '../events';
+import { HomeEvent, HomeEventType } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import ConversationListFragment, {
   ItemDataType as ConversationListItemDataType,
 } from '../fragments/ConversationList';
@@ -54,7 +45,7 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootScreenParamsListOnly>
 >;
 
-type NavigationProp = CompositeNavigationProp<
+export type NavigationProp = CompositeNavigationProp<
   MaterialBottomTabNavigationProp<
     BottomTabScreenParamsList<BottomTabParamsList, 'option'>,
     any,
@@ -67,149 +58,22 @@ type NavigationProp = CompositeNavigationProp<
   >
 >;
 
-type SheetEvent = 'sheet_conversation_list' | 'sheet_navigation_menu';
-
-const InvisiblePlaceholder = React.memo(
-  ({ data }: { data: ConversationListItemDataType[] }) => {
-    console.log('test:InvisiblePlaceholder:', data.length);
-    const sheet = useBottomSheet();
-    const toast = useToastContext();
-    const alert = useAlert();
-    const { conversation } = useAppI18nContext();
-    const theme = useThemeContext();
-    const sf = getScaleFactor();
-    // const { client } = useAppChatSdkContext();
-
-    const navigation = useNavigation<NavigationProp>();
-
-    React.useEffect(() => {
-      console.log(
-        'test:load:InvisiblePlaceholder:',
-        ConversationListScreen.name
-      );
-      const sub = DeviceEventEmitter.addListener(
-        ConversationListEvent,
-        (event) => {
-          console.log('test:ConversationListEvent:', event);
-          switch (event.type as ConversationListEventType) {
-            case 'long_press':
-              sheet.openSheet({
-                sheetItems: [
-                  {
-                    icon: 'loading',
-                    iconColor: theme.colors.primary,
-                    title: '1',
-                    titleColor: 'black',
-                    onPress: () => {
-                      console.log('test:onPress:data:', data);
-                    },
-                  },
-                  {
-                    icon: 'loading',
-                    iconColor: theme.colors.primary,
-                    title: '2',
-                    titleColor: 'black',
-                    onPress: () => {
-                      console.log('test:onPress:data:', data);
-                    },
-                  },
-                ],
-              });
-              break;
-            case 'sheet_':
-              {
-                const eventType = event.params.type as SheetEvent;
-                if (eventType === 'sheet_navigation_menu') {
-                  sheet.openSheet({
-                    sheetItems: [
-                      {
-                        title: conversation.new,
-                        titleColor: 'black',
-                        onPress: () => {
-                          navigation.navigate({
-                            name: 'ContactList',
-                            params: { params: { type: 'create_conversation' } },
-                          });
-                        },
-                      },
-                      {
-                        title: conversation.createGroup,
-                        titleColor: 'black',
-                        onPress: () => {
-                          navigation.navigate('ContactList', {
-                            params: { type: 'create_group' },
-                          });
-                        },
-                      },
-                      {
-                        title: conversation.addContact,
-                        titleColor: 'black',
-                        onPress: () => {
-                          navigation.navigate('Search', {
-                            params: { type: 'add_contact' },
-                          });
-                        },
-                      },
-                      {
-                        title: conversation.searchGroup,
-                        titleColor: 'black',
-                        onPress: () => {
-                          navigation.navigate('Search', {
-                            params: { type: 'search_public_group_info' },
-                          });
-                        },
-                      },
-                      {
-                        title: conversation.joinPublicGroup,
-                        titleColor: 'black',
-                        onPress: () => {
-                          navigation.navigate('Search', {
-                            params: { type: 'join_public_group' },
-                          });
-                        },
-                      },
-                    ],
-                  });
-                }
-              }
-              break;
-            default:
-              break;
-          }
-        }
-      );
-      return () => {
-        console.log(
-          'test:unload:InvisiblePlaceholder:',
-          ConversationListScreen.name
-        );
-        sub.remove();
-      };
-    }, [
-      toast,
-      sheet,
-      alert,
-      navigation,
-      theme.colors.primary,
-      data,
-      sf,
-      conversation.new,
-      conversation.createGroup,
-      conversation.addContact,
-      conversation.joinPublicGroup,
-      conversation.searchGroup,
-    ]);
-
-    return <></>;
-  }
-);
+const sendConversationEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Conversation',
+    eventBizType: 'conversation',
+  } as sendEventProps);
+};
 
 export default function ConversationListScreen({
   navigation,
 }: Props): JSX.Element {
   const sf = getScaleFactor();
   // let data: ConversationListItemDataType[] = React.useMemo(() => [], []); // for search
-  const [data, setData] = React.useState([] as ConversationListItemDataType[]); // for search
+  const [, setData] = React.useState([] as ConversationListItemDataType[]); // for search
   const isEmpty = false;
 
   const NavigationHeaderRight: React.FunctionComponent<HeaderButtonProps> =
@@ -218,12 +82,10 @@ export default function ConversationListScreen({
         return (
           <Pressable
             onPress={() => {
-              DeviceEventEmitter.emit(ConversationListEvent, {
-                type: 'sheet_' as ConversationListEventType,
-                params: {
-                  type: 'sheet_navigation_menu' as SheetEvent,
-                  content: {},
-                },
+              sendConversationEvent({
+                eventType: 'SheetEvent',
+                action: 'sheet_navigation_menu',
+                params: {},
               });
             }}
           >
@@ -253,6 +115,61 @@ export default function ConversationListScreen({
     return unsubscribe;
   }, [NavigationHeaderRight, navigation]);
 
+  React.useEffect(() => {
+    console.log('test:load:InvisiblePlaceholder:', ConversationListScreen.name);
+    const sub = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'create_conversation_item':
+            navigation.navigate({
+              name: 'ContactList',
+              params: { params: { type: 'create_conversation' } },
+            });
+            break;
+          case 'create_new_group':
+            navigation.navigate('ContactList', {
+              params: { type: 'create_group' },
+            });
+            break;
+          case 'add_new_contact':
+            navigation.navigate('Search', {
+              params: { type: 'add_contact' },
+            });
+            break;
+          case 'search_public_group_info':
+            navigation.navigate('Search', {
+              params: { type: 'search_public_group_info' },
+            });
+            break;
+          case 'join_public_group':
+            navigation.navigate('Search', {
+              params: { type: 'join_public_group' },
+            });
+            break;
+
+          default:
+            break;
+        }
+      }
+    );
+
+    return () => {
+      console.log(
+        'test:unload:InvisiblePlaceholder:',
+        ConversationListScreen.name
+      );
+      sub.remove();
+    };
+  }, [navigation]);
+
   return (
     <SafeAreaView
       mode="padding"
@@ -264,12 +181,10 @@ export default function ConversationListScreen({
       ) : (
         <ConversationListFragment
           onLongPress={(_?: ConversationListItemDataType) => {
-            DeviceEventEmitter.emit(ConversationListEvent, {
-              type: 'long_press' as ConversationListEventType,
-              params: {
-                type: 'sheet_conversation_list' as SheetEvent,
-                content: {},
-              },
+            sendConversationEvent({
+              eventType: 'SheetEvent',
+              action: 'sheet_conversation_list',
+              params: {},
             });
           }}
           onPress={(data?: ConversationListItemDataType) => {
@@ -291,9 +206,6 @@ export default function ConversationListScreen({
           }}
         />
       )}
-      <FragmentContainer>
-        <InvisiblePlaceholder data={data} />
-      </FragmentContainer>
     </SafeAreaView>
   );
 }

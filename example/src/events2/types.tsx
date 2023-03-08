@@ -6,6 +6,7 @@ import type {
   SheetEventType,
   ToastEventType,
   UikitBizEventType,
+  VoiceStateEventType,
 } from 'react-native-chat-uikit';
 
 export type EventType =
@@ -14,5 +15,6 @@ export type EventType =
   | PromptEventType
   | AlertEventType
   | ActionMenuEventType
+  | VoiceStateEventType
   | DataEventType;
-export type BizEventType = UikitBizEventType | 'setting';
+export type BizEventType = UikitBizEventType | 'chat' | 'setting' | 'search';

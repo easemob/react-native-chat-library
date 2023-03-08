@@ -1,4 +1,3 @@
-import { useNavigation, useRoute } from '@react-navigation/native';
 import * as React from 'react';
 import {
   DeviceEventEmitter,
@@ -18,15 +17,22 @@ import { useAppI18nContext } from '../contexts/AppI18nContext';
 import {
   type CreateGroupSettingsEventType,
   ContactListEvent,
-  ContactListEventType,
   CreateGroupSettingsEvent,
 } from '../events';
-import type { NavigationProp } from '../screens/ContactList';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
+
+const sendGroupSettingEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'GroupSetting',
+    eventBizType: 'setting',
+  } as sendEventProps);
+};
 
 export const CreateGroupSettings = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const route = useRoute();
-  console.log('test:CreateGroupSettings:', route.key);
+  console.log('test:CreateGroupSettings:');
   const [isPublic, setIsPublic] = React.useState(true);
   const [isInvite, setIsInvite] = React.useState(true);
   const sf = getScaleFactor();
@@ -65,48 +71,43 @@ export const CreateGroupSettings = () => {
 
   React.useEffect(() => {
     const sub = DeviceEventEmitter.addListener(ContactListEvent, (event) => {
-      console.log('test:CreateGroupSettings:', event);
       if (event.type !== 'create_group_result') {
         return;
       }
       const eventParams = event.params;
       setButtonState('stop');
+      const chatId = eventParams.id;
+      const chatType = eventParams.type;
       if (eventParams.result === true) {
-        const chatId = eventParams.id;
-        const chatType = eventParams.type;
         manualClose()
           .then(() => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-              // navigation.pop(1);
-              navigation.push('Chat', {
-                params: { chatId: chatId, chatType: chatType },
-              });
-              // navigation.popToTop();
-            }
+            sendGroupSettingEvent({
+              eventType: 'DataEvent',
+              action: 'create_group_result_success',
+              params: { chatId, chatType },
+            });
           })
           .catch((error) => {
-            console.warn('test:error:', error);
+            console.warn('test:sendGroupSettingEvent:error:', error);
           });
       } else {
         manualClose()
           .then(() => {
-            DeviceEventEmitter.emit(ContactListEvent, {
-              type: 'create_group_result_fail' as ContactListEventType,
-              params: {
-                content: 'Create Group Failed.',
-              },
+            sendGroupSettingEvent({
+              eventType: 'AlertEvent',
+              action: 'create_group_result_fail',
+              params: { chatId, chatType, content: 'Create Group Failed.' },
             });
           })
           .catch((error) => {
-            console.warn('test:error:', error);
+            console.warn('test:sendGroupSettingEvent:error:', error);
           });
       }
     });
     return () => {
       sub.remove();
     };
-  }, [isInvite, isPublic, manualClose, navigation]);
+  }, [isInvite, isPublic, manualClose]);
 
   return (
     <View
@@ -203,16 +204,9 @@ export const CreateGroupSettings = () => {
           style={{ height: sf(48), borderRadius: sf(24) }}
           state={buttonState}
           onChangeState={(state) => {
-            console.log('test:onChangeState:', state);
             startCreateNewGroup(state);
           }}
         />
-        {/* <Button
-          style={{ height: sf(48), borderRadius: sf(24) }}
-          onPress={() => {}}
-        >
-          {contactList.groupSetting.createGroup}
-        </Button> */}
       </View>
     </View>
   );

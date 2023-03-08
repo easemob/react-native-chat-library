@@ -6,7 +6,6 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  Text,
   TextInput as RNTextInput,
   TouchableOpacity,
   // TouchableWithoutFeedback,
@@ -42,7 +41,6 @@ import {
   Button,
   createStyleSheet,
   FaceList as ChatFaceList,
-  FragmentContainer,
   getFileExtension,
   getScaleFactor,
   LocalIcon,
@@ -55,19 +53,13 @@ import {
   TextInput,
   timeoutTask,
   timestamp,
-  useActionMenu,
-  useAlert,
-  useBottomSheet,
-  useChatSdkContext,
-  useContentStateContext,
   useI18nContext,
-  useThemeContext,
-  useToastContext,
   uuid,
 } from 'react-native-chat-uikit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moji from 'twemoji';
 
+import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import {
   type ChatEventType,
   type ConversationListEventType,
@@ -78,6 +70,7 @@ import {
   MessageBubbleEvent,
   MessageEvent,
 } from '../events';
+import { sendEvent, sendEventProps } from '../events2/sendEvent';
 import MessageBubbleList, {
   type CustomMessageItemType,
   type ImageMessageItemType,
@@ -89,188 +82,15 @@ import MessageBubbleList, {
   type VoiceMessageItemType,
 } from './MessageBubbleList';
 
-const InvisiblePlaceholder = React.memo(() => {
-  const sheet = useBottomSheet();
-  const toast = useToastContext();
-  const alert = useAlert();
-  const menu = useActionMenu();
-  const { groupInfo, chat } = useI18nContext();
-  const theme = useThemeContext();
-  const sf = getScaleFactor();
-  const state = useContentStateContext();
-  const ms = Services.ms;
-
-  React.useEffect(() => {
-    const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-      // console.log('test:ChatEvent:Chat:', event);
-      switch (event.type as ChatEventType) {
-        case 'enable_voice':
-          state.showState({
-            children: (
-              <View
-                style={{
-                  height: sf(100),
-                  width: sf(161),
-                  borderRadius: sf(16),
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <View style={{ flexDirection: 'row' }}>
-                  <LocalIcon name="mic" size={sf(40)} />
-                  <LocalIcon name="volume8" size={sf(40)} />
-                </View>
-                <Text style={{ color: 'white' }}>{chat.voiceState}</Text>
-              </View>
-            ),
-          });
-          break;
-        case 'disable_voice':
-          state.hideState();
-          break;
-        case 'open_input_extension':
-          sheet.openSheet({
-            sheetItems: [
-              {
-                iconColor: theme.colors.primary,
-                title: 'Camera',
-                titleColor: 'black',
-                onPress: () => {
-                  ms.openCamera({})
-                    .then(() => {})
-                    .catch((error) => {
-                      console.warn('error:', error);
-                    });
-                },
-              },
-              {
-                iconColor: theme.colors.primary,
-                title: 'Album',
-                titleColor: 'black',
-                onPress: () => {
-                  ms.openMediaLibrary({ selectionLimit: 1 })
-                    .then((result) => {
-                      DeviceEventEmitter.emit(ChatEvent, {
-                        type: 'send_image_message' as ChatEventType,
-                        params: result,
-                      });
-                    })
-                    .catch((error) => {
-                      console.warn('error:', error);
-                    });
-                },
-              },
-              {
-                iconColor: theme.colors.primary,
-                title: 'Files',
-                titleColor: 'black',
-                onPress: () => {
-                  ms.openDocument({})
-                    .then(() => {})
-                    .catch((error) => {
-                      console.warn('error:', error);
-                    });
-                },
-              },
-            ],
-          });
-          break;
-        default:
-          break;
-      }
-    });
-
-    const sub2 = DeviceEventEmitter.addListener(MessageBubbleEvent, (event) => {
-      // console.log('test:ChatEvent:Chat:', event);
-      switch (event.type as MessageBubbleEventType) {
-        case 'on_press':
-          {
-            const eventParams = event.params as MessageItemType;
-            if (eventParams.type === ChatMessageType.VOICE) {
-              const voice = eventParams as VoiceMessageItemType;
-              if (voice.localPath) {
-                Services.ms
-                  .playAudio({
-                    url: playUrl(voice.localPath),
-                    onPlay({ isMuted, currentPosition, duration }) {
-                      console.log(
-                        'test:onPlay',
-                        isMuted,
-                        currentPosition,
-                        duration
-                      );
-                    },
-                  })
-                  .then(() => {
-                    console.log('test:playAudio:finish:');
-                  })
-                  .catch((error) => {
-                    console.warn('test:error:', error);
-                  });
-              }
-            } else if (eventParams.type === ChatMessageType.IMAGE) {
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'preview_image' as ChatEventType,
-                params: eventParams,
-              });
-            }
-          }
-          break;
-        case 'on_long_press':
-          menu.openMenu({
-            menuItems: [
-              {
-                title: 'delete message',
-                onPress: () => {
-                  console.log('test:111:');
-                },
-              },
-              {
-                title: 'resend message',
-                onPress: () => {
-                  console.log('test:222:');
-                },
-              },
-              {
-                title: 'recall message',
-                onPress: () => {
-                  console.log('test:333:');
-                },
-              },
-            ],
-          });
-          break;
-        default:
-          break;
-      }
-    });
-    return () => {
-      sub.remove();
-      sub2.remove();
-    };
-  }, [
-    toast,
-    sheet,
-    alert,
-    groupInfo.inviteAlert.title,
-    groupInfo.inviteAlert.message,
-    groupInfo.inviteAlert.cancelButton,
-    groupInfo.inviteAlert.confirmButton,
-    groupInfo.toast,
-    groupInfo.memberSheet.add,
-    groupInfo.memberSheet.remove,
-    groupInfo.memberSheet.chat,
-    theme.colors.primary,
-    sf,
-    state,
-    chat.voiceState,
-    ms,
-    menu,
-  ]);
-
-  return <></>;
-});
+const sendChatEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Chat',
+    eventBizType: 'chat',
+  } as sendEventProps);
+};
 
 type BaseProps = {
   chatId: string;
@@ -433,10 +253,15 @@ const ChatInput = React.memo((props: ChatInputProps) => {
           ) : (
             <TouchableOpacity
               onPress={() => {
-                DeviceEventEmitter.emit(ChatEvent, {
-                  type: 'open_input_extension' as ChatEventType,
+                sendChatEvent({
+                  eventType: 'SheetEvent',
+                  action: 'open_input_extension',
                   params: {},
                 });
+                // DeviceEventEmitter.emit(ChatEvent, {
+                //   type: 'open_input_extension' as ChatEventType,
+                //   params: {},
+                // });
               }}
             >
               <LocalIcon name="plus_in_circle" color="#A5A7A6" size={sf(28)} />
@@ -458,10 +283,16 @@ const ChatInput = React.memo((props: ChatInputProps) => {
             }}
             style={[styles.talk, { width: sf(width - 24 - 28 - 20) }]}
             onPressIn={() => {
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'enable_voice' as ChatEventType,
+              sendChatEvent({
+                eventType: 'VoiceStateEvent',
+                action: 'enable_voice',
                 params: {},
               });
+              // return;
+              // DeviceEventEmitter.emit(ChatEvent, {
+              //   type: 'enable_voice' as ChatEventType,
+              //   params: {},
+              // });
               Services.ms
                 .startRecordAudio({
                   audio: {
@@ -498,10 +329,16 @@ const ChatInput = React.memo((props: ChatInputProps) => {
             }}
             onPressOut={() => {
               let localPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'disable_voice' as ChatEventType,
+              sendChatEvent({
+                eventType: 'VoiceStateEvent',
+                action: 'disable_voice',
                 params: {},
               });
+              // return;
+              // DeviceEventEmitter.emit(ChatEvent, {
+              //   type: 'disable_voice' as ChatEventType,
+              //   params: {},
+              // });
               Services.ms
                 .stopRecordAudio()
                 .then((result?: { pos: number; path: string }) => {
@@ -561,7 +398,7 @@ const ChatContent = React.memo(
     const setTestRef = React.useRef(() => {});
     const faceHeight = sf(300);
     const faceHeightRef = React.useRef(new Animated.Value(0)).current;
-    const { client } = useChatSdkContext();
+    const { client } = useAppChatSdkContext();
     console.log('test:', onItemLongPress);
 
     const getMsgListRef = React.useCallback(() => {
@@ -669,10 +506,15 @@ const ChatContent = React.memo(
         const r = {
           ...item,
           onLongPress: (data: MessageItemType) => {
-            DeviceEventEmitter.emit(MessageBubbleEvent, {
-              type: 'on_long_press' as MessageBubbleEventType,
+            sendChatEvent({
+              eventType: 'ActionMenuEvent',
+              action: 'long_press_message_bubble',
               params: data,
             });
+            // DeviceEventEmitter.emit(MessageBubbleEvent, {
+            //   type: 'on_long_press' as MessageBubbleEventType,
+            //   params: data,
+            // });
           },
           onPress: (data: MessageItemType) => {
             DeviceEventEmitter.emit(MessageBubbleEvent, {
@@ -1290,9 +1132,52 @@ const ChatContent = React.memo(
           }
         }
       );
+      const sub3 = DeviceEventEmitter.addListener(
+        MessageBubbleEvent,
+        (event) => {
+          switch (event.type as MessageBubbleEventType) {
+            case 'on_press':
+              {
+                const eventParams = event.params as MessageItemType;
+                if (eventParams.type === ChatMessageType.VOICE) {
+                  const voice = eventParams as VoiceMessageItemType;
+                  if (voice.localPath) {
+                    Services.ms
+                      .playAudio({
+                        url: playUrl(voice.localPath),
+                        onPlay({ isMuted, currentPosition, duration }) {
+                          console.log(
+                            'test:onPlay',
+                            isMuted,
+                            currentPosition,
+                            duration
+                          );
+                        },
+                      })
+                      .then(() => {
+                        console.log('test:playAudio:finish:');
+                      })
+                      .catch((error) => {
+                        console.warn('test:error:', error);
+                      });
+                  }
+                } else if (eventParams.type === ChatMessageType.IMAGE) {
+                  DeviceEventEmitter.emit(ChatEvent, {
+                    type: 'preview_image' as ChatEventType,
+                    params: eventParams,
+                  });
+                }
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      );
       return () => {
         sub.remove();
         sub2.remove();
+        sub3.remove();
       };
     }, [
       chatId,
@@ -1521,9 +1406,6 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
         />
         {/* </TouchableWithoutFeedback> */}
       </KeyboardAvoidingView>
-      <FragmentContainer>
-        <InvisiblePlaceholder />
-      </FragmentContainer>
     </React.Fragment>
   );
 }

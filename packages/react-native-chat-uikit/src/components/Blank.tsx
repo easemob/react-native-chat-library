@@ -1,13 +1,16 @@
 import * as React from 'react';
-import { View } from 'react-native';
+import { StyleProp, View, ViewStyle } from 'react-native';
 
 import { ICON_ASSETS } from '../../assets/icons';
 import createStyleSheet from '../styles/createStyleSheet';
 import Image from './Image';
 
-export default function Blank(): JSX.Element {
+type Props = {
+  style?: StyleProp<ViewStyle> | undefined;
+};
+export default function Blank(props: Props): JSX.Element {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, props.style]}>
       <Image
         style={styles.image}
         // source={{

@@ -21,14 +21,17 @@ import {
   EqualHeightListRef,
   getScaleFactor,
   LocalIcon,
-  NotificationMessageDescriptionType,
 } from 'react-native-chat-uikit';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import { HomeEvent, HomeEventType } from '../events';
+import {
+  HomeEvent,
+  HomeEventType,
+  NotificationMessageDescriptionType,
+} from '../events';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
 
@@ -182,9 +185,6 @@ const Item: EqualHeightListItemComponent = (props) => {
 export default function RequestListScreen(_props: Props): JSX.Element {
   console.log('test:RequestListScreen:');
   const sf = getScaleFactor();
-  // const theme = useThemeContext();
-  // const menu = useActionMenu();
-  // const sheet = useBottomSheet();
   const { client, getCurrentId } = useAppChatSdkContext();
 
   const listRef = React.useRef<EqualHeightListRef>(null);
@@ -192,7 +192,7 @@ export default function RequestListScreen(_props: Props): JSX.Element {
   const enableAlphabet = false;
   const enableHeader = false;
   const data: ItemDataType[] = React.useMemo(() => [], []); // for search
-  const [isEmpty, setIsEmpty] = React.useState(false);
+  const [isEmpty, setIsEmpty] = React.useState(true);
 
   const updateDataThen = React.useCallback(
     (
@@ -404,7 +404,6 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       }
     }
     if (count === 0) {
-      console.log('test:1235:from:requestlist:');
       DeviceEventEmitter.emit(HomeEvent, {
         type: 'update_request' as HomeEventType,
         params: { unread: count !== 0 },
@@ -505,6 +504,7 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       }
       setIsEmpty(data.length === 0);
       updateRequestFlag(data);
+      console.log('test:1231245:', data.length);
     },
     [data, updateRequestFlag]
   );
@@ -676,41 +676,38 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       style={useStyleSheet().safe}
       edges={['right', 'left']}
     >
-      {isEmpty === true ? (
-        <Blank />
-      ) : (
-        <EqualHeightList
-          parentName="RequestList"
-          onLayout={(_) => {
-            // console.log(
-            //   'test:EqualHeightList:',
-            //   event.nativeEvent.layout.height
-            // );
-          }}
-          ref={listRef}
-          items={data}
-          ItemFC={Item}
-          enableAlphabet={enableAlphabet}
-          enableRefresh={enableRefresh}
-          enableHeader={enableHeader}
-          alphabet={{
-            alphabetCurrent: {
-              backgroundColor: 'orange',
-              color: 'white',
-            },
-            alphabetItemContainer: {
-              width: sf(15),
-              borderRadius: sf(8),
-            },
-          }}
-          ItemSeparatorComponent={DefaultListItemSeparator}
-          onRefresh={(type) => {
-            if (type === 'started') {
-              initList();
-            }
-          }}
-        />
-      )}
+      <EqualHeightList
+        parentName="RequestList"
+        onLayout={(_) => {
+          // console.log(
+          //   'test:EqualHeightList:',
+          //   event.nativeEvent.layout.height
+          // );
+        }}
+        ref={listRef}
+        items={data}
+        ItemFC={Item}
+        enableAlphabet={enableAlphabet}
+        enableRefresh={enableRefresh}
+        enableHeader={enableHeader}
+        alphabet={{
+          alphabetCurrent: {
+            backgroundColor: 'orange',
+            color: 'white',
+          },
+          alphabetItemContainer: {
+            width: sf(15),
+            borderRadius: sf(8),
+          },
+        }}
+        ItemSeparatorComponent={DefaultListItemSeparator}
+        onRefresh={(type) => {
+          if (type === 'started') {
+            initList();
+          }
+        }}
+      />
+      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </SafeAreaView>
   );
 }
@@ -750,5 +747,10 @@ const styles = createStyleSheet({
   itemText: {
     marginLeft: 10,
     // flexGrow: 1,
+  },
+  blank: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
 });

@@ -67,6 +67,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
     dir?: DirCacheService | undefined;
   };
   onInitialized?: () => void;
+  ModalComponent: React.FunctionComponent;
 }>;
 
 /**
@@ -99,6 +100,7 @@ export function GlobalContainer({
   services,
   children,
   onInitialized,
+  ModalComponent,
 }: GlobalContainerProps): JSX.Element {
   console.log('test:GlobalContainer:', option);
   const sf = getScaleFactor();
@@ -204,6 +206,12 @@ export function GlobalContainer({
     }
   }
 
+  if (ModalComponent === undefined) {
+    throw new Error(
+      'Specify a modal window, for example: UikitModalPlaceholder.'
+    );
+  }
+
   const init = once(() => {
     sdk?.client
       .init(
@@ -257,6 +265,7 @@ export function GlobalContainer({
                         children node is empty.
                       </Text>
                     )}
+                    <ModalComponent />
                   </ContentStateContextProvider>
                 </ToastContextProvider>
               </DialogContextProvider>

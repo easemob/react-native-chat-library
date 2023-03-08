@@ -59,10 +59,6 @@ const Item: EqualHeightListItemComponent = (props) => {
 };
 
 export default function GroupListScreen({ navigation }: Props): JSX.Element {
-  // console.log('test:GroupListScreen:', route, navigation);
-  // const theme = useThemeContext();
-  // const menu = useActionMenu();
-  // const sheet = useBottomSheet();
   const sf = getScaleFactor();
 
   const listRef = React.useRef<EqualHeightListRef>(null);
@@ -456,35 +452,32 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
           deferredSearch(text);
         }}
       />
-      {isEmpty === true ? (
-        <Blank />
-      ) : (
-        <EqualHeightList
-          parentName="GroupList"
-          ref={listRef}
-          items={data}
-          ItemFC={Item}
-          enableAlphabet={enableAlphabet}
-          enableRefresh={enableRefresh}
-          enableHeader={enableHeader}
-          alphabet={{
-            alphabetCurrent: {
-              backgroundColor: 'orange',
-              color: 'white',
-            },
-            alphabetItemContainer: {
-              width: sf(15),
-              borderRadius: 8,
-            },
-          }}
-          ItemSeparatorComponent={DefaultListItemSeparator}
-          onRefresh={(type) => {
-            if (type === 'started') {
-              initList();
-            }
-          }}
-        />
-      )}
+      <EqualHeightList
+        parentName="GroupList"
+        ref={listRef}
+        items={data}
+        ItemFC={Item}
+        enableAlphabet={enableAlphabet}
+        enableRefresh={enableRefresh}
+        enableHeader={enableHeader}
+        alphabet={{
+          alphabetCurrent: {
+            backgroundColor: 'orange',
+            color: 'white',
+          },
+          alphabetItemContainer: {
+            width: sf(15),
+            borderRadius: 8,
+          },
+        }}
+        ItemSeparatorComponent={DefaultListItemSeparator}
+        onRefresh={(type) => {
+          if (type === 'started') {
+            initList();
+          }
+        }}
+      />
+      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </SafeAreaView>
   );
 }
@@ -501,5 +494,10 @@ const styles = createStyleSheet({
   },
   itemText: {
     marginLeft: 10,
+  },
+  blank: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
 });

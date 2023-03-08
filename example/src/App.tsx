@@ -39,6 +39,7 @@ import HomeHeaderRight from './components/HomeHeaderRight';
 import HomeHeaderTitle from './components/HomeHeaderTitle';
 import { AppChatSdkContext } from './contexts/AppImSdkContext';
 import { AppEvent, AppEventType } from './events';
+import { ModalPlaceholder } from './events2';
 import { AppStringSet } from './I18n/AppCStringSet.en';
 import type { RootParamsList, RootParamsName } from './routes';
 import Chat from './screens/Chat';
@@ -203,6 +204,7 @@ export default function App() {
             media: media,
           }),
         }}
+        ModalComponent={() => <ModalPlaceholder />}
       >
         {__TEST__ === true ? (
           Dev()

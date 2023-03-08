@@ -20,6 +20,7 @@ import {
   type MessageChatSdkEventType,
   autoFocus,
   Badge,
+  Blank,
   createStyleSheet,
   DefaultAvatar,
   DefaultListItemSeparator,
@@ -181,11 +182,9 @@ export default function ConversationListFragment(
   const enableRefresh = true;
   const enableAlphabet = false;
   const enableHeader = true;
-  // const autoFocus = false;
   const data: ItemDataType[] = React.useMemo(() => [], []); // for search
-  // const width = sf(100);
-  // const isEmpty = false;
   const currentChatId = React.useRef('');
+  const [isEmpty, setIsEmpty] = React.useState(true);
 
   const getConvId = React.useCallback((msg: ChatMessage) => {
     if (msg.direction === ChatMessageDirection.SEND) {
@@ -280,7 +279,6 @@ export default function ConversationListFragment(
       type: 'init' | 'add' | 'search' | 'del-one' | 'update-one';
       items: ItemDataType[];
     }) => {
-      console.log('test:manualRefresh:', params.type, params.items.length);
       for (let index = 0; index < params.items.length; index++) {
         const element = params.items[index];
         if (element?.convId === getCurrentId()) {
@@ -370,9 +368,9 @@ export default function ConversationListFragment(
           }
         }
       } else {
-        console.warn('test:');
         return;
       }
+      setIsEmpty(data.length === 0);
       onData?.(data);
     },
     [data, getCurrentId, onData]
@@ -387,11 +385,9 @@ export default function ConversationListFragment(
 
       client.chatManager
         .deleteConversation(data.convId, true)
-        .then((result) => {
-          console.log('test:result:', result);
-        })
+        .then()
         .catch((error) => {
-          console.warn('test:error:', error);
+          console.warn('test:deleteConversation:error:', error);
         });
     },
     [client.chatManager, manualRefresh]
@@ -500,7 +496,7 @@ export default function ConversationListFragment(
         }
       })
       .catch((error) => {
-        console.warn('test:error:', error);
+        console.warn('test:getUnreadCount:error:', error);
       });
   }, [client.chatManager, onUpdateReadCount]);
 
@@ -609,7 +605,6 @@ export default function ConversationListFragment(
           case 'onMessagesReceived':
             {
               const messages = eventParams.messages;
-              console.log('test:onMessagesReceived:', messages.length);
               for (const msg of messages) {
                 updateConversationFromMessage(msg);
               }
@@ -621,31 +616,6 @@ export default function ConversationListFragment(
               /// todo: !!! 10000 message count ???
               const messages = eventParams.messages;
               console.log('test:onMessagesRead:', messages.length);
-              // for (const msg of messages) {
-              //   const convId = getConvId(msg);
-              //   const convType = msg.chatType as number as ChatConversationType;
-              //   const conv = getExisted(convId);
-              //   if (conv === undefined) {
-              //     return;
-              //   }
-              //   const count =
-              //     await client.chatManager.getConversationUnreadCount(
-              //       convId,
-              //       convType
-              //     );
-              //   manualRefresh({
-              //     type: 'update-one',
-              //     items: [
-              //       standardizedData({
-              //         key: convId,
-              //         convId: convId,
-              //         convType: convType,
-              //         lastMsg: msg,
-              //         count: count,
-              //       } as ItemDataType),
-              //     ],
-              //   });
-              // }
             }
             break;
           default:
@@ -726,12 +696,12 @@ export default function ConversationListFragment(
               .createConversationDir(convId)
               .then(() => {})
               .catch((error) => {
-                console.warn('test:create:dir:error:', error);
+                console.warn('test:createConversationDir:error:', error);
               });
           }
         })
         .catch((error) => {
-          console.warn('test:isExisted:dir:error:', error);
+          console.warn('test:isExistedConversationDir:error:', error);
         });
     }
   }, []);
@@ -843,6 +813,7 @@ export default function ConversationListFragment(
           }
         }}
       />
+      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </React.Fragment>
   );
 }
@@ -860,5 +831,10 @@ const styles = createStyleSheet({
   },
   itemText: {
     marginLeft: 10,
+  },
+  blank: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
 });

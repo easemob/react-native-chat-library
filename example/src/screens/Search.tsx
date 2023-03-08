@@ -18,7 +18,6 @@ import {
   EqualHeightListItemComponent,
   EqualHeightListItemData,
   EqualHeightListRef,
-  FragmentContainer,
   getScaleFactor,
   GroupChatSdkEvent,
   GroupChatSdkEventType,
@@ -31,7 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { ToastEvent, ToastEventType } from '../events';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 import type { SearchActionType, Undefinable } from '../types';
@@ -69,50 +68,15 @@ type ItemDataType = EqualHeightListItemData & {
   action?: Undefinable<ItemActionDataType>;
 };
 
-const InvisiblePlaceholder = React.memo(
-  ({ data }: { data: ItemDataType[] }) => {
-    console.log('test:InvisiblePlaceholder:', data);
-    const toast = useToastContext();
-    const sf = getScaleFactor();
-
-    React.useEffect(() => {
-      const sub = DeviceEventEmitter.addListener(
-        'toast_' as ToastEvent,
-        (event) => {
-          console.log('test:ContactListEvent:sub:', event);
-          const eventType = event.type as ToastEventType;
-          switch (eventType) {
-            case 'add_content_success':
-              toast.showToast(
-                'The other party has already applied through friends.'
-              );
-              break;
-            case 'add_content_fail':
-              toast.showToast('The other person rejected the friend request.');
-              break;
-            case 'request_join_public_group_success':
-              toast.showToast(
-                'The group administrator has applied to join the group.'
-              );
-              break;
-            case 'request_join_public_group_fail':
-              toast.showToast(
-                'The group administrator refused to join the group.'
-              );
-              break;
-            default:
-              break;
-          }
-        }
-      );
-      return () => {
-        sub.remove();
-      };
-    }, [toast, data, sf]);
-
-    return <></>;
-  }
-);
+const sendSearchEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Search',
+    eventBizType: 'search',
+  } as sendEventProps);
+};
 
 const Item: EqualHeightListItemComponent = (props) => {
   const sf = getScaleFactor();
@@ -354,10 +318,15 @@ export default function SearchScreen({
         .catch((error) => {
           console.warn('test:error:', error);
           // TODO: Probably already friends.
-          DeviceEventEmitter.emit('toast_' as ToastEvent, {
-            type: 'add_content_fail' as ToastEventType,
-            params: {},
+          sendSearchEvent({
+            eventType: 'ToastEvent',
+            action: 'toast_',
+            params: 'The other person rejected the friend request.',
           });
+          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+          //   type: 'add_content_fail' as ToastEventType,
+          //   params: {},
+          // });
         });
     },
     [client.contactManager]
@@ -371,10 +340,15 @@ export default function SearchScreen({
         .catch((error) => {
           console.warn('test:error:', error);
           // TODO: Probably already friends.
-          DeviceEventEmitter.emit('toast_' as ToastEvent, {
-            type: 'request_join_public_group_fail' as ToastEventType,
-            params: {},
+          sendSearchEvent({
+            eventType: 'ToastEvent',
+            action: 'toast_',
+            params: 'The group administrator refused to join the group.',
           });
+          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+          //   type: 'request_join_public_group_fail' as ToastEventType,
+          //   params: {},
+          // });
         });
     },
     [client.groupManager]
@@ -565,10 +539,16 @@ export default function SearchScreen({
                       } as ItemDataType,
                     ],
                   });
-                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                    type: 'add_content_success' as ToastEventType,
-                    params: {},
+                  sendSearchEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params:
+                      'The other party has already applied through friends.',
                   });
+                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                  //   type: 'add_content_success' as ToastEventType,
+                  //   params: {},
+                  // });
                 }
               }
               break;
@@ -589,10 +569,15 @@ export default function SearchScreen({
                       } as ItemDataType),
                     ],
                   });
-                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                    type: 'add_content_fail' as ToastEventType,
-                    params: {},
+                  sendSearchEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params: 'The other person rejected the friend request.',
                   });
+                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                  //   type: 'add_content_fail' as ToastEventType,
+                  //   params: {},
+                  // });
                 }
               }
               break;
@@ -626,10 +611,16 @@ export default function SearchScreen({
                       } as ItemDataType,
                     ],
                   });
-                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                    type: 'request_join_public_group_success' as ToastEventType,
-                    params: {},
+                  sendSearchEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params:
+                      'The group administrator has applied to join the group.',
                   });
+                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                  //   type: 'request_join_public_group_success' as ToastEventType,
+                  //   params: {},
+                  // });
                 }
               }
               break;
@@ -650,10 +641,16 @@ export default function SearchScreen({
                       } as ItemDataType,
                     ],
                   });
-                  DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                    type: 'request_join_public_group_fail' as ToastEventType,
-                    params: {},
+                  sendSearchEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params:
+                      'The group administrator refused to join the group.',
                   });
+                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+                  //   type: 'request_join_public_group_fail' as ToastEventType,
+                  //   params: {},
+                  // });
                 }
               }
               break;
@@ -753,10 +750,15 @@ export default function SearchScreen({
         if (info) {
           loadSearchResult({ type, id: info.groupId, name: info.groupName });
         } else {
-          DeviceEventEmitter.emit('toast_' as ToastEvent, {
-            type: 'add_content_fail' as ToastEventType,
-            params: {},
+          sendSearchEvent({
+            eventType: 'ToastEvent',
+            action: 'toast_',
+            params: 'The other person rejected the friend request.',
           });
+          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+          //   type: 'add_content_fail' as ToastEventType,
+          //   params: {},
+          // });
         }
       } else if (params.type === 'add_contact') {
         const kv = await client.userManager.fetchUserInfoById([params.keyword]);
@@ -769,10 +771,15 @@ export default function SearchScreen({
               name: info.nickName ?? '',
             });
           } else {
-            DeviceEventEmitter.emit('toast_' as ToastEvent, {
-              type: 'request_join_public_group_fail' as ToastEventType,
-              params: {},
+            sendSearchEvent({
+              eventType: 'ToastEvent',
+              action: 'toast_',
+              params: 'The group administrator refused to join the group.',
             });
+            // DeviceEventEmitter.emit('toast_' as ToastEvent, {
+            //   type: 'request_join_public_group_fail' as ToastEventType,
+            //   params: {},
+            // });
           }
         }
       }
@@ -833,34 +840,28 @@ export default function SearchScreen({
           }}
         />
       </View>
-      {isEmpty ? (
-        <Blank />
-      ) : (
-        <EqualHeightList
-          bounces={bounces}
-          parentName="ContactList"
-          ref={listRef}
-          items={data}
-          ItemFC={Item}
-          enableAlphabet={enableAlphabet}
-          enableRefresh={enableRefresh}
-          enableHeader={enableHeader}
-          alphabet={{
-            alphabetCurrent: {
-              backgroundColor: 'orange',
-              color: 'white',
-            },
-            alphabetItemContainer: {
-              width: sf(15),
-              borderRadius: 8,
-            },
-          }}
-          ItemSeparatorComponent={DefaultListItemSeparator}
-        />
-      )}
-      <FragmentContainer>
-        <InvisiblePlaceholder data={data} />
-      </FragmentContainer>
+      <EqualHeightList
+        bounces={bounces}
+        parentName="ContactList"
+        ref={listRef}
+        items={data}
+        ItemFC={Item}
+        enableAlphabet={enableAlphabet}
+        enableRefresh={enableRefresh}
+        enableHeader={enableHeader}
+        alphabet={{
+          alphabetCurrent: {
+            backgroundColor: 'orange',
+            color: 'white',
+          },
+          alphabetItemContainer: {
+            width: sf(15),
+            borderRadius: 8,
+          },
+        }}
+        ItemSeparatorComponent={DefaultListItemSeparator}
+      />
+      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </SafeAreaView>
   );
 }
@@ -891,5 +892,10 @@ const styles = createStyleSheet({
   inputContainer: {
     backgroundColor: 'rgba(242, 242, 242, 1)',
     borderRadius: 24,
+  },
+  blank: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
 });

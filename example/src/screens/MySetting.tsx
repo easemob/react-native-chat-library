@@ -2,18 +2,21 @@ import type { MaterialBottomTabScreenProps } from '@react-navigation/material-bo
 import { CommonActions, CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack/lib/typescript/src/types';
 import * as React from 'react';
-import { Linking, Pressable, TouchableOpacity, View } from 'react-native';
+import {
+  DeviceEventEmitter,
+  Linking,
+  Pressable,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ChatConversationType } from 'react-native-chat-sdk';
 import {
   createStyleSheet,
+  DataEventType,
   Divider,
   getScaleFactor,
   LocalIcon,
   Services,
-  useAlert,
-  useBottomSheet,
-  usePrompt,
-  useToastContext,
 } from 'react-native-chat-uikit';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
@@ -21,6 +24,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type {
   BottomTabScreenParamsList,
@@ -35,6 +40,16 @@ type Props = CompositeScreenProps<
   MaterialBottomTabScreenProps<BottomTabScreenParamsList, 'MySetting'>,
   NativeStackScreenProps<RootScreenParamsListOnly>
 >;
+
+const sendMySettingEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'MySetting',
+    eventBizType: 'setting',
+  } as sendEventProps);
+};
 
 const Intervallum = ({ content }: { content: string }) => {
   const sf = getScaleFactor();
@@ -64,17 +79,13 @@ const Intervallum = ({ content }: { content: string }) => {
 
 export default function MySettingScreen({ navigation }: Props): JSX.Element {
   const sf = getScaleFactor();
-  const toast = useToastContext();
-  const alert = useAlert();
-  const sheet = useBottomSheet();
-  const prompt = usePrompt();
   const { settings } = useAppI18nContext();
   const cbs = Services.cbs;
   const ms = Services.ms;
   const bounces = false;
   const memberCount = 5;
-  const [name, setName] = React.useState('NickName');
-  const [id, setId] = React.useState('Agora ID: xx');
+  const [userName, setUserName] = React.useState('NickName');
+  const [userId, setUserId] = React.useState('Agora ID: xx');
   const sdkVersion = 'AgoraChat v0.0.0';
   const uiVersion = 'AgoraChat v0.0.0';
   const urlName = 'agora.io';
@@ -89,20 +100,14 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
     />
   );
 
-  const _openUrl = React.useCallback(
-    async (url: string) => {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        // Alert.alert(`Don't know how to open this URL: ${url}`);
-        toast.showToast('test');
-      }
-    },
-    [toast]
-  );
+  const _openUrl = React.useCallback(async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    }
+  }, []);
 
-  const removeAllMessage = async () => {
+  const removeAllMessage = React.useCallback(async () => {
     const currentId = getCurrentId();
     client.chatManager
       .deleteAllMessages(currentId, ChatConversationType.PeerChat)
@@ -120,7 +125,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
     for (const item of list) {
       await client.chatManager.deleteConversation(item.convId, true);
     }
-  };
+  }, [client.chatManager, getCurrentId]);
 
   React.useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -135,7 +140,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
     return unsubscribe;
   }, [navigation]);
 
-  const _logout = () => {
+  const logout = React.useCallback(() => {
     logoutAction({
       onResult: ({ result, error }) => {
         if (result === true) {
@@ -146,7 +151,49 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         }
       },
     });
-  };
+  }, [logoutAction, navigation]);
+
+  const onClickHeader = React.useCallback(() => {
+    sendMySettingEvent({
+      eventType: 'SheetEvent',
+      action: 'open_my_setting_setting',
+      params: { userId, userName },
+    });
+  }, [userId, userName]);
+
+  const openMediaLibrary = React.useCallback(() => {
+    ms.openMediaLibrary({
+      selectionLimit: 1,
+      onFailed: (result) => {
+        console.warn('test:openMediaLibrary:', result);
+      },
+    })
+      .then((result) => {
+        console.log('test:openMediaLibrary:', result);
+        // TODO:
+      })
+      .catch((error) => {
+        console.warn('test:openMediaLibrary:', error);
+      });
+  }, [ms]);
+  const modifyMyName = React.useCallback(
+    (params: { userId: string; newMyName: string }) => {
+      setUserName(params.newMyName);
+    },
+    []
+  );
+
+  const copyMyId = React.useCallback(
+    (params: { userId: string; newMyName: string }) => {
+      cbs.setString(params.userId);
+      sendMySettingEvent({
+        eventType: 'ToastEvent',
+        action: 'toast_',
+        params: 'ID Copied',
+      });
+    },
+    [cbs]
+  );
 
   const initList = React.useCallback(() => {
     client.userManager
@@ -154,8 +201,8 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
       .then((result) => {
         console.log('test:result:', result);
         if (result) {
-          setId(result.userId);
-          if (result.nickName) setName(result.nickName);
+          setUserId(result.userId);
+          if (result.nickName) setUserName(result.nickName);
         }
       })
       .catch((error) => {
@@ -164,8 +211,43 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   }, [client.userManager]);
 
   const addListeners = React.useCallback(() => {
-    return () => {};
-  }, []);
+    const sub = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp: number;
+          key: string;
+        };
+        switch (action) {
+          case 'exec_remove_all_conversation_and_messages':
+            removeAllMessage();
+            break;
+          case 'exec_manual_logout':
+            logout();
+            break;
+          case 'open_media_library':
+            openMediaLibrary();
+            break;
+          case 'exec_modify_my_name':
+            modifyMyName(params);
+            break;
+          case 'copy_my_id':
+            copyMyId(params);
+            break;
+
+          default:
+            break;
+        }
+      }
+    );
+    return () => {
+      sub.remove();
+    };
+  }, [copyMyId, logout, modifyMyName, openMediaLibrary, removeAllMessage]);
 
   React.useEffect(() => {
     const load = () => {
@@ -194,64 +276,17 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
       <ScrollView bounces={bounces}>
         <Pressable
           onPress={() => {
-            sheet.openSheet({
-              sheetItems: [
-                {
-                  title: 'Change Profile Picture',
-                  titleColor: 'black',
-                  onPress: () => {
-                    ms.openMediaLibrary({
-                      selectionLimit: 1,
-                      onFailed: (result) => {
-                        console.warn('test:openMediaLibrary:', result);
-                      },
-                    })
-                      .then((result) => {
-                        console.log('test:openMediaLibrary:', result);
-                      })
-                      .catch((error) => {
-                        console.warn('test:openMediaLibrary:', error);
-                      });
-                  },
-                },
-                {
-                  title: 'Change NickName',
-                  titleColor: 'black',
-                  onPress: () => {
-                    prompt.openPrompt({
-                      title: 'Change NickName',
-                      placeholder: 'name',
-                      submitLabel: 'Confirm',
-                      cancelLabel: 'Cancel',
-                      onSubmit: (text: string) => {
-                        console.log('test:onSubmit:', text);
-                      },
-                      onCancel() {
-                        console.log('test:onCancel:');
-                      },
-                    });
-                  },
-                },
-                {
-                  title: 'Copy Agora ID',
-                  titleColor: 'black',
-                  onPress: () => {
-                    cbs.setString(id);
-                    toast.showToast('ID Copied');
-                  },
-                },
-              ],
-            });
+            onClickHeader();
           }}
           style={{ paddingVertical: sf(10), paddingTop: sf(20) }}
         >
           <LocalIcon name="default_avatar" size={sf(100)} />
         </Pressable>
         <TouchableOpacity onPress={() => {}} style={{ paddingVertical: sf(0) }}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{userName}</Text>
         </TouchableOpacity>
         <Pressable onPress={() => {}} style={{ paddingVertical: sf(5) }}>
-          <Text style={styles.id}>{id}</Text>
+          <Text style={styles.id}>{userId}</Text>
         </Pressable>
         <View style={{ height: sf(40) }} />
         <Intervallum content={settings.privacy} />
@@ -278,7 +313,11 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         <Pressable
           onPress={() => {
             cbs.setString('Agora v1.0.0');
-            toast.showToast('SDK Version Copied');
+            sendMySettingEvent({
+              eventType: 'ToastEvent',
+              action: 'toast_',
+              params: 'SDK Version Copied',
+            });
           }}
           style={styles.listItem}
         >
@@ -289,7 +328,11 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         <Pressable
           onPress={() => {
             cbs.setString('Agora v1.0.0');
-            toast.showToast('UI Version Copied');
+            sendMySettingEvent({
+              eventType: 'ToastEvent',
+              action: 'toast_',
+              params: 'UI Version Copied',
+            });
           }}
           style={styles.listItem}
         >
@@ -311,20 +354,10 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
           <Pressable onPress={() => {}} style={styles.listItem}>
             <TouchableOpacity
               onPress={() => {
-                alert.openAlert({
-                  title: 'Sure to delete all messages',
-                  buttons: [
-                    {
-                      text: 'Cancel',
-                      onPress: () => {},
-                    },
-                    {
-                      text: 'Confirm',
-                      onPress: () => {
-                        removeAllMessage();
-                      },
-                    },
-                  ],
+                sendMySettingEvent({
+                  eventType: 'AlertEvent',
+                  action: 'remove_all_conversation_and_messages',
+                  params: {},
                 });
               }}
             >
@@ -338,20 +371,10 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
         <Pressable onPress={() => {}} style={styles.listItem}>
           <TouchableOpacity
             onPress={() => {
-              alert.openAlert({
-                title: 'Sure to logout',
-                buttons: [
-                  {
-                    text: 'Cancel',
-                    onPress: () => {},
-                  },
-                  {
-                    text: 'Confirm',
-                    onPress: () => {
-                      _logout();
-                    },
-                  },
-                ],
+              sendMySettingEvent({
+                eventType: 'AlertEvent',
+                action: 'manual_logout',
+                params: {},
               });
             }}
           >

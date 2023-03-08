@@ -176,7 +176,6 @@ export default function ContactScreen({
         if (error) {
           console.warn('test:error:', error);
         }
-        console.log('test:1235:from:initRequestFlag:contact:', unread);
         requestFlag.current = unread;
         DeviceEventEmitter.emit(HomeEvent, {
           type: 'update_request' as HomeEventType,

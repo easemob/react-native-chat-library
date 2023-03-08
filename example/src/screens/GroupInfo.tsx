@@ -5,23 +5,32 @@ import { ChatConversationType } from 'react-native-chat-sdk';
 import {
   Avatar,
   createStyleSheet,
+  DataEventType,
   getScaleFactor,
   LocalIcon,
   ScreenContainer,
   Services,
   Switch,
-  useAlert,
-  useBottomSheet,
-  usePrompt,
-  useToastContext,
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import { GroupInfoEvent, GroupInfoEventType } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
+
+const sendGroupInfoEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'ContactInfo',
+    eventBizType: 'contact',
+  } as sendEventProps);
+};
 
 const sf = getScaleFactor();
 
@@ -29,17 +38,11 @@ export function GroupInfoScreenInternal({
   route,
   navigation,
 }: Props): JSX.Element {
-  //   console.log('test:ConversationListScreen:', route.params, navigation);
-  //   return <Placeholder content={`${GroupInfoScreen.name}`} />;
   const rp = route.params as any;
   const params = rp?.params as { groupId: string };
 
   const { groupInfo } = useAppI18nContext();
   const { client } = useAppChatSdkContext();
-  const alert = useAlert();
-  const sheet = useBottomSheet();
-  const prompt = usePrompt();
-  const toast = useToastContext();
   const cbs = Services.cbs;
   const groupId = params.groupId ?? 'GroupId: xxx';
   const memberCount = 5;
@@ -66,11 +69,10 @@ export function GroupInfoScreenInternal({
           })
           .catch((error) => {
             console.warn('test:onChangeName:error:', error);
-            toast.showToast(error.toString());
           });
       }
     },
-    [client.groupManager, toast]
+    [client.groupManager]
   );
   const onChangeDescription = React.useCallback(
     (groupId: string, groupDescription: string) => {
@@ -83,11 +85,10 @@ export function GroupInfoScreenInternal({
           })
           .catch((error) => {
             console.warn('test:onChangeDescription:error:', error);
-            toast.showToast(error.toString());
           });
       }
     },
-    [client.groupManager, toast]
+    [client.groupManager]
   );
 
   const onChat = React.useCallback(
@@ -99,79 +100,17 @@ export function GroupInfoScreenInternal({
     [navigation]
   );
 
-  const onHeader = () => {
-    sheet.openSheet({
-      sheetItems: [
-        {
-          title: groupInfo.modify.name,
-          titleColor: 'black',
-          onPress: () => {
-            prompt.openPrompt({
-              title: groupInfo.modify.name,
-              placeholder: groupInfo.modify.namePrompt.placeholder,
-              submitLabel: groupInfo.modify.namePrompt.confirm,
-              cancelLabel: groupInfo.modify.namePrompt.cancel,
-              onSubmit: (text: string) => {
-                console.log('test:onSubmit:', text);
-                onChangeName(groupId, text);
-              },
-              onCancel() {
-                console.log('test:onCancel:');
-              },
-            });
-          },
-        },
-        {
-          title: groupInfo.modify.description,
-          titleColor: 'black',
-          onPress: () => {
-            prompt.openPrompt({
-              title: groupInfo.modify.description,
-              placeholder: groupInfo.modify.descriptionPrompt.placeholder,
-              submitLabel: groupInfo.modify.descriptionPrompt.confirm,
-              cancelLabel: groupInfo.modify.descriptionPrompt.cancel,
-              onSubmit: (text: string) => {
-                console.log('test:onSubmit:', text);
-                onChangeDescription(groupId, text);
-              },
-              onCancel() {
-                console.log('test:onCancel:');
-              },
-            });
-          },
-        },
-        {
-          title: groupInfo.modify.groupId,
-          titleColor: 'black',
-          onPress: () => {
-            cbs.setString(groupId);
-            cbs.getString().then((text) => {
-              console.log('test:openSheet:', text);
-              toast.showToast(groupInfo.toast[3]!);
-            });
-          },
-        },
-      ],
+  const onClickHeader = () => {
+    sendGroupInfoEvent({
+      eventType: 'SheetEvent',
+      action: 'open_group_info_setting',
+      params: { groupId, groupName, groupDesc },
     });
   };
 
-  const onInvite = () => {
-    // TODO: developer
-    // navigation.push('ContactList', {
-    //   params: {
-    //     type: 'group_invite',
-    //   },
-    // });
-  };
+  const onInvite = () => {};
 
-  const onMembers = () => {
-    // TODO: developer
-    // navigation.push('ContactList', {
-    //   params: {
-    //     type: 'group_member',
-    //   },
-    // });
-  };
+  const onMembers = () => {};
 
   const onDestroyGroup = React.useCallback(
     (groupId: string) => {
@@ -207,9 +146,63 @@ export function GroupInfoScreenInternal({
     [client.groupManager, navigation]
   );
 
+  const onCopyGroupId = React.useCallback(
+    (groupId: string) => {
+      cbs.setString(groupId);
+      cbs.getString().then(() => {
+        sendGroupInfoEvent({
+          eventType: 'ToastEvent',
+          action: 'toast_',
+          params: groupInfo.toast[3]!,
+        });
+      });
+    },
+    [cbs, groupInfo.toast]
+  );
+
   const addListeners = React.useCallback(() => {
-    return () => {};
-  }, []);
+    const sub = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'exec_leave_group':
+            onLeaveGroup(params.groupId);
+            break;
+          case 'exec_destroy_group':
+            onDestroyGroup(params.groupId);
+            break;
+          case 'exec_modify_group_name':
+            onChangeName(params.groupId, params.newGroupName);
+            break;
+          case 'exec_modify_group_description':
+            onChangeDescription(params.groupId, params.newGroupDescription);
+            break;
+          case 'copy_group_id':
+            onCopyGroupId(params.groupId);
+            break;
+
+          default:
+            break;
+        }
+      }
+    );
+    return () => {
+      sub.remove();
+    };
+  }, [
+    onChangeDescription,
+    onChangeName,
+    onCopyGroupId,
+    onDestroyGroup,
+    onLeaveGroup,
+  ]);
 
   const initList = React.useCallback(() => {
     client.groupManager
@@ -248,7 +241,7 @@ export function GroupInfoScreenInternal({
 
   return (
     <View style={styles.container}>
-      <Pressable style={{ paddingHorizontal: sf(50) }} onPress={onHeader}>
+      <Pressable style={{ paddingHorizontal: sf(50) }} onPress={onClickHeader}>
         <View style={styles.top}>
           <Avatar uri="" size={sf(100)} radius={sf(50)} />
         </View>
@@ -322,18 +315,10 @@ export function GroupInfoScreenInternal({
       <Pressable
         style={styles.listItem}
         onPress={() => {
-          alert.openAlert({
-            title: groupInfo.leaveAlert.title,
-            message: groupInfo.leaveAlert.message,
-            buttons: [
-              {
-                text: groupInfo.leaveAlert.cancelButton,
-              },
-              {
-                text: groupInfo.leaveAlert.confirmButton,
-                onPress: () => onLeaveGroup(groupId),
-              },
-            ],
+          sendGroupInfoEvent({
+            eventType: 'AlertEvent',
+            action: 'manual_leave_group',
+            params: { groupId },
           });
         }}
       >
@@ -342,18 +327,10 @@ export function GroupInfoScreenInternal({
       <Pressable
         style={styles.listItem}
         onPress={() => {
-          alert.openAlert({
-            title: groupInfo.destroyAlert.title,
-            message: groupInfo.destroyAlert.message,
-            buttons: [
-              {
-                text: groupInfo.destroyAlert.cancelButton,
-              },
-              {
-                text: groupInfo.destroyAlert.confirmButton,
-                onPress: () => onDestroyGroup(groupId),
-              },
-            ],
+          sendGroupInfoEvent({
+            eventType: 'AlertEvent',
+            action: 'manual_destroy_group',
+            params: { groupId },
           });
         }}
       >

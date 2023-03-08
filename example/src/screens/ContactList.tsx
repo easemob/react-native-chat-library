@@ -6,10 +6,9 @@ import type {
   MaterialTopTabNavigationProp,
   MaterialTopTabScreenProps,
 } from '@react-navigation/material-top-tabs';
-import {
+import type {
   CompositeNavigationProp,
   CompositeScreenProps,
-  useNavigation,
 } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type {
@@ -34,6 +33,7 @@ import {
   ContactChatSdkEvent,
   ContactChatSdkEventType,
   createStyleSheet,
+  DataEventType,
   DefaultAvatar,
   DefaultListItemSeparator,
   DefaultListSearchHeader,
@@ -42,18 +42,12 @@ import {
   EqualHeightListItemComponent,
   EqualHeightListItemData,
   EqualHeightListRef,
-  FragmentContainer,
   getScaleFactor,
   LocalIcon,
   queueTask,
   ScreenContainer,
-  useAlert,
-  useBottomSheet,
-  useThemeContext,
-  useToastContext,
 } from 'react-native-chat-uikit';
 
-import { CreateGroupSettings } from '../components/CreateGroupSettings';
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
 import {
@@ -61,6 +55,8 @@ import {
   ContactListEventType,
   CreateGroupSettingsEvent,
 } from '../events';
+import type { DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type {
   BottomTabParamsList,
   BottomTabScreenParamsList,
@@ -134,256 +130,16 @@ type ItemDataType = EqualHeightListItemData & {
   action?: ItemActionDataType;
 };
 
-type AlertEvent =
-  | 'alert_block_contact'
-  | 'alert_group_member_modify'
-  | 'alert_remove_group_member'
-  | 'alert_';
-type SheetEvent =
-  | 'sheet_contact_list'
-  | 'sheet_group_member'
-  | 'sheet_create_group_settings'
-  | 'sheet_';
-type ToastEvent = 'toast_Unblocked' | 'toast_Removed' | 'toast_';
-
-const InvisiblePlaceholder = React.memo(
-  ({ getData }: { getData: () => ItemDataType[] }) => {
-    console.log('test:InvisiblePlaceholder:', getData());
-    const sheet = useBottomSheet();
-    const toast = useToastContext();
-    const alert = useAlert();
-    const { groupInfo } = useAppI18nContext();
-    const theme = useThemeContext();
-    const sf = getScaleFactor();
-
-    const navigation = useNavigation<NavigationProp>();
-
-    React.useEffect(() => {
-      const sub = DeviceEventEmitter.addListener(ContactListEvent, (event) => {
-        console.log('test:ContactListEvent:sub:', event);
-        switch (event.type as ContactListEventType) {
-          case 'alert_':
-            {
-              const eventParams = event.params;
-              const eventType = eventParams.type as AlertEvent;
-              if (eventType === 'alert_group_member_modify') {
-                alert.openAlert({
-                  title: groupInfo.inviteAlert.title,
-                  message: groupInfo.inviteAlert.message,
-                  buttons: [
-                    {
-                      text: groupInfo.inviteAlert.cancelButton,
-                      onPress: () => {
-                        navigation.goBack();
-                      },
-                    },
-                    {
-                      text: groupInfo.inviteAlert.confirmButton,
-                      onPress: () => {
-                        navigation.goBack();
-                        DeviceEventEmitter.emit(ContactListEvent, {
-                          type: 'toast_' as ContactListEventType,
-                          params: {
-                            type: 'toast_custom' as ToastEvent,
-                            content: groupInfo.toast[0]!,
-                          },
-                        });
-                      },
-                    },
-                  ],
-                });
-              } else if (eventType === 'alert_block_contact') {
-                alert.openAlert({
-                  title: 'Unblock NickName?',
-                  buttons: [
-                    {
-                      text: 'Cancel',
-                      onPress: () => {},
-                    },
-                    {
-                      text: 'Confirm',
-                      onPress: () => {
-                        DeviceEventEmitter.emit(ContactListEvent, {
-                          type: 'toast_' as ContactListEventType,
-                          params: {
-                            type: 'toast_Unblocked' as ToastEvent,
-                            content: 'Unblocked',
-                          },
-                        });
-                      },
-                    },
-                  ],
-                });
-              } else if (eventType === 'alert_remove_group_member') {
-                alert.openAlert({
-                  title: 'Remove NickName?',
-                  buttons: [
-                    {
-                      text: 'Cancel',
-                      onPress: () => {},
-                    },
-                    {
-                      text: 'Confirm',
-                      onPress: () => {
-                        DeviceEventEmitter.emit(ContactListEvent, {
-                          type: 'toast_' as ContactListEventType,
-                          params: {
-                            type: 'toast_Removed' as ToastEvent,
-                            content: 'Removed',
-                          },
-                        });
-                      },
-                    },
-                  ],
-                });
-              }
-            }
-            break;
-          case 'sheet_':
-            {
-              const eventParams = event.params;
-              const eventType = eventParams.type as SheetEvent;
-              if (eventType === 'sheet_contact_list') {
-                sheet.openSheet({
-                  sheetItems: [
-                    {
-                      icon: 'loading',
-                      iconColor: theme.colors.primary,
-                      title: '1',
-                      titleColor: 'black',
-                      onPress: () => {},
-                    },
-                    {
-                      icon: 'loading',
-                      iconColor: theme.colors.primary,
-                      title: '2',
-                      titleColor: 'black',
-                      onPress: () => {},
-                    },
-                  ],
-                });
-              } else if (eventType === 'sheet_group_member') {
-                const { contactID } = eventParams.content;
-                sheet.openSheet({
-                  sheetItems: [
-                    {
-                      title: contactID,
-                      titleColor: 'black',
-                      onPress: () => {},
-                      containerStyle: {
-                        marginTop: sf(10),
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: undefined,
-                        minWidth: undefined,
-                        backgroundColor: undefined,
-                        borderRadius: undefined,
-                      },
-                      titleStyle: {
-                        fontWeight: '600',
-                        fontSize: sf(14),
-                        lineHeight: sf(16),
-                        color: 'rgba(102, 102, 102, 1)',
-                        marginHorizontal: undefined,
-                      },
-                    },
-                    {
-                      title: groupInfo.memberSheet.add,
-                      titleColor: 'black',
-                      onPress: () => {
-                        DeviceEventEmitter.emit(ContactListEvent, {
-                          type: 'toast_' as ContactListEventType,
-                          params: {
-                            type: 'toast_custom' as ToastEvent,
-                            content: groupInfo.toast[4]!,
-                          },
-                        });
-                      },
-                    },
-                    {
-                      title: groupInfo.memberSheet.remove,
-                      titleColor: 'rgba(255, 20, 204, 1)',
-                      onPress: () => {
-                        DeviceEventEmitter.emit(ContactListEvent, {
-                          type: 'alert_' as ContactListEventType,
-                          params: {
-                            type: 'alert_remove_group_member' as AlertEvent,
-                            content: {},
-                          },
-                        });
-                      },
-                    },
-                    {
-                      title: groupInfo.memberSheet.chat,
-                      titleColor: 'black',
-                      onPress: () => {},
-                    },
-                  ],
-                });
-              } else if (eventType === 'sheet_create_group_settings') {
-                sheet.openSheet({
-                  sheetItems: [
-                    {
-                      key: '1',
-                      Custom: CreateGroupSettings,
-                      CustomProps: { test: 'hh' } as any,
-                    },
-                  ],
-                });
-              }
-            }
-            break;
-          case 'toast_':
-            {
-              const params = event.params;
-              toast.showToast(params.content);
-            }
-            break;
-          case 'create_group_result_fail':
-            {
-              const params = event.params;
-              alert.openAlert({
-                title: params.content,
-                buttons: [
-                  {
-                    text: 'Confirm',
-                    onPress: () => {
-                      navigation.goBack();
-                    },
-                  },
-                ],
-              });
-            }
-            break;
-          default:
-            break;
-        }
-      });
-      return () => {
-        sub.remove();
-      };
-    }, [
-      toast,
-      sheet,
-      alert,
-      groupInfo.inviteAlert.title,
-      groupInfo.inviteAlert.message,
-      groupInfo.inviteAlert.cancelButton,
-      groupInfo.inviteAlert.confirmButton,
-      groupInfo.toast,
-      groupInfo.memberSheet.add,
-      groupInfo.memberSheet.remove,
-      groupInfo.memberSheet.chat,
-      navigation,
-      theme.colors.primary,
-      sf,
-      getData,
-    ]);
-
-    return <></>;
-  }
-);
+let count = 0;
+const sendContactEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Contact',
+    eventBizType: 'contact',
+  } as sendEventProps);
+};
 
 const Item: EqualHeightListItemComponent = (props) => {
   const sf = getScaleFactor();
@@ -441,13 +197,18 @@ const Item: EqualHeightListItemComponent = (props) => {
                 },
               }}
               onPress={() => {
-                DeviceEventEmitter.emit(ContactListEvent, {
-                  type: 'alert_' as ContactListEventType,
-                  params: {
-                    type: 'alert_block_contact' as AlertEvent,
-                    content: { item: item },
-                  },
+                sendContactEvent({
+                  eventType: 'AlertEvent',
+                  action: 'alert_block_contact',
+                  params: { item: item },
                 });
+                // DeviceEventEmitter.emit(ContactListEvent, {
+                //   type: 'alert_' as ContactListEventType,
+                //   params: {
+                //     type: 'alert_block_contact' as AlertEvent,
+                //     content: { item: item },
+                //   },
+                // });
               }}
             >
               {(item.action as ItemActionBlockDataType)?.block?.name}
@@ -507,8 +268,7 @@ export function ContactListScreenInternal({
   const rp = route.params as any;
   const params = rp?.params as any;
   const type = params?.type as Undefinable<ContactActionType>;
-  console.log('test:ContactListScreenInternal:', params, type, route);
-  const { header } = useAppI18nContext();
+  const { header, groupInfo } = useAppI18nContext();
   const { height: screenHeight } = useWindowDimensions();
 
   const [selectedCount] = React.useState(10);
@@ -522,10 +282,7 @@ export function ContactListScreenInternal({
   const { client, getCurrentId } = useAppChatSdkContext();
   const isInvite = React.useRef(true);
   const isPublic = React.useRef(true);
-
-  const getData = React.useCallback(() => {
-    return data;
-  }, [data]);
+  console.log('test:ContactListScreenInternal:', params, type);
 
   const manualRefresh = React.useCallback(
     (params: {
@@ -692,29 +449,27 @@ export function ContactListScreenInternal({
       const { contactID } = item;
       const r = {
         ...item,
-        onLongPress: (_: ItemDataType) => {
-          if (type === 'contact_list') {
-            DeviceEventEmitter.emit(ContactListEvent, {
-              type: 'sheet_' as ContactListEventType,
-              params: { type: 'sheet_contact_list' as SheetEvent, content: {} },
-            });
-          }
-        },
+        onLongPress: (_: ItemDataType) => {},
         onPress: (data: ItemDataType) => {
           if (type === 'create_conversation') {
             navigation.navigate('Chat', {
               params: { chatId: data.contactID, chatType: 0 },
             });
           } else if (type === 'group_member') {
-            DeviceEventEmitter.emit('sheet_', {
-              type: 'sheet_' as ContactListEventType,
-              params: {
-                type: 'sheet_group_member' as SheetEvent,
-                content: {
-                  contactID: contactID,
-                },
-              },
+            sendContactEvent({
+              eventType: 'SheetEvent',
+              action: 'sheet_group_member',
+              params: { contactID: contactID },
             });
+            // DeviceEventEmitter.emit('sheet_', {
+            //   type: 'sheet_' as ContactListEventType,
+            //   params: {
+            //     type: 'sheet_group_member' as SheetEvent,
+            //     content: {
+            //       contactID: contactID,
+            //     },
+            //   },
+            // });
           } else {
             navigation.navigate({
               name: 'ContactInfo',
@@ -777,13 +532,18 @@ export function ContactListScreenInternal({
             );
           } else if (type === 'create_group') {
             const _createGroup = () => {
-              DeviceEventEmitter.emit(ContactListEvent, {
-                type: 'sheet_' as ContactListEventType,
-                params: {
-                  type: 'sheet_create_group_settings' as SheetEvent,
-                  content: {},
-                },
+              sendContactEvent({
+                eventType: 'SheetEvent',
+                action: 'sheet_create_group_settings',
+                params: {},
               });
+              // DeviceEventEmitter.emit(ContactListEvent, {
+              //   type: 'sheet_' as ContactListEventType,
+              //   params: {
+              //     type: 'sheet_create_group_settings' as SheetEvent,
+              //     content: {},
+              //   },
+              // });
             };
             const right = `${header.createGroup}(${selectedCount})`;
             return (
@@ -800,13 +560,18 @@ export function ContactListScreenInternal({
             );
           } else if (type === 'group_member_modify') {
             const _addMember = () => {
-              DeviceEventEmitter.emit(ContactListEvent, {
-                type: 'alert_' as ContactListEventType,
-                params: {
-                  type: 'alert_group_member_modify' as AlertEvent,
-                  content: {},
-                },
+              sendContactEvent({
+                eventType: 'AlertEvent',
+                action: 'alert_group_member_modify',
+                params: {},
               });
+              // DeviceEventEmitter.emit(ContactListEvent, {
+              //   type: 'alert_' as ContactListEventType,
+              //   params: {
+              //     type: 'alert_group_member_modify' as AlertEvent,
+              //     content: {},
+              //   },
+              // });
             };
             const right = `${header.addMembers}(${selectedCount})`;
             return (
@@ -832,13 +597,18 @@ export function ContactListScreenInternal({
                 params: { type: 'group_member_modify' },
               });
             } else {
-              DeviceEventEmitter.emit(ContactListEvent, {
-                type: 'alert_' as ContactListEventType,
-                params: {
-                  type: 'alert_group_member_modify' as AlertEvent,
-                  content: {},
-                },
+              sendContactEvent({
+                eventType: 'AlertEvent',
+                action: 'alert_group_member_modify',
+                params: {},
               });
+              // DeviceEventEmitter.emit(ContactListEvent, {
+              //   type: 'alert_' as ContactListEventType,
+              //   params: {
+              //     type: 'alert_group_member_modify' as AlertEvent,
+              //     content: {},
+              //   },
+              // });
             }
           }}
         >
@@ -867,9 +637,12 @@ export function ContactListScreenInternal({
     });
   }, [NavigationHeaderRight, navigation, type]);
 
-  const createGroup = React.useCallback(
+  const createGroupAction = React.useCallback(
     async (data: ItemDataType[]) => {
-      console.log('test:createGroup:', data);
+      console.log('test:createGroupAction:', type, count++, data.length);
+      if (type !== 'create_group') {
+        return;
+      }
       const r = [];
       for (const item of data) {
         const i = item.action as ItemActionCreateGroupDataType;
@@ -905,7 +678,7 @@ export function ContactListScreenInternal({
           'Welcome to group'
         )
         .then((result) => {
-          console.log('test:createGroup:success:', result);
+          console.log('test:createGroupAction:success:', result);
           DeviceEventEmitter.emit(ContactListEvent, {
             type: 'create_group_result' as ContactListEventType,
             params: {
@@ -915,7 +688,7 @@ export function ContactListScreenInternal({
           });
         })
         .catch((error) => {
-          console.warn('test:createGroup:fail:', error);
+          console.warn('test:createGroupAction:fail:', error);
           DeviceEventEmitter.emit(ContactListEvent, {
             type: 'create_group_result' as ContactListEventType,
             params: {
@@ -925,7 +698,7 @@ export function ContactListScreenInternal({
           });
         });
     },
-    [client.groupManager, getCurrentId]
+    [client.groupManager, getCurrentId, type]
   );
 
   const initList = React.useCallback(
@@ -947,13 +720,13 @@ export function ContactListScreenInternal({
             ); // for test
           })
           .catch((error) => {
-            console.warn('test:error:', error);
+            console.warn('test:getAllContactsFromServer:error:', error);
           });
       } else if (type === 'create_group') {
         client.contactManager
           .getAllContactsFromServer()
           .then((result) => {
-            console.log('test:ContactListScreen:success:', result);
+            console.log('test:getAllContactsFromServer:success:', result);
             initData(
               result.map((id) => {
                 return {
@@ -969,7 +742,7 @@ export function ContactListScreenInternal({
             ); // for test
           })
           .catch((error) => {
-            console.warn('test:error:', error);
+            console.warn('test:getAllContactsFromServer:error:', error);
           });
       }
     },
@@ -990,6 +763,7 @@ export function ContactListScreenInternal({
 
   const addListeners = React.useCallback(
     (_: Undefinable<ContactActionType>) => {
+      console.log('test:addListeners:', ContactListScreenInternal.name);
       const sub = DeviceEventEmitter.addListener(
         ContactChatSdkEvent,
         (event) => {
@@ -1046,24 +820,82 @@ export function ContactListScreenInternal({
       const sub4 = DeviceEventEmitter.addListener(
         CreateGroupSettingsEvent,
         (event) => {
-          console.log('test:CreateGroupSettingsEvent:sub4:', event);
           if (event.type === 'create_new_group') {
             isInvite.current = event.params.isInvite;
             isPublic.current = event.params.isPublic;
-            createGroup(data);
+            createGroupAction(data);
+          }
+        }
+      );
+      const sub2 = DeviceEventEmitter.addListener(
+        'DataEvent' as DataEventType,
+        (event) => {
+          const action = event.action as DataActionEventType;
+          switch (action) {
+            case 'alert_group_member_modify_result':
+              {
+                const params = event.params as { isConfirmed: boolean };
+                if (params.isConfirmed) {
+                  navigation.goBack();
+                  sendContactEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params: groupInfo.toast[0]!,
+                  });
+                  // DeviceEventEmitter.emit(ContactListEvent, {
+                  //   type: 'toast_' as ContactListEventType,
+                  //   params: {
+                  //     type: 'toast_custom' as ToastEvent,
+                  //     content: groupInfo.toast[0]!,
+                  //   },
+                  // });
+                } else {
+                  navigation.goBack();
+                }
+              }
+              break;
+            case 'create_group_result_fail_result':
+              navigation.goBack();
+              break;
+            case 'create_group_result_success':
+              if (navigation.canGoBack()) {
+                const params = event.params as {
+                  chatId: string;
+                  chatType: number;
+                };
+                navigation.goBack();
+                // navigation.pop(1);
+                navigation.push('Chat', {
+                  params: { chatId: params.chatId, chatType: params.chatType },
+                });
+                // navigation.popToTop();
+              }
+              break;
+
+            default:
+              break;
           }
         }
       );
       return () => {
         sub.remove();
+        sub2.remove();
         sub4.remove();
       };
     },
-    [createGroup, data, duplicateCheck, manualRefresh, standardizedData, type]
+    [
+      createGroupAction,
+      data,
+      duplicateCheck,
+      groupInfo.toast,
+      manualRefresh,
+      navigation,
+      standardizedData,
+      type,
+    ]
   );
 
   React.useEffect(() => {
-    console.log('test:useEffect:', addListeners, initList, type);
     const load = () => {
       console.log('test:load:', ContactListScreen.name);
       const unsubscribe = addListeners(type);
@@ -1100,42 +932,35 @@ export function ContactListScreenInternal({
           });
         }}
       />
-      {isEmpty === true ? (
-        <Blank />
-      ) : (
-        <EqualHeightList
-          parentName="ContactList"
-          ref={listRef}
-          items={data}
-          ItemFC={Item}
-          enableAlphabet={enableAlphabet}
-          enableRefresh={enableRefresh}
-          enableHeader={enableHeader}
-          alphabet={{
-            alphabetCurrent: {
-              backgroundColor: 'orange',
-              color: 'white',
-            },
-            alphabetItemContainer: {
-              width: 15,
-              borderRadius: 8,
-            },
-            alphabetContainer: {
-              top: _calculateAlphabetHeight(),
-            },
-          }}
-          ItemSeparatorComponent={DefaultListItemSeparator}
-          onRefresh={(refreshType) => {
-            console.log('test:onRefresh:', refreshType);
-            if (refreshType === 'started') {
-              initList(type);
-            }
-          }}
-        />
-      )}
-      <FragmentContainer>
-        <InvisiblePlaceholder getData={getData} />
-      </FragmentContainer>
+      <EqualHeightList
+        parentName="ContactList"
+        ref={listRef}
+        items={data}
+        ItemFC={Item}
+        enableAlphabet={enableAlphabet}
+        enableRefresh={enableRefresh}
+        enableHeader={enableHeader}
+        alphabet={{
+          alphabetCurrent: {
+            backgroundColor: 'orange',
+            color: 'white',
+          },
+          alphabetItemContainer: {
+            width: 15,
+            borderRadius: 8,
+          },
+          alphabetContainer: {
+            top: _calculateAlphabetHeight(),
+          },
+        }}
+        ItemSeparatorComponent={DefaultListItemSeparator}
+        onRefresh={(refreshType) => {
+          if (refreshType === 'started') {
+            initList(type);
+          }
+        }}
+      />
+      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </>
   );
 }
@@ -1161,6 +986,11 @@ const styles = createStyleSheet({
     paddingRight: 5,
   },
   rightButton: { padding: 10, marginRight: -10 },
+  blank: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
 });
 
 export default function ContactListScreen({

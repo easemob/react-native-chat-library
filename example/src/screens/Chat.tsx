@@ -29,6 +29,7 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
   const params = rp?.params as { chatId: string; chatType: number };
   const chatId = params.chatId;
   const messageBubbleListRefP = React.useRef<typeof MessageBubbleList>(null);
+  console.log('test:ChatScreen:123');
 
   const onItemPress = React.useCallback(
     (data: MessageItemType) => {

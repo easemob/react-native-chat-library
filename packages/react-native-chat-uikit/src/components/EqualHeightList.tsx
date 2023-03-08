@@ -334,7 +334,6 @@ export const EqualHeightList: (
     ref,
     () => ({
       manualRefresh: (updateItems: ListItemUpdateType[]) => {
-        // console.log('test:manualRefresh:', updateItems);
         _handleManualRefresh(updateItems);
       },
     }),
@@ -388,6 +387,7 @@ export const EqualHeightList: (
     RefreshComponent,
     HeaderComponent,
     Header,
+    parentName,
     // ItemSeparatorComponent,
     // parentName,
     ...others
@@ -402,6 +402,9 @@ export const EqualHeightList: (
   const listItemHeightRef = React.useRef(0);
   // let listItemHeightRef = 0;
   const childrenItems = React.useRef<ItemData[]>([]);
+  if (__DEV__ === true) {
+    console.log('test:EqualHeightList:', parentName);
+  }
 
   if (items.length > 0) {
     const item = items[0];

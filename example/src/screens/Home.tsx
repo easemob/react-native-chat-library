@@ -81,7 +81,6 @@ const HomeScreenInternal = React.memo((props: HomeScreenInternalProps) => {
         };
         setConvBarState(eventParams.count);
       } else if (eventType === 'update_request') {
-        console.log('test:1235:', event);
         const eventParams = event.params as {
           unread: boolean;
         };
@@ -238,7 +237,6 @@ export default function HomeScreen(
         const eventParams = event.params as { id: string; error: string };
         switch (eventType) {
           case 'onContactInvited':
-            console.log('test:1235:from:addListeners:home:');
             contactFlag.current = true;
             DeviceEventEmitter.emit(HomeEvent, {
               type: 'update_request' as HomeEventType,
@@ -288,7 +286,6 @@ export default function HomeScreen(
           console.warn('test:error:', error);
         }
         contactFlag.current = unread;
-        console.log('test:1235:from:initContactFlag:home:');
         DeviceEventEmitter.emit(HomeEvent, {
           type: 'update_request' as HomeEventType,
           params: { unread: unread },

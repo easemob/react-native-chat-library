@@ -4,92 +4,130 @@ import { DeviceEventEmitter, Pressable, Text, View } from 'react-native';
 import {
   Avatar,
   createStyleSheet,
+  DataEventType,
   getScaleFactor,
   LocalIcon,
   ScreenContainer,
   Switch,
-  useAlert,
-  useToastContext,
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
 
-const sf = getScaleFactor();
+const sendContactInfoEvent = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'ContactInfo',
+    eventBizType: 'contact',
+  } as sendEventProps);
+};
 
 export function ContactInfoScreenInternal({
   route,
   navigation,
 }: Props): JSX.Element {
-  //   console.log('test:ConversationListScreen:', route.params, navigation);
-  //   return <Placeholder content={`${ContactInfoScreen.name}`} />;
   const rp = route.params as any;
   const params = rp?.params as { userId: string };
   const { contactInfo } = useAppI18nContext();
   const { client } = useAppChatSdkContext();
   const [isMute, setIsMute] = React.useState(false);
-  const alert = useAlert();
-  const toast = useToastContext();
   const userId = params.userId;
-  const [name, setName] = React.useState(contactInfo.name('NickName'));
-  console.log('test:ContactInfoScreen:', params, name);
+  const [userName, setUserName] = React.useState(contactInfo.name('NickName'));
+  const sf = getScaleFactor();
+  console.log('test:ContactInfoScreen:', params, userName);
 
-  const removeContact = (
-    userId: string,
-    onResult: (result: boolean) => void
-  ) => {
-    client.contactManager
-      .deleteContact(userId)
-      .then((result) => {
-        console.log('test:deleteContact:success:', result);
-        onResult?.(true);
-      })
-      .catch((error) => {
-        onResult?.(false);
-        console.warn('test:deleteContact:fail:', error);
-      });
-  };
-  const blockContact = (
-    userId: string,
-    onResult: (result: boolean) => void
-  ) => {
-    client.contactManager
-      .addUserToBlockList(userId)
-      .then((result) => {
-        console.log('test:addUserToBlockList:success:', result);
-        onResult?.(true);
-      })
-      .catch((error) => {
-        onResult?.(false);
-        console.warn('test:addUserToBlockList:fail:', error);
-      });
-  };
+  const removeContact = React.useCallback(
+    (userId: string, onResult: (result: boolean) => void) => {
+      client.contactManager
+        .deleteContact(userId)
+        .then((result) => {
+          console.log('test:deleteContact:success:', result);
+          onResult?.(true);
+        })
+        .catch((error) => {
+          onResult?.(false);
+          console.warn('test:deleteContact:fail:', error);
+        });
+    },
+    [client.contactManager]
+  );
+  const blockContact = React.useCallback(
+    (userId: string, onResult: (result: boolean) => void) => {
+      client.contactManager
+        .addUserToBlockList(userId)
+        .then((result) => {
+          console.log('test:blockContact:success:', result);
+          onResult?.(true);
+        })
+        .catch((error) => {
+          onResult?.(false);
+          console.warn('test:blockContact:fail:', error);
+        });
+    },
+    [client.contactManager]
+  );
 
   const addListeners = React.useCallback(() => {
     console.log('test:ContactInfoScreen:addListeners:');
-    const sub1 = DeviceEventEmitter.addListener(
-      'manual_block_contact',
+    const sub = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
       (event) => {
-        console.log('test:manual_block_contact:', event);
-        // toast.showToast(contactInfo.toast[0]!);
-      }
-    );
-    const sub2 = DeviceEventEmitter.addListener(
-      'manual_remove_contact',
-      (event) => {
-        console.log('test:manual_remove_contact:', event);
-        // toast.showToast(contactInfo.toast[1]!);
-        navigation.goBack();
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'exec_block_contact':
+            {
+              const userId = params.userId;
+              blockContact(userId, (result) => {
+                if (result === true) {
+                  // toast.showToast(contactInfo.toast[0]!); // !!! dead lock
+                  sendContactInfoEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params: contactInfo.toast[0]!,
+                  });
+                }
+              });
+            }
+            break;
+          case 'exec_remove_contact':
+            {
+              const userId = params.userId;
+              removeContact(userId, (result) => {
+                if (result === true) {
+                  // toast.showToast(contactInfo.toast[1]!); // !!! dead lock
+                  sendContactInfoEvent({
+                    eventType: 'ToastEvent',
+                    action: 'toast_',
+                    params: contactInfo.toast[1]!,
+                  });
+                  navigation.goBack();
+                }
+              });
+            }
+            break;
+
+          default:
+            break;
+        }
       }
     );
     return () => {
-      sub1.remove();
-      sub2.remove();
+      sub.remove();
     };
-  }, [navigation]);
+  }, [blockContact, contactInfo.toast, navigation, removeContact]);
 
   const init = React.useCallback(() => {
     client.userManager
@@ -99,7 +137,7 @@ export function ContactInfoScreenInternal({
           const info = result.get(userId);
           console.log('test:info:', info);
           if (info) {
-            setName(info.nickName ?? '');
+            setUserName(info.nickName ?? '');
           }
         }
       })
@@ -132,7 +170,7 @@ export function ContactInfoScreenInternal({
         <Avatar uri="" size={sf(100)} radius={sf(50)} />
       </View>
       <View style={styles.top}>
-        <Text style={styles.name}>{name}</Text>
+        <Text style={styles.name}>{userName}</Text>
       </View>
       <View style={{ marginTop: sf(10) }}>
         <Text style={styles.id}>{userId}</Text>
@@ -168,26 +206,10 @@ export function ContactInfoScreenInternal({
       <Pressable
         style={styles.listItem}
         onPress={() => {
-          alert.openAlert({
-            title: contactInfo.blockAlert.title,
-            message: contactInfo.blockAlert.message,
-            buttons: [
-              {
-                text: contactInfo.blockAlert.cancelButton,
-              },
-              {
-                text: contactInfo.blockAlert.confirmButton,
-                onPress: () => {
-                  toast.showToast(contactInfo.toast[0]!); // !!! dead lock
-                  blockContact(userId, (result) => {
-                    if (result === true) {
-                      // toast.showToast(contactInfo.toast[0]!); // !!! dead lock
-                      DeviceEventEmitter.emit('manual_block_contact', userId);
-                    }
-                  });
-                },
-              },
-            ],
+          sendContactInfoEvent({
+            eventType: 'AlertEvent',
+            action: 'manual_block_contact',
+            params: { userId },
           });
         }}
       >
@@ -196,26 +218,10 @@ export function ContactInfoScreenInternal({
       <Pressable
         style={styles.listItem}
         onPress={() => {
-          alert.openAlert({
-            title: `Block ${name}`,
-            message: contactInfo.deleteAlert.message,
-            buttons: [
-              {
-                text: contactInfo.deleteAlert.cancelButton,
-              },
-              {
-                text: contactInfo.deleteAlert.confirmButton,
-                onPress: () => {
-                  toast.showToast(contactInfo.toast[1]!); // !!! dead lock
-                  removeContact(userId, (result) => {
-                    if (result === true) {
-                      // toast.showToast(contactInfo.toast[1]!); // !!! dead lock
-                      DeviceEventEmitter.emit('manual_remove_contact', userId);
-                    }
-                  });
-                },
-              },
-            ],
+          sendContactInfoEvent({
+            eventType: 'AlertEvent',
+            action: 'manual_remove_contact',
+            params: { userId },
           });
         }}
       >
