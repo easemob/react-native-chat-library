@@ -9,13 +9,14 @@ import { DeviceEventEmitter, View } from 'react-native';
 import {
   ConnectStateChatSdkEvent,
   ConnectStateChatSdkEventType,
+  DataEventType,
   getScaleFactor,
   Loading,
   Services,
 } from 'react-native-chat-uikit';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import { AppEvent, AppEventType } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
 import type { RootParamsList } from '../routes';
 
 export function SplashScreen({
@@ -66,49 +67,6 @@ export function SplashScreen({
   }, []);
 
   const addListeners = React.useCallback(() => {
-    const sub = DeviceEventEmitter.addListener(AppEvent, (event) => {
-      console.log('test:SplashScreen:addListener:', event);
-      const eventType = event.type as AppEventType;
-      switch (eventType) {
-        case 'on_initialized':
-          {
-            const eventParams = event.params as {
-              autoLogin: boolean;
-              navigation: NavigationContainerRefWithCurrent<RootParamsList>;
-            };
-            if (eventParams.autoLogin === true) {
-              autoLoginAction({
-                onResult: ({ result, error }) => {
-                  if (error === undefined) {
-                    if (result === true) {
-                      createUserDir();
-                      eventParams.navigation.dispatch(
-                        StackActions.push('Home', { params: {} })
-                      );
-                    } else {
-                      eventParams.navigation.dispatch(
-                        CommonActions.navigate('Login', { params: {} })
-                      );
-                    }
-                  } else {
-                    console.warn('test:error:', error);
-                  }
-                },
-              });
-            } else {
-              eventParams.navigation.dispatch(
-                CommonActions.navigate('Login', { params: {} })
-              );
-            }
-          }
-          break;
-        case 'on_logined':
-          createUserDir();
-          break;
-        default:
-          break;
-      }
-    });
     const sub2 = DeviceEventEmitter.addListener(
       ConnectStateChatSdkEvent,
       (event) => {
@@ -135,9 +93,62 @@ export function SplashScreen({
         }
       }
     );
+    const sub3 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp: number;
+          key: string;
+        };
+        switch (action) {
+          case 'on_initialized':
+            {
+              const eventParams = params as {
+                autoLogin: boolean;
+                navigation: NavigationContainerRefWithCurrent<RootParamsList>;
+              };
+              if (eventParams.autoLogin === true) {
+                autoLoginAction({
+                  onResult: ({ result, error }) => {
+                    if (error === undefined) {
+                      if (result === true) {
+                        createUserDir();
+                        eventParams.navigation.dispatch(
+                          StackActions.push('Home', { params: {} })
+                        );
+                      } else {
+                        eventParams.navigation.dispatch(
+                          CommonActions.navigate('Login', { params: {} })
+                        );
+                      }
+                    } else {
+                      console.warn('test:error:', error);
+                    }
+                  },
+                });
+              } else {
+                eventParams.navigation.dispatch(
+                  CommonActions.navigate('Login', { params: {} })
+                );
+              }
+            }
+            break;
+          case 'on_logined':
+            createUserDir();
+            break;
+
+          default:
+            break;
+        }
+      }
+    );
     return () => {
-      sub.remove();
       sub2.remove();
+      sub3.remove();
     };
   }, [
     autoLoginAction,

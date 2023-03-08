@@ -1,11 +1,10 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
-import { DeviceEventEmitter } from 'react-native';
 import { ChatMessageType } from 'react-native-chat-sdk';
 import { ScreenContainer } from 'react-native-chat-uikit';
 
 import { CustomMessageRenderItem } from '../components/CustomMessageBubble';
-import { HomeEvent, HomeEventType } from '../events';
+import { sendEvent } from '../events2/sendEvent';
 import ChatFragment from '../fragments/Chat';
 import type {
   ImageMessageItemType,
@@ -67,9 +66,12 @@ export default function ChatScreen({ route, navigation }: Props): JSX.Element {
           CustomMessageRenderItemP: CustomMessageRenderItem,
         }}
         onUpdateReadCount={(unreadCount) => {
-          DeviceEventEmitter.emit(HomeEvent, {
-            type: 'update_all_count' as HomeEventType,
+          sendEvent({
+            eventType: 'DataEvent',
+            action: 'update_all_count',
             params: { count: unreadCount },
+            eventBizType: 'conversation',
+            senderId: 'Chat',
           });
         }}
         onItemPress={onItemPress}

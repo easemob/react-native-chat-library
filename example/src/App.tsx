@@ -14,7 +14,7 @@ import {
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { registerRootComponent } from 'expo';
 import * as React from 'react';
-import { DeviceEventEmitter, Linking, Platform, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import * as Audio from 'react-native-audio-recorder-player';
 import { ChatClient } from 'react-native-chat-sdk';
 import {
@@ -38,8 +38,8 @@ import Dev from './__dev__';
 import HomeHeaderRight from './components/HomeHeaderRight';
 import HomeHeaderTitle from './components/HomeHeaderTitle';
 import { AppChatSdkContext } from './contexts/AppImSdkContext';
-import { AppEvent, AppEventType } from './events';
 import { ModalPlaceholder } from './events2';
+import { sendEvent } from './events2/sendEvent';
 import { AppStringSet } from './I18n/AppCStringSet.en';
 import type { RootParamsList, RootParamsName } from './routes';
 import Chat from './screens/Chat';
@@ -139,9 +139,12 @@ export default function App() {
       return;
     }
     console.log('test:onInitApp:');
-    DeviceEventEmitter.emit(AppEvent, {
-      type: 'on_initialized' as AppEventType,
+    sendEvent({
+      eventType: 'DataEvent',
+      action: 'on_initialized',
       params: { autoLogin: autoLogin.current, navigation: RootRef },
+      eventBizType: 'setting',
+      senderId: 'App',
     });
   }, [RootRef, isOnInitialized, isOnReady]);
 

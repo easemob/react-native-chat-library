@@ -50,12 +50,7 @@ import {
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import {
-  ContactListEvent,
-  ContactListEventType,
-  CreateGroupSettingsEvent,
-} from '../events';
-import type { DataActionEventType } from '../events2';
+import type { BizEventType, DataActionEventType } from '../events2';
 import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type {
   BottomTabParamsList,
@@ -130,13 +125,12 @@ type ItemDataType = EqualHeightListItemData & {
   action?: ItemActionDataType;
 };
 
-let count = 0;
-const sendContactEvent = (
+const sendEventFromContactList = (
   params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
 ) => {
   sendEvent({
     ...params,
-    senderId: 'Contact',
+    senderId: 'ContactList',
     eventBizType: 'contact',
   } as sendEventProps);
 };
@@ -197,18 +191,11 @@ const Item: EqualHeightListItemComponent = (props) => {
                 },
               }}
               onPress={() => {
-                sendContactEvent({
+                sendEventFromContactList({
                   eventType: 'AlertEvent',
                   action: 'alert_block_contact',
                   params: { item: item },
                 });
-                // DeviceEventEmitter.emit(ContactListEvent, {
-                //   type: 'alert_' as ContactListEventType,
-                //   params: {
-                //     type: 'alert_block_contact' as AlertEvent,
-                //     content: { item: item },
-                //   },
-                // });
               }}
             >
               {(item.action as ItemActionBlockDataType)?.block?.name}
@@ -280,8 +267,6 @@ export function ContactListScreenInternal({
   const data: ItemDataType[] = React.useMemo(() => [], []); // for search
   const [isEmpty, setIsEmpty] = React.useState(true);
   const { client, getCurrentId } = useAppChatSdkContext();
-  const isInvite = React.useRef(true);
-  const isPublic = React.useRef(true);
   console.log('test:ContactListScreenInternal:', params, type);
 
   const manualRefresh = React.useCallback(
@@ -456,20 +441,11 @@ export function ContactListScreenInternal({
               params: { chatId: data.contactID, chatType: 0 },
             });
           } else if (type === 'group_member') {
-            sendContactEvent({
+            sendEventFromContactList({
               eventType: 'SheetEvent',
               action: 'sheet_group_member',
               params: { contactID: contactID },
             });
-            // DeviceEventEmitter.emit('sheet_', {
-            //   type: 'sheet_' as ContactListEventType,
-            //   params: {
-            //     type: 'sheet_group_member' as SheetEvent,
-            //     content: {
-            //       contactID: contactID,
-            //     },
-            //   },
-            // });
           } else {
             navigation.navigate({
               name: 'ContactInfo',
@@ -532,18 +508,11 @@ export function ContactListScreenInternal({
             );
           } else if (type === 'create_group') {
             const _createGroup = () => {
-              sendContactEvent({
+              sendEventFromContactList({
                 eventType: 'SheetEvent',
                 action: 'sheet_create_group_settings',
                 params: {},
               });
-              // DeviceEventEmitter.emit(ContactListEvent, {
-              //   type: 'sheet_' as ContactListEventType,
-              //   params: {
-              //     type: 'sheet_create_group_settings' as SheetEvent,
-              //     content: {},
-              //   },
-              // });
             };
             const right = `${header.createGroup}(${selectedCount})`;
             return (
@@ -560,18 +529,11 @@ export function ContactListScreenInternal({
             );
           } else if (type === 'group_member_modify') {
             const _addMember = () => {
-              sendContactEvent({
+              sendEventFromContactList({
                 eventType: 'AlertEvent',
                 action: 'alert_group_member_modify',
                 params: {},
               });
-              // DeviceEventEmitter.emit(ContactListEvent, {
-              //   type: 'alert_' as ContactListEventType,
-              //   params: {
-              //     type: 'alert_group_member_modify' as AlertEvent,
-              //     content: {},
-              //   },
-              // });
             };
             const right = `${header.addMembers}(${selectedCount})`;
             return (
@@ -597,18 +559,11 @@ export function ContactListScreenInternal({
                 params: { type: 'group_member_modify' },
               });
             } else {
-              sendContactEvent({
+              sendEventFromContactList({
                 eventType: 'AlertEvent',
                 action: 'alert_group_member_modify',
                 params: {},
               });
-              // DeviceEventEmitter.emit(ContactListEvent, {
-              //   type: 'alert_' as ContactListEventType,
-              //   params: {
-              //     type: 'alert_group_member_modify' as AlertEvent,
-              //     content: {},
-              //   },
-              // });
             }
           }}
         >
@@ -638,12 +593,20 @@ export function ContactListScreenInternal({
   }, [NavigationHeaderRight, navigation, type]);
 
   const createGroupAction = React.useCallback(
-    async (data: ItemDataType[]) => {
-      console.log('test:createGroupAction:', type, count++, data.length);
+    async ({
+      data,
+      isInvite,
+      isPublic,
+    }: {
+      data: ItemDataType[];
+      isInvite: boolean;
+      isPublic: boolean;
+    }) => {
+      console.log('test:createGroupAction:', type, data.length);
       if (type !== 'create_group') {
         return;
       }
-      const r = [];
+      const r = [] as string[];
       for (const item of data) {
         const i = item.action as ItemActionCreateGroupDataType;
         if (i?.createGroup && i.createGroup.isInvited === true) {
@@ -651,8 +614,9 @@ export function ContactListScreenInternal({
         }
       }
       if (r.length === 0) {
-        DeviceEventEmitter.emit(ContactListEvent, {
-          type: 'create_group_result' as ContactListEventType,
+        sendEventFromContactList({
+          eventType: 'DataEvent',
+          action: 'create_group_result',
           params: {
             result: false,
             error: 'The number of members cannot be less than 1.',
@@ -662,25 +626,34 @@ export function ContactListScreenInternal({
       }
       const currentId = getCurrentId();
       r.push(currentId);
+      const groupName = (r: string[]) => {
+        let _r = '';
+        for (const id of r) {
+          _r += `${id},`;
+        }
+        _r = _r.substring(0, _r.length - 1);
+        return _r;
+      };
       client.groupManager
         .createGroup(
           new ChatGroupOptions({
             style:
-              isPublic.current === true
+              isPublic === true
                 ? ChatGroupStyle.PublicJoinNeedApproval
                 : ChatGroupStyle.PrivateMemberCanInvite,
             maxCount: 200,
-            inviteNeedConfirm: isInvite.current,
+            inviteNeedConfirm: isInvite,
           }),
-          'New Group',
+          groupName(r),
           'This is new group.',
           r,
           'Welcome to group'
         )
         .then((result) => {
           console.log('test:createGroupAction:success:', result);
-          DeviceEventEmitter.emit(ContactListEvent, {
-            type: 'create_group_result' as ContactListEventType,
+          sendEventFromContactList({
+            eventType: 'DataEvent',
+            action: 'create_group_result',
             params: {
               result: true,
               id: result.groupId,
@@ -689,8 +662,9 @@ export function ContactListScreenInternal({
         })
         .catch((error) => {
           console.warn('test:createGroupAction:fail:', error);
-          DeviceEventEmitter.emit(ContactListEvent, {
-            type: 'create_group_result' as ContactListEventType,
+          sendEventFromContactList({
+            eventType: 'DataEvent',
+            action: 'create_group_result',
             params: {
               result: false,
               error: error,
@@ -817,41 +791,27 @@ export function ContactListScreenInternal({
           }
         }
       );
-      const sub4 = DeviceEventEmitter.addListener(
-        CreateGroupSettingsEvent,
-        (event) => {
-          if (event.type === 'create_new_group') {
-            isInvite.current = event.params.isInvite;
-            isPublic.current = event.params.isPublic;
-            createGroupAction(data);
-          }
-        }
-      );
       const sub2 = DeviceEventEmitter.addListener(
         'DataEvent' as DataEventType,
         (event) => {
-          const action = event.action as DataActionEventType;
+          const { action, params } = event as {
+            eventBizType: BizEventType;
+            action: DataActionEventType;
+            senderId: string;
+            params: any;
+            timestamp?: number;
+          };
           switch (action) {
             case 'alert_group_member_modify_result':
-              {
-                const params = event.params as { isConfirmed: boolean };
-                if (params.isConfirmed) {
-                  navigation.goBack();
-                  sendContactEvent({
-                    eventType: 'ToastEvent',
-                    action: 'toast_',
-                    params: groupInfo.toast[0]!,
-                  });
-                  // DeviceEventEmitter.emit(ContactListEvent, {
-                  //   type: 'toast_' as ContactListEventType,
-                  //   params: {
-                  //     type: 'toast_custom' as ToastEvent,
-                  //     content: groupInfo.toast[0]!,
-                  //   },
-                  // });
-                } else {
-                  navigation.goBack();
-                }
+              if (params.isConfirmed) {
+                navigation.goBack();
+                sendEventFromContactList({
+                  eventType: 'ToastEvent',
+                  action: 'toast_',
+                  params: groupInfo.toast[0]!,
+                });
+              } else {
+                navigation.goBack();
               }
               break;
             case 'create_group_result_fail_result':
@@ -859,16 +819,22 @@ export function ContactListScreenInternal({
               break;
             case 'create_group_result_success':
               if (navigation.canGoBack()) {
-                const params = event.params as {
-                  chatId: string;
-                  chatType: number;
-                };
-                navigation.goBack();
-                // navigation.pop(1);
+                // navigation.goBack();
+                navigation.pop(1);
                 navigation.push('Chat', {
-                  params: { chatId: params.chatId, chatType: params.chatType },
+                  params: {
+                    chatId: params.chatId,
+                    chatType: params.chatType,
+                  },
                 });
                 // navigation.popToTop();
+              }
+              break;
+            case 'start_create_new_group':
+              {
+                const isInvite = params.isInvite as boolean;
+                const isPublic = params.isPublic as boolean;
+                createGroupAction({ data, isInvite, isPublic });
               }
               break;
 
@@ -880,7 +846,6 @@ export function ContactListScreenInternal({
       return () => {
         sub.remove();
         sub2.remove();
-        sub4.remove();
       };
     },
     [

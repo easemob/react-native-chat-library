@@ -323,10 +323,6 @@ export default function SearchScreen({
             action: 'toast_',
             params: 'The other person rejected the friend request.',
           });
-          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-          //   type: 'add_content_fail' as ToastEventType,
-          //   params: {},
-          // });
         });
     },
     [client.contactManager]
@@ -345,10 +341,6 @@ export default function SearchScreen({
             action: 'toast_',
             params: 'The group administrator refused to join the group.',
           });
-          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-          //   type: 'request_join_public_group_fail' as ToastEventType,
-          //   params: {},
-          // });
         });
     },
     [client.groupManager]
@@ -545,10 +537,6 @@ export default function SearchScreen({
                     params:
                       'The other party has already applied through friends.',
                   });
-                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                  //   type: 'add_content_success' as ToastEventType,
-                  //   params: {},
-                  // });
                 }
               }
               break;
@@ -574,10 +562,6 @@ export default function SearchScreen({
                     action: 'toast_',
                     params: 'The other person rejected the friend request.',
                   });
-                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                  //   type: 'add_content_fail' as ToastEventType,
-                  //   params: {},
-                  // });
                 }
               }
               break;
@@ -617,10 +601,6 @@ export default function SearchScreen({
                     params:
                       'The group administrator has applied to join the group.',
                   });
-                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                  //   type: 'request_join_public_group_success' as ToastEventType,
-                  //   params: {},
-                  // });
                 }
               }
               break;
@@ -647,10 +627,6 @@ export default function SearchScreen({
                     params:
                       'The group administrator refused to join the group.',
                   });
-                  // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-                  //   type: 'request_join_public_group_fail' as ToastEventType,
-                  //   params: {},
-                  // });
                 }
               }
               break;
@@ -755,10 +731,6 @@ export default function SearchScreen({
             action: 'toast_',
             params: 'The other person rejected the friend request.',
           });
-          // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-          //   type: 'add_content_fail' as ToastEventType,
-          //   params: {},
-          // });
         }
       } else if (params.type === 'add_contact') {
         const kv = await client.userManager.fetchUserInfoById([params.keyword]);
@@ -776,10 +748,6 @@ export default function SearchScreen({
               action: 'toast_',
               params: 'The group administrator refused to join the group.',
             });
-            // DeviceEventEmitter.emit('toast_' as ToastEvent, {
-            //   type: 'request_join_public_group_fail' as ToastEventType,
-            //   params: {},
-            // });
           }
         }
       }

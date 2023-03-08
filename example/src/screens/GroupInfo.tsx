@@ -15,7 +15,6 @@ import {
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import { GroupInfoEvent, GroupInfoEventType } from '../events';
 import type { BizEventType, DataActionEventType } from '../events2';
 import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type { RootScreenParamsList } from '../routes';
@@ -32,7 +31,15 @@ const sendGroupInfoEvent = (
   } as sendEventProps);
 };
 
-const sf = getScaleFactor();
+const sendEventFromGroupInfo = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'GroupInfo',
+    eventBizType: 'group',
+  } as sendEventProps);
+};
 
 export function GroupInfoScreenInternal({
   route,
@@ -41,6 +48,7 @@ export function GroupInfoScreenInternal({
   const rp = route.params as any;
   const params = rp?.params as { groupId: string };
 
+  const sf = getScaleFactor();
   const { groupInfo } = useAppI18nContext();
   const { client } = useAppChatSdkContext();
   const cbs = Services.cbs;
@@ -62,8 +70,9 @@ export function GroupInfoScreenInternal({
           .then(() => {
             console.log('test:onChangeName:');
             setGroupName(groupName);
-            DeviceEventEmitter.emit(GroupInfoEvent, {
-              type: 'modify_group_name' as GroupInfoEventType,
+            sendEventFromGroupInfo({
+              eventType: 'DataEvent',
+              action: 'exec_modify_group_name',
               params: { groupId, groupName },
             });
           })
@@ -118,8 +127,9 @@ export function GroupInfoScreenInternal({
         .destroyGroup(groupId)
         .then((result) => {
           console.log('test:destroyGroup:success:', result);
-          DeviceEventEmitter.emit(GroupInfoEvent, {
-            type: 'destroy_group',
+          sendEventFromGroupInfo({
+            eventType: 'DataEvent',
+            action: 'exec_destroy_group',
             params: { groupId: groupId },
           });
           navigation.goBack();
@@ -241,12 +251,17 @@ export function GroupInfoScreenInternal({
 
   return (
     <View style={styles.container}>
-      <Pressable style={{ paddingHorizontal: sf(50) }} onPress={onClickHeader}>
+      <Pressable
+        style={{ paddingHorizontal: sf(50), alignItems: 'center' }}
+        onPress={onClickHeader}
+      >
         <View style={styles.top}>
           <Avatar uri="" size={sf(100)} radius={sf(50)} />
         </View>
         <View style={styles.top}>
-          <Text style={styles.name}>{groupInfo.name(groupName)}</Text>
+          <Text numberOfLines={1} style={[styles.name, { maxWidth: '80%' }]}>
+            {groupInfo.name(groupName)}
+          </Text>
         </View>
         <View style={{ marginTop: sf(10) }}>
           <Text style={styles.id}>{groupId}</Text>

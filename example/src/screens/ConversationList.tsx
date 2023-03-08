@@ -22,7 +22,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import HomeHeaderTitle from '../components/HomeHeaderTitle';
-import { HomeEvent, HomeEventType } from '../events';
 import type { BizEventType, DataActionEventType } from '../events2';
 import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import ConversationListFragment, {
@@ -199,9 +198,12 @@ export default function ConversationListScreen({
             setData(d);
           }}
           onUpdateReadCount={(unreadCount) => {
-            DeviceEventEmitter.emit(HomeEvent, {
-              type: 'update_all_count' as HomeEventType,
+            sendEvent({
+              eventType: 'DataEvent',
+              action: 'update_all_count',
               params: { count: unreadCount },
+              eventBizType: 'conversation',
+              senderId: 'ConversationList',
             });
           }}
         />

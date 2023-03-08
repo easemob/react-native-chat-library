@@ -22,6 +22,7 @@ import {
   Badge,
   Blank,
   createStyleSheet,
+  DataEventType,
   DefaultAvatar,
   DefaultListItemSeparator,
   DefaultListSearchHeader,
@@ -36,12 +37,7 @@ import {
   useChatSdkContext,
 } from 'react-native-chat-uikit';
 
-import {
-  type ConversationListEventType,
-  type MessageEventType,
-  ConversationListEvent,
-  MessageEvent,
-} from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
 
 export type ItemDataType = EqualHeightListItemData & {
   convId: string;
@@ -579,23 +575,6 @@ export default function ConversationListFragment(
   );
 
   const addListeners = React.useCallback(() => {
-    const sub = DeviceEventEmitter.addListener(
-      ConversationListEvent,
-      (event) => {
-        const eventType = event.type as ConversationListEventType;
-        switch (eventType) {
-          case 'create_conversation':
-            createConversation(event.params);
-            break;
-          case 'conversation_read':
-            conversationRead(event.params);
-            break;
-          default:
-            break;
-        }
-      }
-    );
-
     const sub2 = DeviceEventEmitter.addListener(
       MessageChatSdkEvent,
       async (event) => {
@@ -624,57 +603,72 @@ export default function ConversationListFragment(
       }
     );
 
-    const sub3 = DeviceEventEmitter.addListener(MessageEvent, (event) => {
-      console.log('test:sub3:', ConversationListFragment.name, event);
-      const eventType = event.type as MessageEventType;
-      switch (eventType) {
-        case 'on_send_before':
-          {
-            const eventParams = event.params as { message: ChatMessage };
-            const conv = getConv(eventParams.message.conversationId);
-            if (conv === undefined) {
-              return;
+    const sub4 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'on_send_before':
+            {
+              const eventParams = params as { message: ChatMessage };
+              const conv = getConv(eventParams.message.conversationId);
+              if (conv === undefined) {
+                return;
+              }
+              manualRefresh({
+                type: 'update-one',
+                items: [
+                  standardizedData({
+                    ...conv,
+                    count: 0,
+                    lastMsg: eventParams.message,
+                  } as ItemDataType),
+                ],
+              });
             }
-            manualRefresh({
-              type: 'update-one',
-              items: [
-                standardizedData({
-                  ...conv,
-                  count: 0,
-                  lastMsg: eventParams.message,
-                } as ItemDataType),
-              ],
-            });
-          }
-          break;
-        case 'on_send_result':
-          {
-            const eventParams = event.params as { message: ChatMessage };
-            const conv = getConv(eventParams.message.conversationId);
-            if (conv === undefined) {
-              return;
+            break;
+          case 'on_send_result':
+            {
+              const eventParams = params as { message: ChatMessage };
+              const conv = getConv(eventParams.message.conversationId);
+              if (conv === undefined) {
+                return;
+              }
+              manualRefresh({
+                type: 'update-one',
+                items: [
+                  standardizedData({
+                    ...conv,
+                    count: 0,
+                    lastMsg: eventParams.message,
+                  } as ItemDataType),
+                ],
+              });
             }
-            manualRefresh({
-              type: 'update-one',
-              items: [
-                standardizedData({
-                  ...conv,
-                  count: 0,
-                  lastMsg: eventParams.message,
-                } as ItemDataType),
-              ],
-            });
-          }
-          break;
-        default:
-          break;
+            break;
+          case 'create_conversation':
+            createConversation(params);
+            break;
+
+          case 'update_conversation_read_state':
+            conversationRead(params);
+            break;
+
+          default:
+            break;
+        }
       }
-    });
+    );
 
     return () => {
-      sub.remove();
       sub2.remove();
-      sub3.remove();
+      sub4.remove();
     };
   }, [
     createConversation,

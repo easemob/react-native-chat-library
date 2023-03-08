@@ -40,6 +40,7 @@ import {
   type MessageChatSdkEventType,
   Button,
   createStyleSheet,
+  DataEventType,
   FaceList as ChatFaceList,
   getFileExtension,
   getScaleFactor,
@@ -60,16 +61,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moji from 'twemoji';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import {
-  type ChatEventType,
-  type ConversationListEventType,
-  type MessageBubbleEventType,
-  type MessageEventType,
-  ChatEvent,
-  ConversationListEvent,
-  MessageBubbleEvent,
-  MessageEvent,
-} from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
 import { sendEvent, sendEventProps } from '../events2/sendEvent';
 import MessageBubbleList, {
   type CustomMessageItemType,
@@ -81,16 +73,6 @@ import MessageBubbleList, {
   type TextMessageItemType,
   type VoiceMessageItemType,
 } from './MessageBubbleList';
-
-const sendChatEvent = (
-  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
-) => {
-  sendEvent({
-    ...params,
-    senderId: 'Chat',
-    eventBizType: 'chat',
-  } as sendEventProps);
-};
 
 type BaseProps = {
   chatId: string;
@@ -130,6 +112,16 @@ type ChatContentProps = BaseProps & {
   onUpdateReadCount?: (unreadCount: number) => void;
   onItemPress?: (data: MessageItemType) => void;
   onItemLongPress?: (data: MessageItemType) => void;
+};
+
+const sendEventFromChat = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Chat',
+    eventBizType: 'chat',
+  } as sendEventProps);
 };
 
 const ChatInput = React.memo((props: ChatInputProps) => {
@@ -253,15 +245,11 @@ const ChatInput = React.memo((props: ChatInputProps) => {
           ) : (
             <TouchableOpacity
               onPress={() => {
-                sendChatEvent({
+                sendEventFromChat({
                   eventType: 'SheetEvent',
                   action: 'open_input_extension',
                   params: {},
                 });
-                // DeviceEventEmitter.emit(ChatEvent, {
-                //   type: 'open_input_extension' as ChatEventType,
-                //   params: {},
-                // });
               }}
             >
               <LocalIcon name="plus_in_circle" color="#A5A7A6" size={sf(28)} />
@@ -283,16 +271,11 @@ const ChatInput = React.memo((props: ChatInputProps) => {
             }}
             style={[styles.talk, { width: sf(width - 24 - 28 - 20) }]}
             onPressIn={() => {
-              sendChatEvent({
+              sendEventFromChat({
                 eventType: 'VoiceStateEvent',
                 action: 'enable_voice',
                 params: {},
               });
-              // return;
-              // DeviceEventEmitter.emit(ChatEvent, {
-              //   type: 'enable_voice' as ChatEventType,
-              //   params: {},
-              // });
               Services.ms
                 .startRecordAudio({
                   audio: {
@@ -329,16 +312,11 @@ const ChatInput = React.memo((props: ChatInputProps) => {
             }}
             onPressOut={() => {
               let localPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
-              sendChatEvent({
+              sendEventFromChat({
                 eventType: 'VoiceStateEvent',
                 action: 'disable_voice',
                 params: {},
               });
-              // return;
-              // DeviceEventEmitter.emit(ChatEvent, {
-              //   type: 'disable_voice' as ChatEventType,
-              //   params: {},
-              // });
               Services.ms
                 .stopRecordAudio()
                 .then((result?: { pos: number; path: string }) => {
@@ -352,8 +330,9 @@ const ChatInput = React.memo((props: ChatInputProps) => {
                         localPath: result.path,
                       })
                       .then(() => {
-                        DeviceEventEmitter.emit(ChatEvent, {
-                          type: 'send_voice_message' as ChatEventType,
+                        sendEventFromChat({
+                          eventType: 'DataEvent',
+                          action: 'send_voice_message',
                           params: { localPath, duration: result.pos / 1000 },
                         });
                       })
@@ -506,19 +485,16 @@ const ChatContent = React.memo(
         const r = {
           ...item,
           onLongPress: (data: MessageItemType) => {
-            sendChatEvent({
+            sendEventFromChat({
               eventType: 'ActionMenuEvent',
               action: 'long_press_message_bubble',
               params: data,
             });
-            // DeviceEventEmitter.emit(MessageBubbleEvent, {
-            //   type: 'on_long_press' as MessageBubbleEventType,
-            //   params: data,
-            // });
           },
           onPress: (data: MessageItemType) => {
-            DeviceEventEmitter.emit(MessageBubbleEvent, {
-              type: 'on_press' as MessageBubbleEventType,
+            sendEventFromChat({
+              eventType: 'DataEvent',
+              action: 'press_message_bubble',
               params: data,
             });
           },
@@ -631,8 +607,9 @@ const ChatContent = React.memo(
               );
             },
             onSuccess: (message: ChatMessage): void => {
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'msg_state' as ChatEventType,
+              sendEventFromChat({
+                eventType: 'DataEvent',
+                action: 'update_message_state',
                 params: {
                   localMsgId: message.localMsgId,
                   result: true,
@@ -682,14 +659,16 @@ const ChatContent = React.memo(
     );
 
     const onSendBefore = React.useCallback((msg: ChatMessage) => {
-      DeviceEventEmitter.emit(MessageEvent, {
-        type: 'on_send_before' as MessageEventType,
+      sendEventFromChat({
+        eventType: 'DataEvent',
+        action: 'on_send_before',
         params: { message: msg },
       });
     }, []);
     const onSendResult = React.useCallback((msg: ChatMessage) => {
-      DeviceEventEmitter.emit(MessageEvent, {
-        type: 'on_send_result' as MessageEventType,
+      sendEventFromChat({
+        eventType: 'DataEvent',
+        action: 'on_send_result',
         params: { message: msg },
       });
     }, []);
@@ -701,8 +680,9 @@ const ChatContent = React.memo(
           .sendMessage(msg, {
             onProgress: (localMsgId: string, progress: number): void => {
               console.log('test:sendToServer:onProgress', localMsgId);
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'msg_progress' as ChatEventType,
+              sendEventFromChat({
+                eventType: 'DataEvent',
+                action: 'on_message_progress',
                 params: {
                   localMsgId,
                   progress,
@@ -711,8 +691,9 @@ const ChatContent = React.memo(
             },
             onError: (localMsgId: string, error: ChatError): void => {
               console.log('test:sendToServer:onError', localMsgId);
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'msg_state' as ChatEventType,
+              sendEventFromChat({
+                eventType: 'DataEvent',
+                action: 'update_message_state',
                 params: {
                   localMsgId,
                   result: false,
@@ -727,8 +708,9 @@ const ChatContent = React.memo(
             },
             onSuccess: (message: ChatMessage): void => {
               console.log('test:sendToServer:onSuccess', message.localMsgId);
-              DeviceEventEmitter.emit(ChatEvent, {
-                type: 'msg_state' as ChatEventType,
+              sendEventFromChat({
+                eventType: 'DataEvent',
+                action: 'update_message_state',
                 params: {
                   localMsgId: message.localMsgId,
                   result: true,
@@ -996,8 +978,9 @@ const ChatContent = React.memo(
     };
 
     const createConversationIfNotExisted = React.useCallback(() => {
-      DeviceEventEmitter.emit(ConversationListEvent, {
-        type: 'create_conversation' as ConversationListEventType,
+      sendEventFromChat({
+        eventType: 'DataEvent',
+        action: 'create_conversation',
         params: {
           convId: chatId,
           convType: chatType as number as ChatConversationType,
@@ -1025,8 +1008,9 @@ const ChatContent = React.memo(
           chatType as number as ChatConversationType
         )
         .then(() => {
-          DeviceEventEmitter.emit(ConversationListEvent, {
-            type: 'conversation_read' as ConversationListEventType,
+          sendEventFromChat({
+            eventType: 'DataEvent',
+            action: 'update_conversation_read_state',
             params: {
               convId: chatId,
               convType: chatType as number as ChatConversationType,
@@ -1068,46 +1052,6 @@ const ChatContent = React.memo(
     }, []);
 
     const addListeners = React.useCallback(() => {
-      const sub = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-        const eventType = event.type as ChatEventType;
-        if (eventType === 'send_image_message') {
-          const eventParams = event.params as any[];
-          for (const item of eventParams) {
-            sendImageMessage({
-              name: item.name,
-              localPath: item.uri,
-              memoSize: item.size,
-              imageType: item.type,
-              width: item.width,
-              height: item.height,
-            })
-              .then()
-              .catch((error) => {
-                console.warn('test:error', error);
-              });
-          }
-        } else if (eventType === 'send_voice_message') {
-          const eventParams = event.params as {
-            localPath: string;
-            duration: number;
-          };
-          sendVoiceMessage({
-            localPath: eventParams.localPath,
-            duration: eventParams.duration,
-          })
-            .then()
-            .catch((error) => {
-              console.warn('test:error', error);
-            });
-        } else if (eventType === 'request_history_message') {
-          const eventParams = event.params as {
-            earliestId: string | undefined;
-          };
-          requestHistoryMessage(eventParams.earliestId);
-        } else if (eventType === 'preview_image') {
-          onItemPress?.(event.params);
-        }
-      });
       const sub2 = DeviceEventEmitter.addListener(
         MessageChatSdkEvent,
         (event) => {
@@ -1132,13 +1076,56 @@ const ChatContent = React.memo(
           }
         }
       );
-      const sub3 = DeviceEventEmitter.addListener(
-        MessageBubbleEvent,
+
+      const sub4 = DeviceEventEmitter.addListener(
+        'DataEvent' as DataEventType,
         (event) => {
-          switch (event.type as MessageBubbleEventType) {
-            case 'on_press':
+          const { action, params } = event as {
+            eventBizType: BizEventType;
+            action: DataActionEventType;
+            senderId: string;
+            params: any;
+            timestamp?: number;
+          };
+          switch (action) {
+            case 'send_image_message':
               {
-                const eventParams = event.params as MessageItemType;
+                const eventParams = params as any[];
+                for (const item of eventParams) {
+                  sendImageMessage({
+                    name: item.name,
+                    localPath: item.uri,
+                    memoSize: item.size,
+                    imageType: item.type,
+                    width: item.width,
+                    height: item.height,
+                  })
+                    .then()
+                    .catch((error) => {
+                      console.warn('test:error', error);
+                    });
+                }
+              }
+              break;
+            case 'send_voice_message':
+              {
+                const eventParams = params as {
+                  localPath: string;
+                  duration: number;
+                };
+                sendVoiceMessage({
+                  localPath: eventParams.localPath,
+                  duration: eventParams.duration,
+                })
+                  .then()
+                  .catch((error) => {
+                    console.warn('test:sendVoiceMessage:error', error);
+                  });
+              }
+              break;
+            case 'press_message_bubble':
+              {
+                const eventParams = params as MessageItemType;
                 if (eventParams.type === ChatMessageType.VOICE) {
                   const voice = eventParams as VoiceMessageItemType;
                   if (voice.localPath) {
@@ -1162,22 +1149,35 @@ const ChatContent = React.memo(
                       });
                   }
                 } else if (eventParams.type === ChatMessageType.IMAGE) {
-                  DeviceEventEmitter.emit(ChatEvent, {
-                    type: 'preview_image' as ChatEventType,
+                  sendEventFromChat({
+                    eventType: 'DataEvent',
+                    action: 'preview_image',
                     params: eventParams,
                   });
                 }
               }
               break;
+            case 'preview_image':
+              onItemPress?.(params);
+              break;
+
+            case 'request_history_message':
+              {
+                const eventParams = params as {
+                  earliestId: string | undefined;
+                };
+                requestHistoryMessage(eventParams.earliestId);
+              }
+              break;
+
             default:
               break;
           }
         }
       );
       return () => {
-        sub.remove();
         sub2.remove();
-        sub3.remove();
+        sub4.remove();
       };
     }, [
       chatId,

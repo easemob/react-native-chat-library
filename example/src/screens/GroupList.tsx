@@ -6,6 +6,7 @@ import {
   autoFocus,
   Blank,
   createStyleSheet,
+  DataEventType,
   DefaultAvatar,
   DefaultListItemSeparator,
   DefaultListSearchHeader,
@@ -22,7 +23,7 @@ import {
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GroupInfoEvent, GroupInfoEventType } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
 
@@ -49,10 +50,18 @@ const Item: EqualHeightListItemComponent = (props) => {
     <View style={styles.item}>
       <DefaultAvatar size={sf(50)} radius={sf(25)} />
       <View style={styles.itemText}>
-        <Text style={{ lineHeight: 20, fontSize: 16, fontWeight: '600' }}>
+        <Text
+          numberOfLines={1}
+          style={{
+            lineHeight: 20,
+            fontSize: 16,
+            fontWeight: '600',
+            maxWidth: '85%',
+          }}
+        >
           {item.groupName.length !== 0 ? item.groupName : item.groupID}
         </Text>
-        {/* <Text>{item.groupID}</Text> */}
+        <Text>{item.groupID}</Text>
       </View>
     </View>
   );
@@ -259,6 +268,31 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
     [data]
   );
 
+  const onCreateGroupSuccess = React.useCallback(
+    (params: { chatId: string; chatType: number }) => {
+      client.groupManager
+        .getGroupWithId(params.chatId)
+        .then((result) => {
+          if (result) {
+            console.log('test:groupInfo:', result);
+            manualRefresh({
+              type: 'add',
+              items: [
+                standardizedData({
+                  groupID: result.groupId,
+                  groupName: result.groupName,
+                } as ItemDataType),
+              ],
+            });
+          }
+        })
+        .catch((error) => {
+          console.warn('test:onCreateGroup:error:', error);
+        });
+    },
+    [client.groupManager, manualRefresh, standardizedData]
+  );
+
   const addListeners = React.useCallback(() => {
     const groupEventListener: ChatGroupEventListener = {
       onRequestToJoinAccepted: (params: {
@@ -347,41 +381,68 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
       },
     };
     client.groupManager.addGroupListener(groupEventListener);
-    const sub = DeviceEventEmitter.addListener(GroupInfoEvent, (event) => {
-      console.log('test:GroupInfoEvent:', event);
-      const eventType = event.type as GroupInfoEventType;
-      switch (eventType) {
-        case 'modify_group_name':
-          {
-            const eventParams = event.params as {
-              groupId: string;
-              groupName: string;
-            };
-            const d = getData(eventParams.groupId);
-            if (d) {
-              manualRefresh({
-                type: 'update-one',
-                items: [
-                  standardizedData({ ...d, groupName: eventParams.groupName }),
-                ],
-              });
+    const sub2 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'exec_modify_group_name':
+            {
+              const eventParams = params as {
+                groupId: string;
+                groupName: string;
+              };
+              const d = getData(eventParams.groupId);
+              if (d) {
+                manualRefresh({
+                  type: 'update-one',
+                  items: [
+                    standardizedData({
+                      ...d,
+                      groupName: eventParams.groupName,
+                    }),
+                  ],
+                });
+              }
             }
-          }
-          break;
+            break;
+          case 'exec_destroy_group':
+            manualRefresh({
+              type: 'del-one',
+              items: [
+                standardizedData({
+                  groupID: params.groupId,
+                  key: params.groupId,
+                  groupName: '',
+                }),
+              ],
+            });
+            break;
+          case 'create_group_result_success':
+            onCreateGroupSuccess(params);
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
       }
-    });
+    );
     return () => {
       client.groupManager.removeGroupListener(groupEventListener);
-      sub.remove();
+      sub2.remove();
     };
   }, [
     client.groupManager,
     duplicateCheck,
     getData,
     manualRefresh,
+    onCreateGroupSuccess,
     requestGroupInfo,
     standardizedData,
   ]);
@@ -403,28 +464,6 @@ export default function GroupListScreen({ navigation }: Props): JSX.Element {
     const res = load();
     return () => unload(res);
   }, [addListeners, initList]);
-
-  React.useEffect(() => {
-    const sub1 = DeviceEventEmitter.addListener(GroupInfoEvent, (event) => {
-      console.log('test:GroupInfoEvent:', event);
-      const eventType = event.type as GroupInfoEventType;
-      if (eventType === 'destroy_group') {
-        manualRefresh({
-          type: 'del-one',
-          items: [
-            standardizedData({
-              groupID: event.params.groupId,
-              key: event.params.groupId,
-              groupName: '',
-            }),
-          ],
-        });
-      }
-    });
-    return () => {
-      sub1.remove();
-    };
-  }, [manualRefresh, standardizedData]);
 
   const deferredSearch = throttle((text: string) => {
     const r: ItemDataType[] = [];

@@ -2,7 +2,6 @@ import { StackActions } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as React from 'react';
 import {
-  DeviceEventEmitter,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -23,11 +22,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
-import { AppEvent, AppEventType } from '../events';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootScreenParamsList } from '../routes';
 
 type Props = NativeStackScreenProps<RootScreenParamsList>;
+
+const sendEventFromSigIn = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'SigIn',
+    eventBizType: 'setting',
+  } as sendEventProps);
+};
 
 export default function SignInScreen({
   route,
@@ -76,8 +85,9 @@ export default function SignInScreen({
         if (result.result === true) {
           console.log('test:login:success');
           setButtonState('stop');
-          DeviceEventEmitter.emit(AppEvent, {
-            type: 'on_logined' as AppEventType,
+          sendEventFromSigIn({
+            eventType: 'DataEvent',
+            action: 'on_logined',
             params: {},
           });
           navigation.dispatch(StackActions.push('Home', { params: {} }));
@@ -85,8 +95,9 @@ export default function SignInScreen({
           console.warn('test:login:fail:', result.error);
           setButtonState('stop');
           if (result.error.code === 200) {
-            DeviceEventEmitter.emit(AppEvent, {
-              type: 'on_logined' as AppEventType,
+            sendEventFromSigIn({
+              eventType: 'DataEvent',
+              action: 'on_logined',
               params: {},
             });
             navigation.dispatch(StackActions.push('Home', { params: {} }));

@@ -3,17 +3,13 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import type { ParamListBase } from '@react-navigation/native';
 import * as React from 'react';
 import { DeviceEventEmitter, View } from 'react-native';
+import type { DataEventType } from 'react-native-chat-uikit';
 
 import HomeHeaderTitle from '../components/HomeHeaderTitle';
 import TabBarIcon from '../components/TabBarIcon';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import {
-  ContactEvent,
-  ContactEventBarType,
-  ContactEventType,
-  HomeEvent,
-  HomeEventType,
-} from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { sendEvent } from '../events2/sendEvent';
 import type { RootParamsList } from '../routes';
 import ContactList from './ContactList';
 import GroupList from './GroupList';
@@ -29,12 +25,8 @@ const ContactScreenInternal = React.memo(
     console.log('test:ContactScreenInternal:', props);
     const { requestFlag } = props;
 
-    const [contactBarState, setContactBarState] = React.useState<
-      boolean | undefined
-    >(undefined);
-    const [groupBarState, setGroupBarState] = React.useState<
-      boolean | undefined
-    >(undefined);
+    const [contactBarState] = React.useState<boolean | undefined>(undefined);
+    const [groupBarState] = React.useState<boolean | undefined>(undefined);
     const [requestBarState, setRequestBarState] = React.useState<
       boolean | undefined
     >(requestFlag.current ?? undefined);
@@ -55,37 +47,51 @@ const ContactScreenInternal = React.memo(
     };
 
     React.useEffect(() => {
-      const sub = DeviceEventEmitter.addListener(ContactEvent, (event) => {
-        console.log('test:event:ContactScreenInternal:', event);
-        const eventType = event.type as ContactEventType;
-        if (eventType === 'update_state') {
-          const eventParams = event.params as {
-            unread: boolean;
-            barType: ContactEventBarType;
+      // const sub = DeviceEventEmitter.addListener(ContactEvent, (event) => {
+      //   console.log('test:event:ContactScreenInternal:', event);
+      //   const eventType = event.type as ContactEventType;
+      //   if (eventType === 'update_state') {
+      //     const eventParams = event.params as {
+      //       unread: boolean;
+      //       barType: ContactEventBarType;
+      //     };
+      //     const barType = eventParams.barType;
+      //     if (barType === 'contact') {
+      //       setContactBarState(eventParams.unread as boolean);
+      //     } else if (barType === 'group') {
+      //       setGroupBarState(eventParams.unread as boolean);
+      //     } else if (barType === 'request') {
+      //       setRequestBarState(eventParams.unread as boolean);
+      //     }
+      //   }
+      // });
+      const sub3 = DeviceEventEmitter.addListener(
+        'DataEvent' as DataEventType,
+        (event) => {
+          const { action, params } = event as {
+            eventBizType: BizEventType;
+            action: DataActionEventType;
+            senderId: string;
+            params: any;
+            timestamp?: number;
           };
-          const barType = eventParams.barType;
-          if (barType === 'contact') {
-            setContactBarState(eventParams.unread as boolean);
-          } else if (barType === 'group') {
-            setGroupBarState(eventParams.unread as boolean);
-          } else if (barType === 'request') {
-            setRequestBarState(eventParams.unread as boolean);
+          switch (action) {
+            case 'update_request_notification_flag':
+              {
+                const eventParams = params as {
+                  unread: boolean;
+                };
+                setRequestBarState(eventParams.unread);
+              }
+              break;
+
+            default:
+              break;
           }
         }
-      });
-      const sub2 = DeviceEventEmitter.addListener(HomeEvent, (event) => {
-        console.log('test:event:ContactScreenInternal:', event);
-        const eventType = event.type as HomeEventType;
-        if (eventType === 'update_request') {
-          const eventParams = event.params as {
-            unread: boolean;
-          };
-          setRequestBarState(eventParams.unread);
-        }
-      });
+      );
       return () => {
-        sub.remove();
-        sub2.remove();
+        sub3.remove();
       };
     }, []);
 
@@ -177,9 +183,12 @@ export default function ContactScreen({
           console.warn('test:error:', error);
         }
         requestFlag.current = unread;
-        DeviceEventEmitter.emit(HomeEvent, {
-          type: 'update_request' as HomeEventType,
+        sendEvent({
+          eventType: 'DataEvent',
+          action: 'update_request_notification_flag',
           params: { unread: unread },
+          eventBizType: 'message',
+          senderId: 'Contact',
         });
       },
     });

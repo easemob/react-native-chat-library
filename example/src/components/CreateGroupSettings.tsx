@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import {
+  DataEventType,
   Divider,
   getScaleFactor,
   LoadingButton,
@@ -14,11 +15,7 @@ import {
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
-import {
-  type CreateGroupSettingsEventType,
-  ContactListEvent,
-  CreateGroupSettingsEvent,
-} from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
 import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 
 const sendGroupSettingEvent = (
@@ -58,52 +55,76 @@ export const CreateGroupSettings = () => {
         return;
       }
       setButtonState('loading');
-      DeviceEventEmitter.emit(CreateGroupSettingsEvent, {
-        type: 'create_new_group' as CreateGroupSettingsEventType,
+      sendEvent({
+        eventType: 'DataEvent',
+        action: 'start_create_new_group',
         params: {
           isInvite: isInvite,
           isPublic: isPublic,
         },
+        eventBizType: 'group',
+        senderId: 'CreateGroupSettings',
       });
     },
     [isInvite, isPublic]
   );
 
   React.useEffect(() => {
-    const sub = DeviceEventEmitter.addListener(ContactListEvent, (event) => {
-      if (event.type !== 'create_group_result') {
-        return;
+    const sub = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'create_group_result':
+            {
+              const eventParams = params;
+              setButtonState('stop');
+              const chatId = eventParams.id;
+              const chatType = eventParams.type;
+              if (eventParams.result === true) {
+                manualClose()
+                  .then(() => {
+                    sendGroupSettingEvent({
+                      eventType: 'DataEvent',
+                      action: 'create_group_result_success',
+                      params: { chatId, chatType },
+                    });
+                  })
+                  .catch((error) => {
+                    console.warn('test:sendGroupSettingEvent:error:', error);
+                  });
+              } else {
+                manualClose()
+                  .then(() => {
+                    sendGroupSettingEvent({
+                      eventType: 'AlertEvent',
+                      action: 'create_group_result_fail',
+                      params: {
+                        chatId,
+                        chatType,
+                        content: 'Create Group Failed.',
+                      },
+                    });
+                  })
+                  .catch((error) => {
+                    console.warn('test:sendGroupSettingEvent:error:', error);
+                  });
+              }
+            }
+
+            break;
+
+          default:
+            break;
+        }
       }
-      const eventParams = event.params;
-      setButtonState('stop');
-      const chatId = eventParams.id;
-      const chatType = eventParams.type;
-      if (eventParams.result === true) {
-        manualClose()
-          .then(() => {
-            sendGroupSettingEvent({
-              eventType: 'DataEvent',
-              action: 'create_group_result_success',
-              params: { chatId, chatType },
-            });
-          })
-          .catch((error) => {
-            console.warn('test:sendGroupSettingEvent:error:', error);
-          });
-      } else {
-        manualClose()
-          .then(() => {
-            sendGroupSettingEvent({
-              eventType: 'AlertEvent',
-              action: 'create_group_result_fail',
-              params: { chatId, chatType, content: 'Create Group Failed.' },
-            });
-          })
-          .catch((error) => {
-            console.warn('test:sendGroupSettingEvent:error:', error);
-          });
-      }
-    });
+    );
     return () => {
       sub.remove();
     };

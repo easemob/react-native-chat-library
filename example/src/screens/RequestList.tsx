@@ -13,6 +13,7 @@ import {
   Blank,
   Button,
   createStyleSheet,
+  DataEventType,
   DefaultAvatar,
   DefaultListItemSeparator,
   EqualHeightList,
@@ -27,11 +28,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import {
-  HomeEvent,
-  HomeEventType,
-  NotificationMessageDescriptionType,
-} from '../events';
+import type { NotificationMessageDescriptionType } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { sendEvent } from '../events2/sendEvent';
 import { useStyleSheet } from '../hooks/useStyleSheet';
 import type { RootParamsList } from '../routes';
 
@@ -404,9 +403,12 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       }
     }
     if (count === 0) {
-      DeviceEventEmitter.emit(HomeEvent, {
-        type: 'update_request' as HomeEventType,
+      sendEvent({
+        eventType: 'DataEvent',
+        action: 'update_request_notification_flag',
         params: { unread: count !== 0 },
+        eventBizType: 'message',
+        senderId: 'RequestList',
       });
     }
   }, []);
@@ -620,35 +622,44 @@ export default function RequestListScreen(_props: Props): JSX.Element {
   }, [client.chatManager, getCurrentId, initData]);
 
   const addListeners = React.useCallback(() => {
-    const sub2 = DeviceEventEmitter.addListener(HomeEvent, (event) => {
-      const eventType = event.type as HomeEventType;
-      const eventParams = event.params;
-      switch (eventType) {
-        case 'forward_notify_msg':
-          {
-            const msg = eventParams.msg as ChatMessage;
-            manualRefresh({
-              type: 'add',
-              items: [
-                standardizedData({
-                  key: msg.serverTime.toString(),
-                  timestamp: msg.serverTime,
-                  msgId: msg.msgId,
-                  notificationID: msg.from,
-                  from: msg.from,
-                  notificationType:
-                    'ContactInvitation' as NotificationMessageDescriptionType,
-                }) as ItemDataType,
-              ],
-            });
-          }
-          break;
-        default:
-          break;
+    const sub3 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'exec_forward_notify_message':
+            {
+              const msg = params.msg as ChatMessage;
+              manualRefresh({
+                type: 'add',
+                items: [
+                  standardizedData({
+                    key: msg.serverTime.toString(),
+                    timestamp: msg.serverTime,
+                    msgId: msg.msgId,
+                    notificationID: msg.from,
+                    from: msg.from,
+                    notificationType:
+                      'ContactInvitation' as NotificationMessageDescriptionType,
+                  }) as ItemDataType,
+                ],
+              });
+            }
+            break;
+
+          default:
+            break;
+        }
       }
-    });
+    );
     return () => {
-      sub2.remove();
+      sub3.remove();
     };
   }, [manualRefresh, standardizedData]);
 

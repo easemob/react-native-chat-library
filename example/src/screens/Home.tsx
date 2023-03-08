@@ -9,6 +9,7 @@ import {
   ContactChatSdkEventType,
   ContactEventDispatch,
   ConversationEventDispatch,
+  DataEventType,
   GroupEventDispatch,
   MessageEventDispatch,
   MultiDevicesEventDispatch,
@@ -16,15 +17,22 @@ import {
 
 import TabBarIcon from '../components/TabBarIcon';
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import {
-  type HomeEventBarType,
-  type HomeEventType,
-  HomeEvent,
-} from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { type sendEventProps, sendEvent } from '../events2/sendEvent';
 import type { RootParamsList } from '../routes';
 import ContactScreen from './Contact';
 import ConversationList from './ConversationList';
 import MySetting from './MySetting';
+
+const sendEventFromHome = (
+  params: Omit<sendEventProps, 'senderId' | 'timestamp' | 'eventBizType'>
+) => {
+  sendEvent({
+    ...params,
+    senderId: 'Home',
+    eventBizType: 'message',
+  } as sendEventProps);
+};
 
 const Home = createMaterialBottomTabNavigator<RootParamsList>();
 
@@ -42,53 +50,46 @@ const HomeScreenInternal = React.memo((props: HomeScreenInternalProps) => {
   const [contactBarState, setContactBarState] = React.useState<
     number | boolean | undefined
   >(contactFlag.current ?? undefined);
-  const [settingBarState, setSettingBarState] = React.useState<
-    number | boolean | undefined
-  >(undefined);
+  const [settingBarState] = React.useState<number | boolean | undefined>(
+    undefined
+  );
 
   const addListeners = React.useCallback(() => {
-    const sub = DeviceEventEmitter.addListener(HomeEvent, (event) => {
-      console.log('test:event:HomeScreenInternal:', event);
-      const eventType = event.type as HomeEventType;
-      if (eventType === 'update_state') {
-        const eventParams = event.params as {
-          count: number;
-          unread: boolean;
-          barType: HomeEventBarType;
+    const sub2 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
         };
-        if (eventParams.count) {
-          const barType = eventParams.barType;
-          if (barType === 'contact') {
-            setContactBarState(eventParams.count as number);
-          } else if (barType === 'conv') {
-            setConvBarState(eventParams.count as number);
-          } else if (barType === 'setting') {
-            setSettingBarState(eventParams.count as number);
-          }
-        } else if (eventParams.unread) {
-          const barType = eventParams.barType;
-          if (barType === 'contact') {
-            setContactBarState(eventParams.unread as boolean);
-          } else if (barType === 'conv') {
-            setConvBarState(eventParams.unread as boolean);
-          } else if (barType === 'setting') {
-            setSettingBarState(eventParams.unread as boolean);
-          }
+        switch (action) {
+          case 'update_all_count':
+            {
+              const eventParams = params as {
+                count: number;
+              };
+              setConvBarState(eventParams.count);
+            }
+            break;
+          case 'update_request_notification_flag':
+            {
+              const eventParams = params as {
+                unread: boolean;
+              };
+              setContactBarState(eventParams.unread);
+            }
+            break;
+
+          default:
+            break;
         }
-      } else if (eventType === 'update_all_count') {
-        const eventParams = event.params as {
-          count: number;
-        };
-        setConvBarState(eventParams.count);
-      } else if (eventType === 'update_request') {
-        const eventParams = event.params as {
-          unread: boolean;
-        };
-        setContactBarState(eventParams.unread);
       }
-    });
+    );
     return () => {
-      sub.remove();
+      sub2.remove();
     };
   }, []);
 
@@ -217,8 +218,9 @@ export default function HomeScreen(
         .insertMessage(msg)
         .then((result) => {
           console.log('test:insertMessage:success:', result);
-          DeviceEventEmitter.emit(HomeEvent, {
-            type: 'forward_notify_msg' as HomeEventType,
+          sendEventFromHome({
+            eventType: 'DataEvent',
+            action: 'exec_forward_notify_message',
             params: { msg },
           });
         })
@@ -238,8 +240,9 @@ export default function HomeScreen(
         switch (eventType) {
           case 'onContactInvited':
             contactFlag.current = true;
-            DeviceEventEmitter.emit(HomeEvent, {
-              type: 'update_request' as HomeEventType,
+            sendEventFromHome({
+              eventType: 'DataEvent',
+              action: 'update_request_notification_flag',
               params: { unread: true },
             });
             saveRequest({ from: eventParams.id, convId: getCurrentId() });
@@ -286,8 +289,9 @@ export default function HomeScreen(
           console.warn('test:error:', error);
         }
         contactFlag.current = unread;
-        DeviceEventEmitter.emit(HomeEvent, {
-          type: 'update_request' as HomeEventType,
+        sendEventFromHome({
+          eventType: 'DataEvent',
+          action: 'update_request_notification_flag',
           params: { unread: unread },
         });
       },

@@ -100,7 +100,26 @@ export type DataActionEventType =
   | 'exec_manual_logout'
   | 'open_media_library'
   | 'copy_my_id'
-  | 'exec_modify_my_name';
+  | 'exec_modify_my_name'
+  | 'on_initialized'
+  | 'start_create_new_group'
+  | 'send_voice_message'
+  | 'send_image_message'
+  | 'press_message_bubble'
+  | 'update_message_state'
+  | 'on_send_before'
+  | 'on_send_result'
+  | 'on_message_progress'
+  | 'create_conversation'
+  | 'update_conversation_read_state'
+  | 'preview_image'
+  | 'request_history_message'
+  | 'update_all_count'
+  | 'exec_destroy_group'
+  | 'exec_forward_notify_message'
+  | 'update_request_notification_flag'
+  | 'on_logined'
+  | 'create_group_result';
 
 ////////////////////////////////////////////////////////////////////////////////
 //// ActionEventType ///////////////////////////////////////////////////////////

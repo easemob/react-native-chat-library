@@ -14,6 +14,7 @@ import {
   type DynamicHeightListRef,
   type LocalIconName,
   createStyleSheet,
+  DataEventType,
   DefaultAvatar,
   DynamicHeightList,
   getScaleFactor,
@@ -23,7 +24,8 @@ import {
   wait,
 } from 'react-native-chat-uikit';
 
-import { type ChatEventType, ChatEvent } from '../events';
+import type { BizEventType, DataActionEventType } from '../events2';
+import { sendEvent } from '../events2/sendEvent';
 
 export type MessageItemStateType =
   | 'unread'
@@ -582,55 +584,65 @@ const MessageBubbleList = (
 
   const requestHistory = React.useCallback(() => {
     const item = getEarliestItem();
-    DeviceEventEmitter.emit(ChatEvent, {
-      type: 'request_history_message' as ChatEventType,
+    sendEvent({
+      eventType: 'DataEvent',
+      action: 'request_history_message',
       params: { earliestId: item?.msgId },
+      eventBizType: 'message',
+      senderId: 'MessageBubble',
     });
   }, [getEarliestItem]);
 
   const initList = React.useCallback(() => {}, []);
 
   const addListeners = React.useCallback(() => {
-    const sub1 = DeviceEventEmitter.addListener(ChatEvent, (event) => {
-      console.log('test:addListeners:msg_state:', event);
-      const eventType = event.type as ChatEventType;
-      switch (eventType) {
-        case 'msg_state':
-          {
-            const eventParams = event.params as {
-              localMsgId: string;
-              result: boolean;
-              reason?: any;
-              item: MessageItemType;
-            };
-            if (eventParams.result === true) {
-              updateData({
-                type: 'update-all',
-                list: [eventParams.item],
-                direction: 'after',
-              });
-            } else {
-              updateData({
-                type: 'update-part',
-                list: [
-                  {
-                    key: eventParams.localMsgId,
-                    state: 'failed',
-                  } as MessageItemType,
-                ],
-                direction: 'after',
-              });
+    const sub2 = DeviceEventEmitter.addListener(
+      'DataEvent' as DataEventType,
+      (event) => {
+        const { action, params } = event as {
+          eventBizType: BizEventType;
+          action: DataActionEventType;
+          senderId: string;
+          params: any;
+          timestamp?: number;
+        };
+        switch (action) {
+          case 'update_message_state':
+            {
+              const eventParams = params as {
+                localMsgId: string;
+                result: boolean;
+                reason?: any;
+                item: MessageItemType;
+              };
+              if (eventParams.result === true) {
+                updateData({
+                  type: 'update-all',
+                  list: [eventParams.item],
+                  direction: 'after',
+                });
+              } else {
+                updateData({
+                  type: 'update-part',
+                  list: [
+                    {
+                      key: eventParams.localMsgId,
+                      state: 'failed',
+                    } as MessageItemType,
+                  ],
+                  direction: 'after',
+                });
+              }
             }
-          }
-          break;
-        case 'msg_progress':
-          break;
-        default:
-          break;
+            break;
+
+          default:
+            break;
+        }
       }
-    });
+    );
     return () => {
-      sub1.remove();
+      sub2.remove();
     };
   }, [updateData]);
 

@@ -165,12 +165,14 @@ export function ContactInfoScreenInternal({
   }, [addListeners, init]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { alignItems: 'center' }]}>
       <View style={styles.top}>
         <Avatar uri="" size={sf(100)} radius={sf(50)} />
       </View>
       <View style={styles.top}>
-        <Text style={styles.name}>{userName}</Text>
+        <Text numberOfLines={1} style={[styles.name, { maxWidth: '80%' }]}>
+          {userName}
+        </Text>
       </View>
       <View style={{ marginTop: sf(10) }}>
         <Text style={styles.id}>{userId}</Text>
