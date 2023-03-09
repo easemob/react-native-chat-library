@@ -12,6 +12,8 @@ export type Undefinable<T> = T | undefined;
 export type PartialNullable<T> = {
   [P in keyof T]?: T[P] | null;
 };
+export type PromiseType<T> = (...args: any[]) => Promise<T>;
+export type UnPromisify<T> = T extends PromiseType<infer U> ? U : never;
 
 export type PartialDeep<T> = T extends object
   ? T extends Function

@@ -627,7 +627,7 @@ type ChatFragmentProps = {
 
 # Q & A
 
-如果你有更多疑问请查看这里，如果你有更多建议，也请更新这里。
+如果你有更多疑问请查看这里，如果你有更多建议，也请贡献到这里。
 
 [skip to here](./qa.md)
 
@@ -635,6 +635,6 @@ type ChatFragmentProps = {
 
 # 思维导图
 
-这个维度的说明可能能加深理解。
+这个维度的说明可能增加你对该项目的了解。
 
 [skip to here](./swdt.md)

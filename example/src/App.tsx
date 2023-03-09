@@ -174,7 +174,11 @@ export default function App() {
   return (
     <React.StrictMode>
       <GlobalContainer
-        option={{ appKey: appKey, autoLogin: autoLogin.current }}
+        option={{
+          appKey: appKey,
+          autoLogin: autoLogin.current,
+          debugModel: true,
+        }}
         onInitialized={() => {
           isOnInitialized.current = true;
           onInitApp();

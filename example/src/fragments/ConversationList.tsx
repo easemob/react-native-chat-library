@@ -41,6 +41,7 @@ import type { BizEventType, DataActionEventType } from '../events';
 
 export type ItemDataType = EqualHeightListItemData & {
   convId: string;
+  convName?: string;
   convType: ChatConversationType;
   lastMsg?: ChatMessage;
   convContent: string;
@@ -71,7 +72,7 @@ const Item: EqualHeightListItemComponent = (props) => {
         <DefaultAvatar size={sf(50)} radius={sf(25)} />
         <View style={[styles.itemText, { justifyContent: 'space-between' }]}>
           <Text style={{ maxWidth: screenWidth * 0.5 }} numberOfLines={1}>
-            {item.convId}
+            {item.convName ? item.convName : item.convId}
           </Text>
           <Text style={{ maxWidth: screenWidth * 0.6 }} numberOfLines={1}>
             {item.convContent}
@@ -269,6 +270,40 @@ export default function ConversationListFragment(
     },
     [data]
   );
+
+  // const getConvName = React.useCallback(
+  //   (params: {
+  //     convId: string;
+  //     convType: ChatConversationType;
+  //     fromLocal: boolean;
+  //   }) => {
+  //     console.log('test:getConvName:', params);
+  //     if (params.convType === ChatConversationType.PeerChat) {
+  //       client.userManager.fetchUserInfoById([params.convId]).then().catch();
+  //     } else if (params.convType === ChatConversationType.GroupChat) {
+  //       if (params.fromLocal) {
+  //         client.groupManager.getGroupWithId(params.convId).then().catch();
+  //       } else {
+  //         client.groupManager
+  //           .fetchGroupInfoFromServer(params.convId)
+  //           .then()
+  //           .catch();
+  //         // !!! for test
+  //         // promiseWrapper({
+  //         //   f: client.groupManager.fetchGroupInfoFromServer.bind(
+  //         //     client.groupManager
+  //         //   ),
+  //         //   ft: 's',
+  //         //   args: params.convId,
+  //         //   onSuccess: (data) => {
+  //         //     console.log('test:234', data);
+  //         //   },
+  //         // });
+  //       }
+  //     }
+  //   },
+  //   [client.groupManager, client.userManager]
+  // );
 
   const manualRefresh = React.useCallback(
     (params: {
@@ -700,6 +735,15 @@ export default function ConversationListFragment(
     }
   }, []);
 
+  const initInfo = React.useCallback(() => {
+    client.groupManager
+      .fetchJoinedGroupsFromServer(1, 200)
+      .then()
+      .catch((error) => {
+        console.warn('test:getAllContactsFromServer:error:', error);
+      });
+  }, [client.groupManager]);
+
   const initList = React.useCallback(() => {
     client.chatManager
       .getAllConversations()
@@ -732,6 +776,11 @@ export default function ConversationListFragment(
           }
           manualRefresh({ type: 'init', items: rr });
           initDirs(convIds);
+          // getConvName({
+          //   convId: '208545165410307',
+          //   convType: ChatConversationType.GroupChat,
+          //   fromLocal: false,
+          // });
         }
       })
       .catch((error) => {
@@ -743,6 +792,7 @@ export default function ConversationListFragment(
     const load = () => {
       console.log('test:load:', ConversationListFragment.name);
       const unsubscribe = addListeners();
+      initInfo();
       initList();
       return {
         unsubscribe: unsubscribe,
@@ -755,7 +805,7 @@ export default function ConversationListFragment(
 
     const res = load();
     return () => unload(res);
-  }, [addListeners, initList]);
+  }, [addListeners, initInfo, initList]);
 
   return (
     <React.Fragment>

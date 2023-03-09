@@ -54,6 +54,14 @@ export const arraySort = <T extends { key: string }>(list: T[]) => {
 type Function = (...args: any[]) => any;
 type Callback = Function;
 
+// from: https://www.cnblogs.com/Wayou/p/typescript_infer.html
+// type PromiseType<T> = (...args: any[]) => Promise<T>;
+// type UnPromisify<T> = T extends PromiseType<infer U> ? U : never;
+// const s = async function sss() {
+//   return '';
+// };
+// export let sss: UnPromisify<typeof s>;
+
 /**
  * Example:
  * ```typescript
