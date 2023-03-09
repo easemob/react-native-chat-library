@@ -8,7 +8,6 @@ import {
   getScaleFactor,
   LocalIcon,
   ScreenContainer,
-  Switch,
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
@@ -37,7 +36,7 @@ export function ContactInfoScreenInternal({
   const params = rp?.params as { userId: string };
   const { contactInfo } = useAppI18nContext();
   const { client } = useAppChatSdkContext();
-  const [isMute, setIsMute] = React.useState(false);
+  // const [isMute, setIsMute] = React.useState(false);
   const userId = params.userId;
   const [userName, setUserName] = React.useState(contactInfo.name('NickName'));
   const sf = getScaleFactor();
@@ -191,7 +190,7 @@ export function ContactInfoScreenInternal({
         <Text style={styles.chat}>{contactInfo.chat}</Text>
       </View>
       <View style={{ height: sf(66) }} />
-      <View style={styles.listItem}>
+      {/* <View style={styles.listItem}>
         <Text style={styles.listItemText1}>{contactInfo.mute}</Text>
         <Switch
           value={isMute}
@@ -204,7 +203,7 @@ export function ContactInfoScreenInternal({
           inactiveThumbColor="white"
           inactiveTrackColor="rgba(216, 216, 216, 1)"
         />
-      </View>
+      </View> */}
       <Pressable
         style={styles.listItem}
         onPress={() => {

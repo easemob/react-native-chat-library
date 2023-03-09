@@ -27,31 +27,22 @@ export function handleMenuEvent(params: {
   let ret = true;
   switch (menuEvent.action) {
     case 'long_press_message_bubble':
-      {
-        const p = menuEvent.params as {};
-        params.menu.openMenu({
-          menuItems: [
-            {
-              title: 'delete message',
-              onPress: () => {
-                console.log('test:111:', p);
-              },
-            },
-            {
-              title: 'resend message',
-              onPress: () => {
-                console.log('test:222:');
-              },
-            },
-            {
-              title: 'recall message',
-              onPress: () => {
-                console.log('test:333:');
-              },
-            },
-          ],
-        });
-      }
+      params.menu.openMenu({
+        menuItems: [
+          {
+            title: 'delete message',
+            onPress: () => {},
+          },
+          {
+            title: 'resend message',
+            onPress: () => {},
+          },
+          {
+            title: 'recall message',
+            onPress: () => {},
+          },
+        ],
+      });
       break;
 
     default:

@@ -980,7 +980,7 @@ const ChatContent = React.memo(
     const createConversationIfNotExisted = React.useCallback(() => {
       sendEventFromChat({
         eventType: 'DataEvent',
-        action: 'create_conversation',
+        action: 'exec_create_conversation',
         params: {
           convId: chatId,
           convType: chatType as number as ChatConversationType,

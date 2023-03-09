@@ -312,6 +312,9 @@ export default function SearchScreen({
   const sendContactRequest = React.useCallback(
     (id: string) => {
       console.log('test:id:', id);
+      if (type !== ('add_contact' as SearchActionType)) {
+        return;
+      }
       client.contactManager
         .addContact(id, 'Request to be a friend.')
         .then()
@@ -325,11 +328,17 @@ export default function SearchScreen({
           });
         });
     },
-    [client.contactManager]
+    [client.contactManager, type]
   );
 
   const sendJoinGroupRequest = React.useCallback(
     (id: string) => {
+      if (
+        type !== ('join_public_group' as SearchActionType) &&
+        type !== ('search_public_group_info' as SearchActionType)
+      ) {
+        return;
+      }
       client.groupManager
         .joinPublicGroup(id)
         .then()
@@ -343,7 +352,7 @@ export default function SearchScreen({
           });
         });
     },
-    [client.groupManager]
+    [client.groupManager, type]
   );
 
   const standardizedData = React.useCallback(
@@ -409,6 +418,7 @@ export default function SearchScreen({
                     });
 
                     // TODO: send join group request
+                    sendJoinGroupRequest(item.itemId);
                   }
                 },
               },
@@ -722,14 +732,17 @@ export default function SearchScreen({
   }) => {
     try {
       if (params.type === 'search_public_group_info') {
-        const info = await client.groupManager.getGroupWithId(params.keyword);
+        const info = await client.groupManager.fetchGroupInfoFromServer(
+          params.keyword
+        );
+        console.log('test:1231231:', info);
         if (info) {
           loadSearchResult({ type, id: info.groupId, name: info.groupName });
         } else {
           sendSearchEvent({
             eventType: 'ToastEvent',
             action: 'toast_',
-            params: 'The other person rejected the friend request.',
+            params: 'The group administrator refused to join the group.',
           });
         }
       } else if (params.type === 'add_contact') {
@@ -746,7 +759,7 @@ export default function SearchScreen({
             sendSearchEvent({
               eventType: 'ToastEvent',
               action: 'toast_',
-              params: 'The group administrator refused to join the group.',
+              params: 'The other person rejected the friend request.',
             });
           }
         }
@@ -786,50 +799,54 @@ export default function SearchScreen({
         >
           <LocalIcon name="gray_goBack" />
         </TouchableOpacity>
-        <SearchBar
-          ref={inputRef}
-          enableCancel={enableCancel}
-          enableClear={enableClear}
-          inputContainerStyle={styles.inputContainer}
-          cancel={{
-            buttonName: 'cancel',
-            onCancel: () => {
-              navigation.goBack();
+        <View style={{ flex: 1 }}>
+          <SearchBar
+            ref={inputRef}
+            enableCancel={enableCancel}
+            enableClear={enableClear}
+            inputContainerStyle={styles.inputContainer}
+            cancel={{
+              buttonName: 'cancel',
+              onCancel: () => {
+                navigation.goBack();
+              },
+            }}
+            onChangeText={() => {}}
+            onClear={execClear}
+            returnKeyType="search"
+            onSubmitEditing={(event) => {
+              const c = event.nativeEvent.text;
+              // Keyboard.dismiss();
+              event.preventDefault();
+              execSearch({ type, keyword: c });
+            }}
+          />
+        </View>
+      </View>
+      <View style={{ flex: 1 }}>
+        <EqualHeightList
+          bounces={bounces}
+          parentName="ContactList"
+          ref={listRef}
+          items={data}
+          ItemFC={Item}
+          enableAlphabet={enableAlphabet}
+          enableRefresh={enableRefresh}
+          enableHeader={enableHeader}
+          alphabet={{
+            alphabetCurrent: {
+              backgroundColor: 'orange',
+              color: 'white',
+            },
+            alphabetItemContainer: {
+              width: sf(15),
+              borderRadius: 8,
             },
           }}
-          onChangeText={() => {}}
-          onClear={execClear}
-          returnKeyType="search"
-          onSubmitEditing={(event) => {
-            const c = event.nativeEvent.text;
-            // Keyboard.dismiss();
-            event.preventDefault();
-            execSearch({ type, keyword: c });
-          }}
+          ItemSeparatorComponent={DefaultListItemSeparator}
         />
+        {isEmpty === true ? <Blank style={styles.blank} /> : null}
       </View>
-      <EqualHeightList
-        bounces={bounces}
-        parentName="ContactList"
-        ref={listRef}
-        items={data}
-        ItemFC={Item}
-        enableAlphabet={enableAlphabet}
-        enableRefresh={enableRefresh}
-        enableHeader={enableHeader}
-        alphabet={{
-          alphabetCurrent: {
-            backgroundColor: 'orange',
-            color: 'white',
-          },
-          alphabetItemContainer: {
-            width: sf(15),
-            borderRadius: 8,
-          },
-        }}
-        ItemSeparatorComponent={DefaultListItemSeparator}
-      />
-      {isEmpty === true ? <Blank style={styles.blank} /> : null}
     </SafeAreaView>
   );
 }
@@ -856,7 +873,7 @@ const styles = createStyleSheet({
   },
   rightItemFont: { fontSize: 14, fontWeight: '400', lineHeight: 18 },
   rightItemStyle: { height: 30, borderRadius: 24, paddingHorizontal: 15 },
-  container: { paddingHorizontal: 20, paddingTop: 10 },
+  container: { paddingTop: 10, marginHorizontal: 20 },
   inputContainer: {
     backgroundColor: 'rgba(242, 242, 242, 1)',
     borderRadius: 24,

@@ -110,7 +110,7 @@ export type DataActionEventType =
   | 'on_send_before'
   | 'on_send_result'
   | 'on_message_progress'
-  | 'create_conversation'
+  | 'exec_create_conversation'
   | 'update_conversation_read_state'
   | 'preview_image'
   | 'request_history_message'

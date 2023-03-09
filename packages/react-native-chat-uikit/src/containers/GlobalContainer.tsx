@@ -6,6 +6,7 @@ import * as React from 'react';
 import { Text } from 'react-native';
 import * as Audio from 'react-native-audio-recorder-player';
 import { ChatClient, ChatOptions } from 'react-native-chat-sdk';
+import { UikitModalPlaceholder } from 'react-native-chat-uikit';
 import CreateThumbnail from 'react-native-create-thumbnail';
 import * as DocumentPicker from 'react-native-document-picker';
 import * as FileAccess from 'react-native-file-access';
@@ -67,7 +68,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
     dir?: DirCacheService | undefined;
   };
   onInitialized?: () => void;
-  ModalComponent: React.FunctionComponent;
+  ModalComponent?: React.FunctionComponent;
 }>;
 
 /**
@@ -206,11 +207,12 @@ export function GlobalContainer({
     }
   }
 
-  if (ModalComponent === undefined) {
-    throw new Error(
-      'Specify a modal window, for example: UikitModalPlaceholder.'
-    );
-  }
+  const ModalComponentWrapper = () => {
+    if (ModalComponent) {
+      return <ModalComponent />;
+    }
+    return <UikitModalPlaceholder />;
+  };
 
   const init = once(() => {
     sdk?.client
@@ -265,7 +267,7 @@ export function GlobalContainer({
                         children node is empty.
                       </Text>
                     )}
-                    <ModalComponent />
+                    {ModalComponentWrapper()}
                   </ContentStateContextProvider>
                 </ToastContextProvider>
               </DialogContextProvider>

@@ -1,3 +1,7 @@
+_English | [Chinese](./README.zh.md)_
+
+---
+
 # react-native-chat-library
 
 ## github

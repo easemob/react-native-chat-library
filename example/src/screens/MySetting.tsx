@@ -83,7 +83,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
   const cbs = Services.cbs;
   const ms = Services.ms;
   const bounces = false;
-  const memberCount = 5;
+  // const memberCount = 5;
   const [userName, setUserName] = React.useState('NickName');
   const [userId, setUserId] = React.useState('Agora ID: xx');
   const sdkVersion = 'AgoraChat v0.0.0';
@@ -289,7 +289,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
           <Text style={styles.id}>{userId}</Text>
         </Pressable>
         <View style={{ height: sf(40) }} />
-        <Intervallum content={settings.privacy} />
+        {/* <Intervallum content={settings.privacy} />
         <Pressable
           onPress={() => {
             navigation.navigate('ContactList', {
@@ -308,7 +308,7 @@ export default function MySettingScreen({ navigation }: Props): JSX.Element {
               color="#A9A9A9"
             />
           </View>
-        </Pressable>
+        </Pressable> */}
         <Intervallum content={settings.about} />
         <Pressable
           onPress={() => {

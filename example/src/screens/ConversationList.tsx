@@ -115,7 +115,7 @@ export default function ConversationListScreen({
   }, [NavigationHeaderRight, navigation]);
 
   React.useEffect(() => {
-    console.log('test:load:InvisiblePlaceholder:', ConversationListScreen.name);
+    console.log('test:load:', ConversationListScreen.name);
     const sub = DeviceEventEmitter.addListener(
       'DataEvent' as DataEventType,
       (event) => {
@@ -161,10 +161,7 @@ export default function ConversationListScreen({
     );
 
     return () => {
-      console.log(
-        'test:unload:InvisiblePlaceholder:',
-        ConversationListScreen.name
-      );
+      console.log('test:unload:', ConversationListScreen.name);
       sub.remove();
     };
   }, [navigation]);

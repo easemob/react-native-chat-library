@@ -6,6 +6,8 @@
 
 该页面显示最近聊天的记录，通过聊天记录可以快速建立聊天。
 
+会话页面 `ConversationListScreen` 由 导航器 `NavigationHeaderRight` 和 会话列表组件 `ConversationListFragment` 组成。
+
 组件 `ConversationListFragment` 提供属性 `ConversationListFragmentProps`。
 
 组件 `ConversationListFragment` 主要由搜索组件 `DefaultListSearchHeader` 和列表组件 `ConversationList` 组成。
@@ -56,6 +58,25 @@ type ConversationListFragmentProps = {
 
 ## 会话列表项
 
+主要对象：数据源 `ItemDataType`
+
+```typescript
+export type ItemDataType = EqualHeightListItemData & {
+  convId: string;
+  convType: ChatConversationType;
+  lastMsg?: ChatMessage;
+  convContent: string;
+  timestamp: number;
+  timestampS: string;
+  count: number;
+  actions?: {
+    onDelete?: (data: ItemDataType) => void;
+  };
+};
+```
+
+主要对象：渲染组件 `Item`。
+
 如果想要修改会话列表项可以参考 `ItemDataType` 和 `Item` 相关组件源码。
 
 ## 典型应用场景
@@ -80,12 +101,12 @@ type ConversationListFragmentProps = {
 
 会话右上角有一个重要入口，它包括：
 
-1. 创建群组入口
-2. 添加联系人入口
-3. 搜索群组入口
+1. 创建群组
+2. 添加联系人
+3. 搜索群组
 
 ## 扩展
 
-用户可以根据需要进行 `和` 修改使用。
+用户可以根据需要进行 `对应组件` 修改和使用。
 
-[sample code](https://github.com/easemob/react-native-chat-library/tree/dev/example/src/fragments/ConversationList.tsx)
+[sample code](https://github.com/easemob/react-native-chat-library/tree/dev/example/src/screens/ConversationList.tsx)

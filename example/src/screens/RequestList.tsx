@@ -506,7 +506,6 @@ export default function RequestListScreen(_props: Props): JSX.Element {
       }
       setIsEmpty(data.length === 0);
       updateRequestFlag(data);
-      console.log('test:1231245:', data.length);
     },
     [data, updateRequestFlag]
   );

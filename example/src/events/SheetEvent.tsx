@@ -187,18 +187,18 @@ export function handleSheetEvent(params: {
         const { conversation } = extra.i18n;
         params.sheet.openSheet({
           sheetItems: [
-            {
-              title: conversation.new,
-              titleColor: 'black',
-              onPress: () => {
-                sendEventFromSheet({
-                  eventType: 'DataEvent',
-                  eventBizType: 'conversation',
-                  action: 'create_conversation_item',
-                  params: {},
-                });
-              },
-            },
+            // {
+            //   title: conversation.new,
+            //   titleColor: 'black',
+            //   onPress: () => {
+            //     sendEventFromSheet({
+            //       eventType: 'DataEvent',
+            //       eventBizType: 'conversation',
+            //       action: 'create_conversation_item',
+            //       params: {},
+            //     });
+            //   },
+            // },
             {
               title: conversation.createGroup,
               titleColor: 'black',
@@ -235,18 +235,18 @@ export function handleSheetEvent(params: {
                 });
               },
             },
-            {
-              title: conversation.joinPublicGroup,
-              titleColor: 'black',
-              onPress: () => {
-                sendEventFromSheet({
-                  eventType: 'DataEvent',
-                  eventBizType: 'conversation',
-                  action: 'join_public_group',
-                  params: {},
-                });
-              },
-            },
+            // {
+            //   title: conversation.joinPublicGroup,
+            //   titleColor: 'black',
+            //   onPress: () => {
+            //     sendEventFromSheet({
+            //       eventType: 'DataEvent',
+            //       eventBizType: 'conversation',
+            //       action: 'join_public_group',
+            //       params: {},
+            //     });
+            //   },
+            // },
           ],
         });
       }

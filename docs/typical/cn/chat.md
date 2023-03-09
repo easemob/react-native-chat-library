@@ -53,6 +53,25 @@ type ChatFragmentProps = {
 };
 ```
 
+## 聊天气泡项
+
+目前包括：文本、语音、图片消息气泡。 目前源码封装在 `MessageBubbleList` 组件中。
+
+### 文本
+
+- `TextMessageItemType`: 数据源
+- `TextMessageRenderItem`: 渲染组件
+
+### 图片
+
+- `ImageMessageItemType`:数据源
+- `ImageMessageRenderItem`:渲染组件
+
+### 语音
+
+- `VoiceMessageItemType`:数据源
+- `VoiceMessageRenderItem`:渲染组件
+
 ## 扩展
 
 对于有更多更改需求的用户，可以参考 `ChatFragment` 设计和实现。

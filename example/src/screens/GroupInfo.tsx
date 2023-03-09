@@ -10,7 +10,6 @@ import {
   LocalIcon,
   ScreenContainer,
   Services,
-  Switch,
 } from 'react-native-chat-uikit';
 
 import { useAppI18nContext } from '../contexts/AppI18nContext';
@@ -53,14 +52,14 @@ export function GroupInfoScreenInternal({
   const { client } = useAppChatSdkContext();
   const cbs = Services.cbs;
   const groupId = params.groupId ?? 'GroupId: xxx';
-  const memberCount = 5;
+  // const memberCount = 5;
   const [groupName, setGroupName] = React.useState('GroupName');
   const [groupDesc, setGroupDesc] = React.useState(groupInfo.groupDescription);
-  const [isAllMemberMuted, setIsAllMemberMuted] = React.useState(false);
+  const [, setIsAllMemberMuted] = React.useState(false);
 
-  const onMute = (isMute: boolean) => {
-    setIsAllMemberMuted(isMute);
-  };
+  // const onMute = (isMute: boolean) => {
+  //   setIsAllMemberMuted(isMute);
+  // };
 
   const onChangeName = React.useCallback(
     (groupId: string, groupName: string) => {
@@ -117,9 +116,9 @@ export function GroupInfoScreenInternal({
     });
   };
 
-  const onInvite = () => {};
+  // const onInvite = () => {};
 
-  const onMembers = () => {};
+  // const onMembers = () => {};
 
   const onDestroyGroup = React.useCallback(
     (groupId: string) => {
@@ -273,18 +272,18 @@ export function GroupInfoScreenInternal({
       <View
         style={{
           flexDirection: 'row',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           width: 130,
         }}
       >
-        <Pressable onPress={onInvite}>
+        {/* <Pressable onPress={onInvite}>
           <View style={styles.chatButton}>
             <LocalIcon name="group_invite" size={sf(30)} />
           </View>
           <Text style={[styles.chat, { marginTop: sf(5) }]}>
             {groupInfo.invite}
           </Text>
-        </Pressable>
+        </Pressable> */}
         <View>
           <Pressable
             onPress={() => {
@@ -300,7 +299,7 @@ export function GroupInfoScreenInternal({
         </View>
       </View>
       <View style={{ height: sf(66) }} />
-      <Pressable onPress={onMembers} style={styles.listItem}>
+      {/* <Pressable onPress={onMembers} style={styles.listItem}>
         <Text style={styles.listItemText1}>{groupInfo.members}</Text>
         <View
           style={{
@@ -313,8 +312,8 @@ export function GroupInfoScreenInternal({
           <View style={{ width: sf(5) }} />
           <LocalIcon name="go_small_black_mobile" size={sf(14)} />
         </View>
-      </Pressable>
-      <View style={styles.listItem}>
+      </Pressable> */}
+      {/* <View style={styles.listItem}>
         <Text style={styles.listItemText1}>{groupInfo.mute}</Text>
         <Switch
           value={isAllMemberMuted}
@@ -326,7 +325,7 @@ export function GroupInfoScreenInternal({
           inactiveThumbColor="white"
           inactiveTrackColor="rgba(216, 216, 216, 1)"
         />
-      </View>
+      </View> */}
       <Pressable
         style={styles.listItem}
         onPress={() => {

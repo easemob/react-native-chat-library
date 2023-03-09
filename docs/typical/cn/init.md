@@ -29,6 +29,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
     dir?: DirCacheService | undefined;
   };
   onInitialized?: () => void;
+  ModalComponent?: React.FunctionComponent;
 }>;
 ```
 
@@ -48,6 +49,8 @@ export type GlobalContainerProps = React.PropsWithChildren<{
   - permission: Apply permission service. 'uikit' provides the default version.
   - storage: Storage service. Currently support 'key-value' persistent storage. 'uikit' provides the default version.
   - dir: Directory service. 'uikit' provides the default version.
+- onInitialized: Called after uikit is initialized.
+- ModalComponent: A custom modal system component that manages all modal Windows.
 
 很多参数提供了默认值。
 
@@ -62,6 +65,7 @@ export default function App() {
 ### 本地环境
 
 在 `初始化` 项目的时候，会自动创建 `env.ts` , 里面的参数可选。
+**注意** 主要用于高效开发。
 
 ```typescript
 export const test = false; // test mode or no

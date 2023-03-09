@@ -106,7 +106,7 @@ const Item: EqualHeightListItemComponent = (props) => {
         }}
       >
         <View style={{ width: sf(20) }} />
-        <Pressable
+        {/* <Pressable
           style={{
             height: sf(30),
             width: sf(30),
@@ -122,7 +122,7 @@ const Item: EqualHeightListItemComponent = (props) => {
         >
           <LocalIcon name="bell_slash" size={20} color="#666666" />
         </Pressable>
-        <View style={{ width: sf(15) }} />
+        <View style={{ width: sf(15) }} /> */}
         <Pressable
           style={{
             height: sf(30),
@@ -399,7 +399,7 @@ export default function ConversationListFragment(
         timestampS: messageTimestamp(time),
         type: 'sideslip',
         sideslip: {
-          width: sf(100),
+          width: sf(50),
         },
         onLongPress: (data: ItemDataType) => {
           onLongPress?.(data);
@@ -652,7 +652,7 @@ export default function ConversationListFragment(
               });
             }
             break;
-          case 'create_conversation':
+          case 'exec_create_conversation':
             createConversation(params);
             break;
 
