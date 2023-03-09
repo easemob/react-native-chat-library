@@ -54,6 +54,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
   option: {
     appKey: string;
     autoLogin: boolean;
+    debugModel?: boolean;
   };
   localization?: StringSetContextType | undefined;
   theme?: ThemeContextType | undefined;
@@ -220,7 +221,7 @@ export function GlobalContainer({
         new ChatOptions({
           autoLogin: option.autoLogin,
           appKey: option.appKey,
-          debugModel: true,
+          debugModel: option.debugModel ?? false,
         })
       )
       .then(async () => {
