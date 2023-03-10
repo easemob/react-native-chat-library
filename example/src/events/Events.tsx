@@ -119,7 +119,10 @@ export type DataActionEventType =
   | 'exec_forward_notify_message'
   | 'update_request_notification_flag'
   | 'on_logined'
-  | 'create_group_result';
+  | 'create_group_result'
+  | 'chat_open_camera'
+  | 'chat_open_media_library'
+  | 'chat_open_document';
 
 ////////////////////////////////////////////////////////////////////////////////
 //// ActionEventType ///////////////////////////////////////////////////////////

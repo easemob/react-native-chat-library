@@ -2,7 +2,6 @@ import {
   DialogContextType,
   ExtraDataType,
   getScaleFactor,
-  Services,
   ThemeContextType,
 } from 'react-native-chat-uikit';
 
@@ -253,7 +252,6 @@ export function handleSheetEvent(params: {
       break;
     case 'open_input_extension':
       {
-        const ms = Services.ms;
         const extra = params.extra.getData?.() as {
           theme: ThemeContextType;
           i18n: AppStringSet;
@@ -265,11 +263,12 @@ export function handleSheetEvent(params: {
               title: 'Camera',
               titleColor: 'black',
               onPress: () => {
-                ms.openCamera({})
-                  .then(() => {})
-                  .catch((error) => {
-                    console.warn('error:', error);
-                  });
+                sendEventFromSheet({
+                  eventType: 'DataEvent',
+                  action: 'chat_open_camera',
+                  params: {},
+                  eventBizType: 'chat',
+                });
               },
             },
             {
@@ -277,19 +276,12 @@ export function handleSheetEvent(params: {
               title: 'Album',
               titleColor: 'black',
               onPress: () => {
-                Services.ms
-                  .openMediaLibrary({ selectionLimit: 1 })
-                  .then((result) => {
-                    sendEventFromSheet({
-                      eventType: 'DataEvent',
-                      eventBizType: 'contact',
-                      params: result,
-                      action: 'send_image_message',
-                    });
-                  })
-                  .catch((error) => {
-                    console.warn('error:', error);
-                  });
+                sendEventFromSheet({
+                  eventType: 'DataEvent',
+                  action: 'chat_open_media_library',
+                  params: {},
+                  eventBizType: 'chat',
+                });
               },
             },
             {
@@ -297,11 +289,12 @@ export function handleSheetEvent(params: {
               title: 'Files',
               titleColor: 'black',
               onPress: () => {
-                ms.openDocument({})
-                  .then(() => {})
-                  .catch((error) => {
-                    console.warn('error:', error);
-                  });
+                sendEventFromSheet({
+                  eventType: 'DataEvent',
+                  action: 'chat_open_document',
+                  params: {},
+                  eventBizType: 'chat',
+                });
               },
             },
           ],

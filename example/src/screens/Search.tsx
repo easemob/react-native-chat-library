@@ -735,7 +735,6 @@ export default function SearchScreen({
         const info = await client.groupManager.fetchGroupInfoFromServer(
           params.keyword
         );
-        console.log('test:1231231:', info);
         if (info) {
           loadSearchResult({ type, id: info.groupId, name: info.groupName });
         } else {

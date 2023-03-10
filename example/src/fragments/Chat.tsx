@@ -40,7 +40,7 @@ import {
   type MessageChatSdkEventType,
   Button,
   createStyleSheet,
-  DataEventType,
+  // DataEventType,
   FaceList as ChatFaceList,
   getFileExtension,
   getScaleFactor,
@@ -61,7 +61,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import moji from 'twemoji';
 
 import { useAppChatSdkContext } from '../contexts/AppImSdkContext';
-import type { BizEventType, DataActionEventType } from '../events';
 import { sendEvent, sendEventProps } from '../events/sendEvent';
 import MessageBubbleList, {
   type CustomMessageItemType,
@@ -94,9 +93,31 @@ type ChatInputProps = BaseProps & {
     getContent: () => string;
     setContent: React.Dispatch<React.SetStateAction<string>>;
   }) => void;
+  onVoiceRecordEnd?: (params: { localPath: string; duration: number }) => void;
+  onClickInputMoreButton?: () => void;
+  onPressInInputVoiceButton?: () => void;
+  onPressOutInputVoiceButton?: () => void;
 };
 
+type ChatContentRef = {
+  sendImageMessage: (
+    params: {
+      name: string;
+      localPath: string;
+      memoSize: string;
+      imageType: string;
+      width: number;
+      height: number;
+    }[]
+  ) => void;
+  sendVoiceMessage: (params: {
+    localPath: string;
+    memoSize?: number;
+    duration?: number;
+  }) => void;
+};
 type ChatContentProps = BaseProps & {
+  propsRef?: React.RefObject<ChatContentRef>;
   messageBubbleList?: {
     MessageBubbleListP: React.ForwardRefExoticComponent<
       MessageBubbleListProps & React.RefAttributes<MessageBubbleListRef>
@@ -110,8 +131,14 @@ type ChatContentProps = BaseProps & {
     >;
   };
   onUpdateReadCount?: (unreadCount: number) => void;
-  onItemPress?: (data: MessageItemType) => void;
-  onItemLongPress?: (data: MessageItemType) => void;
+  onClickMessageBubble?: (data: MessageItemType) => void;
+  onLongPressMessageBubble?: (data: MessageItemType) => void;
+  onClickInputMoreButton?: () => void;
+  onPressInInputVoiceButton?: () => void;
+  onPressOutInputVoiceButton?: () => void;
+  onSendMessage?: (message: ChatMessage) => void;
+  onSendMessageEnd?: (message: ChatMessage) => void;
+  onVoiceRecordEnd?: (params: { localPath: string; duration: number }) => void;
 };
 
 const sendEventFromChat = (
@@ -119,14 +146,24 @@ const sendEventFromChat = (
 ) => {
   sendEvent({
     ...params,
-    senderId: 'Chat',
+    senderId: 'ChatFragment',
     eventBizType: 'chat',
   } as sendEventProps);
 };
 
 const ChatInput = React.memo((props: ChatInputProps) => {
-  const { onFace, onSendTextMessage, onInit, inputRef, chatId, ...others } =
-    props;
+  const {
+    onFace,
+    onSendTextMessage,
+    onInit,
+    inputRef,
+    chatId,
+    onVoiceRecordEnd,
+    onClickInputMoreButton,
+    onPressInInputVoiceButton,
+    onPressOutInputVoiceButton,
+    ...others
+  } = props;
   const sf = getScaleFactor();
   const { chat } = useI18nContext();
   // const TextInputRef = React.useRef<RNTextInput>(null);
@@ -245,11 +282,15 @@ const ChatInput = React.memo((props: ChatInputProps) => {
           ) : (
             <TouchableOpacity
               onPress={() => {
-                sendEventFromChat({
-                  eventType: 'SheetEvent',
-                  action: 'open_input_extension',
-                  params: {},
-                });
+                if (onClickInputMoreButton) {
+                  onClickInputMoreButton();
+                } else {
+                  sendEventFromChat({
+                    eventType: 'SheetEvent',
+                    action: 'open_input_extension',
+                    params: {},
+                  });
+                }
               }}
             >
               <LocalIcon name="plus_in_circle" color="#A5A7A6" size={sf(28)} />
@@ -271,79 +312,96 @@ const ChatInput = React.memo((props: ChatInputProps) => {
             }}
             style={[styles.talk, { width: sf(width - 24 - 28 - 20) }]}
             onPressIn={() => {
-              sendEventFromChat({
-                eventType: 'VoiceStateEvent',
-                action: 'enable_voice',
-                params: {},
-              });
-              Services.ms
-                .startRecordAudio({
-                  audio: {
-                    AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
-                    AudioSourceAndroid: AudioSourceAndroidType.MIC,
-                    AVModeIOS: AVModeIOSOption.measurement,
-                    AVEncoderAudioQualityKeyIOS:
-                      AVEncoderAudioQualityIOSType.high,
-                    AVNumberOfChannelsKeyIOS: 2,
-                    AVFormatIDKeyIOS: AVEncodingOption.aac,
-                  } as AudioSet,
-                  // url: localPath,
-                  onPosition: (pos) => {
-                    console.log('test:startRecordAudio:pos:', pos);
-                  },
-                  onFailed: (error) => {
-                    console.warn('test:startRecordAudio:onFailed:', error);
-                  },
-                  onFinished: ({ result, path, error }) => {
-                    console.log(
-                      'test:startRecordAudio:onFinished:',
-                      result,
-                      path,
-                      error
-                    );
-                  },
-                })
-                .then((result) => {
-                  console.log('test:startRecordAudio:result:', result);
-                })
-                .catch((error) => {
-                  console.warn('test:startRecordAudio:error:', error);
+              if (onPressInInputVoiceButton) {
+                onPressInInputVoiceButton();
+              } else {
+                sendEventFromChat({
+                  eventType: 'VoiceStateEvent',
+                  action: 'enable_voice',
+                  params: {},
                 });
+                Services.ms
+                  .startRecordAudio({
+                    audio: {
+                      AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
+                      AudioSourceAndroid: AudioSourceAndroidType.MIC,
+                      AVModeIOS: AVModeIOSOption.measurement,
+                      AVEncoderAudioQualityKeyIOS:
+                        AVEncoderAudioQualityIOSType.high,
+                      AVNumberOfChannelsKeyIOS: 2,
+                      AVFormatIDKeyIOS: AVEncodingOption.aac,
+                    } as AudioSet,
+                    // url: localPath,
+                    onPosition: (pos) => {
+                      console.log('test:startRecordAudio:pos:', pos);
+                    },
+                    onFailed: (error) => {
+                      console.warn('test:startRecordAudio:onFailed:', error);
+                    },
+                    onFinished: ({ result, path, error }) => {
+                      console.log(
+                        'test:startRecordAudio:onFinished:',
+                        result,
+                        path,
+                        error
+                      );
+                    },
+                  })
+                  .then((result) => {
+                    console.log('test:startRecordAudio:result:', result);
+                  })
+                  .catch((error) => {
+                    console.warn('test:startRecordAudio:error:', error);
+                  });
+              }
             }}
             onPressOut={() => {
-              let localPath = localUrl(Services.dcs.getFileDir(chatId, uuid()));
-              sendEventFromChat({
-                eventType: 'VoiceStateEvent',
-                action: 'disable_voice',
-                params: {},
-              });
-              Services.ms
-                .stopRecordAudio()
-                .then((result?: { pos: number; path: string }) => {
-                  if (result?.path) {
-                    const extension = getFileExtension(result.path);
-                    console.log('test:extension:', extension);
-                    localPath = localPath + extension;
-                    Services.ms
-                      .saveFromLocal({
-                        targetPath: localPath,
-                        localPath: result.path,
-                      })
-                      .then(() => {
-                        sendEventFromChat({
-                          eventType: 'DataEvent',
-                          action: 'send_voice_message',
-                          params: { localPath, duration: result.pos / 1000 },
-                        });
-                      })
-                      .catch((error) => {
-                        console.warn('test:startRecordAudio:save:error', error);
-                      });
-                  }
-                })
-                .catch((error) => {
-                  console.warn('test:stopRecordAudio:error:', error);
+              if (onPressOutInputVoiceButton) {
+                onPressOutInputVoiceButton();
+              } else {
+                sendEventFromChat({
+                  eventType: 'VoiceStateEvent',
+                  action: 'disable_voice',
+                  params: {},
                 });
+                let localPath = localUrl(
+                  Services.dcs.getFileDir(chatId, uuid())
+                );
+                Services.ms
+                  .stopRecordAudio()
+                  .then((result?: { pos: number; path: string }) => {
+                    if (result?.path) {
+                      const extension = getFileExtension(result.path);
+                      console.log('test:extension:', extension);
+                      localPath = localPath + extension;
+                      Services.ms
+                        .saveFromLocal({
+                          targetPath: localPath,
+                          localPath: result.path,
+                        })
+                        .then(() => {
+                          onVoiceRecordEnd?.({
+                            localPath,
+                            duration: result.pos / 1000,
+                          });
+                          // sendEventFromChat({
+                          //   eventType: 'DataEvent',
+                          //   action: 'send_voice_message',
+                          //   params: { localPath, duration: result.pos / 1000 },
+                          // });
+                        })
+                        .catch((error) => {
+                          console.warn(
+                            'test:startRecordAudio:save:error',
+                            error
+                          );
+                        });
+                    }
+                  })
+                  .catch((error) => {
+                    console.warn('test:stopRecordAudio:error:', error);
+                  });
+              }
             }}
           >
             {chat.voiceButton}
@@ -356,6 +414,7 @@ const ChatInput = React.memo((props: ChatInputProps) => {
 
 const ChatContent = React.memo(
   ({
+    propsRef,
     chatId,
     chatType,
     messageBubbleList,
@@ -363,8 +422,14 @@ const ChatContent = React.memo(
     inputRef,
     customMessageBubble,
     onUpdateReadCount,
-    onItemPress,
-    onItemLongPress,
+    onClickMessageBubble,
+    onLongPressMessageBubble,
+    onClickInputMoreButton,
+    onPressInInputVoiceButton,
+    onPressOutInputVoiceButton,
+    onSendMessage,
+    onSendMessageEnd,
+    onVoiceRecordEnd,
   }: ChatContentProps) => {
     const sf = getScaleFactor();
     const TextInputRef = React.useRef<RNTextInput>(null);
@@ -378,7 +443,6 @@ const ChatContent = React.memo(
     const faceHeight = sf(300);
     const faceHeightRef = React.useRef(new Animated.Value(0)).current;
     const { client } = useAppChatSdkContext();
-    console.log('test:', onItemLongPress);
 
     const getMsgListRef = React.useCallback(() => {
       if (messageBubbleList) {
@@ -478,6 +542,38 @@ const ChatContent = React.memo(
       [chatId, chatType]
     );
 
+    const onClickMessageBubbleInternal = React.useCallback(
+      (item: MessageItemType) => {
+        const eventParams = item;
+        if (eventParams.type === ChatMessageType.VOICE) {
+          const voice = eventParams as VoiceMessageItemType;
+          if (voice.localPath) {
+            Services.ms
+              .playAudio({
+                url: playUrl(voice.localPath),
+                onPlay({ isMuted, currentPosition, duration }) {
+                  console.log(
+                    'test:onPlay',
+                    isMuted,
+                    currentPosition,
+                    duration
+                  );
+                },
+              })
+              .then(() => {
+                console.log('test:playAudio:finish:');
+              })
+              .catch((error) => {
+                console.warn('test:error:', error);
+              });
+          }
+        } else if (eventParams.type === ChatMessageType.IMAGE) {
+          // TODO: The image preview is displayed.
+        }
+      },
+      []
+    );
+
     const standardizedData = React.useCallback(
       (
         item: Omit<MessageItemType, 'onPress' | 'onLongPress'>
@@ -485,23 +581,36 @@ const ChatContent = React.memo(
         const r = {
           ...item,
           onLongPress: (data: MessageItemType) => {
-            sendEventFromChat({
-              eventType: 'ActionMenuEvent',
-              action: 'long_press_message_bubble',
-              params: data,
-            });
+            if (onLongPressMessageBubble) {
+              onLongPressMessageBubble(data);
+            } else {
+              sendEventFromChat({
+                eventType: 'ActionMenuEvent',
+                action: 'long_press_message_bubble',
+                params: data,
+              });
+            }
           },
           onPress: (data: MessageItemType) => {
-            sendEventFromChat({
-              eventType: 'DataEvent',
-              action: 'press_message_bubble',
-              params: data,
-            });
+            if (onClickMessageBubble) {
+              onClickMessageBubble(data);
+            } else {
+              onClickMessageBubbleInternal(data);
+              // sendEventFromChat({
+              //   eventType: 'DataEvent',
+              //   action: 'press_message_bubble',
+              //   params: data,
+              // });
+            }
           },
         } as MessageItemType;
         return r;
       },
-      []
+      [
+        onClickMessageBubble,
+        onClickMessageBubbleInternal,
+        onLongPressMessageBubble,
+      ]
     );
 
     const convertFromMessage = React.useCallback(
@@ -509,6 +618,8 @@ const ChatContent = React.memo(
         const convertFromMessageState = (msg: ChatMessage) => {
           if (msg.status === ChatMessageStatus.SUCCESS) {
             return 'arrived' as MessageItemStateType;
+          } else if (msg.status === ChatMessageStatus.CREATE) {
+            return 'sending' as MessageItemStateType;
           } else if (msg.status === ChatMessageStatus.FAIL) {
             return 'failed' as MessageItemStateType;
           } else if (msg.status === ChatMessageStatus.PROGRESS) {
@@ -585,6 +696,18 @@ const ChatContent = React.memo(
       [customMessageBubble?.CustomMessageRenderItemP, standardizedData]
     );
 
+    const updateMessageState = React.useCallback(
+      (params: {
+        localMsgId: string;
+        result: boolean;
+        reason?: any;
+        item?: MessageItemType;
+      }) => {
+        getMsgListRef().current?.updateMessageState(params);
+      },
+      [getMsgListRef]
+    );
+
     const downloadAttachment = React.useCallback(
       (msg: ChatMessage) => {
         if (
@@ -607,20 +730,25 @@ const ChatContent = React.memo(
               );
             },
             onSuccess: (message: ChatMessage): void => {
-              sendEventFromChat({
-                eventType: 'DataEvent',
-                action: 'update_message_state',
-                params: {
-                  localMsgId: message.localMsgId,
-                  result: true,
-                  item: convertFromMessage(message),
-                },
+              // sendEventFromChat({
+              //   eventType: 'DataEvent',
+              //   action: 'update_message_state',
+              //   params: {
+              //     localMsgId: message.localMsgId,
+              //     result: true,
+              //     item: convertFromMessage(message),
+              //   },
+              // });
+              updateMessageState({
+                localMsgId: message.localMsgId,
+                result: true,
+                item: convertFromMessage(message),
               });
             },
           } as ChatMessageStatusCallback);
         }
       },
-      [client.chatManager, convertFromMessage]
+      [client.chatManager, convertFromMessage, updateMessageState]
     );
 
     const checkAttachment = React.useCallback(
@@ -628,11 +756,11 @@ const ChatContent = React.memo(
         const isExisted = async (msg: ChatMessage) => {
           if (msg.body.type === ChatMessageType.IMAGE) {
             const body = msg.body as ChatImageMessageBody;
-            const thumb = await Services.dcs.isExistedFile(
-              body.thumbnailLocalPath
-            );
+            // const thumb = await Services.dcs.isExistedFile(
+            //   body.thumbnailLocalPath
+            // );
             const org = await Services.dcs.isExistedFile(body.localPath);
-            if (thumb === false || org === false) {
+            if (org === false) {
               return false;
             } else {
               return true;
@@ -658,66 +786,82 @@ const ChatContent = React.memo(
       [downloadAttachment]
     );
 
-    const onSendBefore = React.useCallback((msg: ChatMessage) => {
-      sendEventFromChat({
-        eventType: 'DataEvent',
-        action: 'on_send_before',
-        params: { message: msg },
-      });
-    }, []);
-    const onSendResult = React.useCallback((msg: ChatMessage) => {
-      sendEventFromChat({
-        eventType: 'DataEvent',
-        action: 'on_send_result',
-        params: { message: msg },
-      });
-    }, []);
+    // const onSendBefore = React.useCallback((msg: ChatMessage) => {
+    //   // sendEventFromChat({
+    //   //   eventType: 'DataEvent',
+    //   //   action: 'on_send_before',
+    //   //   params: { message: msg },
+    //   // });
+    // }, []);
+    // const onSendResult = React.useCallback((msg: ChatMessage) => {
+    //   // sendEventFromChat({
+    //   //   eventType: 'DataEvent',
+    //   //   action: 'on_send_result',
+    //   //   params: { message: msg },
+    //   // });
+    // }, []);
 
     const sendToServer = React.useCallback(
       (msg: ChatMessage) => {
-        onSendBefore(msg);
+        onSendMessage?.(msg);
+        // onSendBefore(msg);
         client.chatManager
           .sendMessage(msg, {
             onProgress: (localMsgId: string, progress: number): void => {
-              console.log('test:sendToServer:onProgress', localMsgId);
-              sendEventFromChat({
-                eventType: 'DataEvent',
-                action: 'on_message_progress',
-                params: {
-                  localMsgId,
-                  progress,
-                },
-              });
+              console.log('test:sendToServer:onProgress', localMsgId, progress);
+              // sendEventFromChat({
+              //   eventType: 'DataEvent',
+              //   action: 'on_message_progress',
+              //   params: {
+              //     localMsgId,
+              //     progress,
+              //   },
+              // });
             },
             onError: (localMsgId: string, error: ChatError): void => {
               console.log('test:sendToServer:onError', localMsgId);
-              sendEventFromChat({
-                eventType: 'DataEvent',
-                action: 'update_message_state',
-                params: {
-                  localMsgId,
-                  result: false,
-                  reason: error,
-                },
+              // sendEventFromChat({
+              //   eventType: 'DataEvent',
+              //   action: 'update_message_state',
+              //   params: {
+              //     localMsgId,
+              //     result: false,
+              //     reason: error,
+              //   },
+              // });
+              updateMessageState({
+                localMsgId,
+                result: false,
+                reason: error,
               });
               // msg.status = ChatMessageStatus.FAIL; // !!! Error: You attempted to set the key `status` with the value `3` on an object that is meant to be immutable and has been frozen.
-              onSendResult({
+              onSendMessageEnd?.({
                 ...msg,
                 status: ChatMessageStatus.FAIL,
               } as ChatMessage);
+              // onSendResult({
+              //   ...msg,
+              //   status: ChatMessageStatus.FAIL,
+              // } as ChatMessage);
             },
             onSuccess: (message: ChatMessage): void => {
               console.log('test:sendToServer:onSuccess', message.localMsgId);
-              sendEventFromChat({
-                eventType: 'DataEvent',
-                action: 'update_message_state',
-                params: {
-                  localMsgId: message.localMsgId,
-                  result: true,
-                  item: convertFromMessage(message),
-                },
+              // sendEventFromChat({
+              //   eventType: 'DataEvent',
+              //   action: 'update_message_state',
+              //   params: {
+              //     localMsgId: message.localMsgId,
+              //     result: true,
+              //     item: convertFromMessage(message),
+              //   },
+              // });
+              updateMessageState({
+                localMsgId: message.localMsgId,
+                result: true,
+                item: convertFromMessage(message),
               });
-              onSendResult(message);
+              onSendMessageEnd?.(message);
+              // onSendResult(message);
             },
           } as ChatMessageStatusCallback)
           .then(() => {})
@@ -725,7 +869,13 @@ const ChatContent = React.memo(
             console.warn('test:sendToServer:error:', error);
           });
       },
-      [client.chatManager, convertFromMessage, onSendBefore, onSendResult]
+      [
+        client.chatManager,
+        convertFromMessage,
+        onSendMessage,
+        onSendMessageEnd,
+        updateMessageState,
+      ]
     );
 
     const sendTextMessage = React.useCallback(
@@ -1051,6 +1201,36 @@ const ChatContent = React.memo(
       };
     }, []);
 
+    if (propsRef?.current) {
+      propsRef.current.sendImageMessage = (params: any) => {
+        const eventParams = params as any[];
+        for (const item of eventParams) {
+          sendImageMessage({
+            name: item.name,
+            localPath: item.uri,
+            memoSize: item.size,
+            imageType: item.type,
+            width: item.width,
+            height: item.height,
+          })
+            .then()
+            .catch((error) => {
+              console.warn('test:sendImageMessage:error', error);
+            });
+        }
+      };
+      propsRef.current.sendVoiceMessage = (params: any) => {
+        sendVoiceMessage({
+          localPath: params.localPath,
+          duration: params.duration,
+        })
+          .then()
+          .catch((error) => {
+            console.warn('test:sendVoiceMessage:error', error);
+          });
+      };
+    }
+
     const addListeners = React.useCallback(() => {
       const sub2 = DeviceEventEmitter.addListener(
         MessageChatSdkEvent,
@@ -1077,116 +1257,110 @@ const ChatContent = React.memo(
         }
       );
 
-      const sub4 = DeviceEventEmitter.addListener(
-        'DataEvent' as DataEventType,
-        (event) => {
-          const { action, params } = event as {
-            eventBizType: BizEventType;
-            action: DataActionEventType;
-            senderId: string;
-            params: any;
-            timestamp?: number;
-          };
-          switch (action) {
-            case 'send_image_message':
-              {
-                const eventParams = params as any[];
-                for (const item of eventParams) {
-                  sendImageMessage({
-                    name: item.name,
-                    localPath: item.uri,
-                    memoSize: item.size,
-                    imageType: item.type,
-                    width: item.width,
-                    height: item.height,
-                  })
-                    .then()
-                    .catch((error) => {
-                      console.warn('test:error', error);
-                    });
-                }
-              }
-              break;
-            case 'send_voice_message':
-              {
-                const eventParams = params as {
-                  localPath: string;
-                  duration: number;
-                };
-                sendVoiceMessage({
-                  localPath: eventParams.localPath,
-                  duration: eventParams.duration,
-                })
-                  .then()
-                  .catch((error) => {
-                    console.warn('test:sendVoiceMessage:error', error);
-                  });
-              }
-              break;
-            case 'press_message_bubble':
-              {
-                const eventParams = params as MessageItemType;
-                if (eventParams.type === ChatMessageType.VOICE) {
-                  const voice = eventParams as VoiceMessageItemType;
-                  if (voice.localPath) {
-                    Services.ms
-                      .playAudio({
-                        url: playUrl(voice.localPath),
-                        onPlay({ isMuted, currentPosition, duration }) {
-                          console.log(
-                            'test:onPlay',
-                            isMuted,
-                            currentPosition,
-                            duration
-                          );
-                        },
-                      })
-                      .then(() => {
-                        console.log('test:playAudio:finish:');
-                      })
-                      .catch((error) => {
-                        console.warn('test:error:', error);
-                      });
-                  }
-                } else if (eventParams.type === ChatMessageType.IMAGE) {
-                  sendEventFromChat({
-                    eventType: 'DataEvent',
-                    action: 'preview_image',
-                    params: eventParams,
-                  });
-                }
-              }
-              break;
-            case 'preview_image':
-              onItemPress?.(params);
-              break;
+      // const sub4 = DeviceEventEmitter.addListener(
+      //   'DataEvent' as DataEventType,
+      //   (event) => {
+      //     const { action, params } = event as {
+      //       eventBizType: BizEventType;
+      //       action: DataActionEventType;
+      //       senderId: string;
+      //       params: any;
+      //       timestamp?: number;
+      //     };
+      //     switch (action) {
+      //       // case 'send_image_message':
+      //       //   {
+      //       //     const eventParams = params as any[];
+      //       //     for (const item of eventParams) {
+      //       //       sendImageMessage({
+      //       //         name: item.name,
+      //       //         localPath: item.uri,
+      //       //         memoSize: item.size,
+      //       //         imageType: item.type,
+      //       //         width: item.width,
+      //       //         height: item.height,
+      //       //       })
+      //       //         .then()
+      //       //         .catch((error) => {
+      //       //           console.warn('test:error', error);
+      //       //         });
+      //       //     }
+      //       //   }
+      //       //   break;
+      //       // case 'send_voice_message':
+      //       //   {
+      //       //     const eventParams = params as {
+      //       //       localPath: string;
+      //       //       duration: number;
+      //       //     };
+      //       //     sendVoiceMessage({
+      //       //       localPath: eventParams.localPath,
+      //       //       duration: eventParams.duration,
+      //       //     })
+      //       //       .then()
+      //       //       .catch((error) => {
+      //       //         console.warn('test:sendVoiceMessage:error', error);
+      //       //       });
+      //       //   }
+      //       //   break;
+      //       // case 'press_message_bubble':
+      //       //   {
+      //       //     const eventParams = params as MessageItemType;
+      //       //     if (eventParams.type === ChatMessageType.VOICE) {
+      //       //       const voice = eventParams as VoiceMessageItemType;
+      //       //       if (voice.localPath) {
+      //       //         Services.ms
+      //       //           .playAudio({
+      //       //             url: playUrl(voice.localPath),
+      //       //             onPlay({ isMuted, currentPosition, duration }) {
+      //       //               console.log(
+      //       //                 'test:onPlay',
+      //       //                 isMuted,
+      //       //                 currentPosition,
+      //       //                 duration
+      //       //               );
+      //       //             },
+      //       //           })
+      //       //           .then(() => {
+      //       //             console.log('test:playAudio:finish:');
+      //       //           })
+      //       //           .catch((error) => {
+      //       //             console.warn('test:error:', error);
+      //       //           });
+      //       //       }
+      //       //     } else if (eventParams.type === ChatMessageType.IMAGE) {
+      //       //       onClickMessageBubble?.(eventParams);
+      //       //       // sendEventFromChat({
+      //       //       //   eventType: 'DataEvent',
+      //       //       //   action: 'preview_image',
+      //       //       //   params: eventParams,
+      //       //       // });
+      //       //     }
+      //       //   }
+      //       //   break;
+      //       // case 'preview_image':
+      //       //   onClickMessageBubble?.(params);
+      //       //   break;
 
-            case 'request_history_message':
-              {
-                const eventParams = params as {
-                  earliestId: string | undefined;
-                };
-                requestHistoryMessage(eventParams.earliestId);
-              }
-              break;
+      //       // case 'request_history_message':
+      //       //   {
+      //       //     const eventParams = params as {
+      //       //       earliestId: string | undefined;
+      //       //     };
+      //       //     requestHistoryMessage(eventParams.earliestId);
+      //       //   }
+      //       //   break;
 
-            default:
-              break;
-          }
-        }
-      );
+      //       default:
+      //         break;
+      //     }
+      //   }
+      // );
       return () => {
         sub2.remove();
-        sub4.remove();
+        // sub4.remove();
       };
-    }, [
-      chatId,
-      loadMessage,
-      onItemPress,
-      requestHistoryMessage,
-      sendImageMessage,
-      sendVoiceMessage,
-    ]);
+    }, [chatId, loadMessage]);
 
     const initDirs = React.useCallback((convIds: string[]) => {
       for (const convId of convIds) {
@@ -1253,6 +1427,13 @@ const ChatContent = React.memo(
       chatId,
     ]);
 
+    const onRequestHistoryMessage = React.useCallback(
+      (params: { earliestId: string }) => {
+        requestHistoryMessage(params.earliestId);
+      },
+      [requestHistoryMessage]
+    );
+
     const ChatMessageBubbleList = React.memo(() =>
       messageBubbleList ? (
         <messageBubbleList.MessageBubbleListP
@@ -1263,6 +1444,7 @@ const ChatContent = React.memo(
             _onFace('face');
             messageBubbleList.MessageBubbleListPropsP?.onPressed?.();
           }}
+          onRequestHistoryMessage={onRequestHistoryMessage}
         />
       ) : (
         <MessageBubbleList
@@ -1274,8 +1456,23 @@ const ChatContent = React.memo(
           CustomMessageRenderItem={
             customMessageBubble?.CustomMessageRenderItemP
           }
+          onRequestHistoryMessage={onRequestHistoryMessage}
         />
       )
+    );
+
+    const onVoiceRecordEndInternal = React.useCallback(
+      (params: { localPath: string; duration: number }) => {
+        sendVoiceMessage({
+          localPath: params.localPath,
+          duration: params.duration,
+        })
+          .then()
+          .catch((error) => {
+            console.warn('test:sendVoiceMessage:error', error);
+          });
+      },
+      [sendVoiceMessage]
     );
 
     return (
@@ -1320,6 +1517,12 @@ const ChatContent = React.memo(
             setContentRef.current = setContent;
             getContentRef.current = getContent;
           }}
+          onVoiceRecordEnd={
+            onVoiceRecordEnd ? onVoiceRecordEnd : onVoiceRecordEndInternal
+          }
+          onClickInputMoreButton={onClickInputMoreButton}
+          onPressInInputVoiceButton={onPressInInputVoiceButton}
+          onPressOutInputVoiceButton={onPressOutInputVoiceButton}
         />
 
         <ChatFaceList height={faceHeightRef} onFace={onFaceInternal} />
@@ -1328,13 +1531,53 @@ const ChatContent = React.memo(
   }
 );
 
+/**
+ * ChatFragment controller
+ */
+export type ChatFragmentRef = {
+  /**
+   * send image message
+   */
+  sendImageMessage: (
+    params: {
+      name: string;
+      localPath: string;
+      memoSize: string;
+      imageType: string;
+      width: number;
+      height: number;
+    }[]
+  ) => void;
+  /**
+   * send voice message
+   */
+  sendVoiceMessage: (params: {
+    localPath: string;
+    memoSize?: number;
+    duration?: number;
+  }) => void;
+};
+
+/**
+ * ChatFragment properties
+ */
 type ChatFragmentProps = {
+  /**
+   * ChatFragment controller
+   */
+  propsRef?: React.RefObject<ChatFragmentRef>;
+  /**
+   * ChatFragment parameters
+   */
   screenParams: {
     params: {
       chatId: string;
       chatType: number;
     };
   };
+  /**
+   * Message bubble list component
+   */
   messageBubbleList?: {
     MessageBubbleListP: React.ForwardRefExoticComponent<
       MessageBubbleListProps & React.RefAttributes<MessageBubbleListRef>
@@ -1342,26 +1585,67 @@ type ChatFragmentProps = {
     MessageBubbleListPropsP: MessageBubbleListProps;
     MessageBubbleListRefP: React.RefObject<MessageBubbleListRef>;
   };
-  onFace?: (value?: 'face' | 'key') => void;
+  /**
+   * Message bubble item component for custom type message
+   */
   customMessageBubble?: {
     CustomMessageRenderItemP: React.FunctionComponent<
       MessageItemType & { eventType: string; data: any }
     >;
   };
+  /**
+   * Update message no reading callback notification.
+   */
   onUpdateReadCount?: (unreadCount: number) => void;
-  onItemPress?: (data: MessageItemType) => void;
-  onItemLongPress?: (data: MessageItemType) => void;
+  /**
+   * Click the message bubble callback notification.
+   */
+  onClickMessageBubble?: (data: MessageItemType) => void;
+  /**
+   * Long press the message bubble callback notification.
+   */
+  onLongPressMessageBubble?: (data: MessageItemType) => void;
+  /**
+   * Click the input more button callback notification.
+   */
+  onClickInputMoreButton?: () => void;
+  /**
+   * Press down the input voice button callback notification.
+   */
+  onPressInInputVoiceButton?: () => void;
+  /**
+   * Press up the input voice button callback notification.
+   */
+  onPressOutInputVoiceButton?: () => void;
+  /**
+   * A callback notification before sending a message.
+   */
+  onSendMessage?: (message: ChatMessage) => void;
+  /**
+   * A callback notification after sending a message.
+   */
+  onSendMessageEnd?: (message: ChatMessage) => void;
+  /**
+   * A callback notification after a voice file is recorded.
+   */
+  onVoiceRecordEnd?: (params: { localPath: string; duration: number }) => void;
 };
 
 export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
   const {
+    propsRef,
     screenParams,
     messageBubbleList,
-    onFace,
     customMessageBubble,
     onUpdateReadCount,
-    onItemPress,
-    onItemLongPress,
+    onClickMessageBubble,
+    onLongPressMessageBubble,
+    onClickInputMoreButton,
+    onPressInInputVoiceButton,
+    onPressOutInputVoiceButton,
+    onSendMessage,
+    onSendMessageEnd,
+    onVoiceRecordEnd,
   } = props;
   const params = screenParams.params as {
     chatId: string;
@@ -1371,9 +1655,18 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
   const { bottom } = useSafeAreaInsets();
   const chatId = params.chatId;
   const chatType = params.chatType;
+  const chatContentRef = React.useRef<ChatContentRef>({} as any);
   let keyboardVerticalOffset = sf(
     bottom + Platform.select({ ios: 50, android: 70 })!
   );
+  if (propsRef?.current) {
+    propsRef.current.sendImageMessage = (params) => {
+      chatContentRef?.current.sendImageMessage(params);
+    };
+    propsRef.current.sendVoiceMessage = (params) => {
+      chatContentRef?.current.sendVoiceMessage(params);
+    };
+  }
   return (
     <React.Fragment>
       <KeyboardAvoidingView
@@ -1392,14 +1685,20 @@ export default function ChatFragment(props: ChatFragmentProps): JSX.Element {
     }}
   > */}
         <ChatContent
+          propsRef={chatContentRef}
           chatId={chatId}
           chatType={chatType}
           messageBubbleList={messageBubbleList}
-          onFace={onFace}
           customMessageBubble={customMessageBubble}
           onUpdateReadCount={onUpdateReadCount}
-          onItemPress={onItemPress}
-          onItemLongPress={onItemLongPress}
+          onClickMessageBubble={onClickMessageBubble}
+          onLongPressMessageBubble={onLongPressMessageBubble}
+          onClickInputMoreButton={onClickInputMoreButton}
+          onPressInInputVoiceButton={onPressInInputVoiceButton}
+          onPressOutInputVoiceButton={onPressOutInputVoiceButton}
+          onSendMessage={onSendMessage}
+          onSendMessageEnd={onSendMessageEnd}
+          onVoiceRecordEnd={onVoiceRecordEnd}
           // customMessageBubble={{
           //   CustomMessageRenderItemP: CustomMessageRenderItem,
           // }}

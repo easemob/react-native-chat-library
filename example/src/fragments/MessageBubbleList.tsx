@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {
-  DeviceEventEmitter,
+  // DeviceEventEmitter,
   // Image as RNImage,
   ListRenderItem,
   ListRenderItemInfo,
@@ -14,7 +14,7 @@ import {
   type DynamicHeightListRef,
   type LocalIconName,
   createStyleSheet,
-  DataEventType,
+  // DataEventType,
   DefaultAvatar,
   DynamicHeightList,
   getScaleFactor,
@@ -24,8 +24,8 @@ import {
   wait,
 } from 'react-native-chat-uikit';
 
-import type { BizEventType, DataActionEventType } from '../events';
-import { sendEvent } from '../events/sendEvent';
+// import type { BizEventType, DataActionEventType } from '../events';
+// import { sendEvent } from '../events/sendEvent';
 
 export type MessageItemStateType =
   | 'unread'
@@ -425,9 +425,16 @@ export type MessageBubbleListRef = {
     msgs: MessageItemType[];
     direction: InsertDirectionType;
   }) => void;
+  updateMessageState: (params: {
+    localMsgId: string;
+    result: boolean;
+    reason?: any;
+    item?: MessageItemType;
+  }) => void;
 };
 export type MessageBubbleListProps = {
   onPressed?: () => void;
+  onRequestHistoryMessage?: (params: { earliestId: string }) => void;
   CustomMessageRenderItem?: React.FunctionComponent<
     React.PropsWithChildren<MessageItemType & { eventType: string; data: any }>
   >;
@@ -561,6 +568,35 @@ const MessageBubbleList = (
     [items, updateDataInternal]
   );
 
+  const updateMessageState = React.useCallback(
+    (params: {
+      localMsgId: string;
+      result: boolean;
+      reason?: any;
+      item?: MessageItemType;
+    }) => {
+      if (params.result === true && params.item) {
+        updateData({
+          type: 'update-all',
+          list: [params.item],
+          direction: 'after',
+        });
+      } else {
+        updateData({
+          type: 'update-part',
+          list: [
+            {
+              key: params.localMsgId,
+              state: 'failed',
+            } as MessageItemType,
+          ],
+          direction: 'after',
+        });
+      }
+    },
+    [updateData]
+  );
+
   React.useImperativeHandle(
     ref,
     () => ({
@@ -578,73 +614,81 @@ const MessageBubbleList = (
           direction: params.direction,
         });
       },
+      updateMessageState: (params: {
+        localMsgId: string;
+        result: boolean;
+        reason?: any;
+        item?: MessageItemType;
+      }) => {
+        updateMessageState(params);
+      },
     }),
-    [updateData]
+    [updateData, updateMessageState]
   );
 
-  const requestHistory = React.useCallback(() => {
-    const item = getEarliestItem();
-    sendEvent({
-      eventType: 'DataEvent',
-      action: 'request_history_message',
-      params: { earliestId: item?.msgId },
-      eventBizType: 'message',
-      senderId: 'MessageBubble',
-    });
-  }, [getEarliestItem]);
+  // const requestHistory = React.useCallback(() => {
+  //   const item = getEarliestItem();
+  //   sendEvent({
+  //     eventType: 'DataEvent',
+  //     action: 'request_history_message',
+  //     params: { earliestId: item?.msgId },
+  //     eventBizType: 'message',
+  //     senderId: 'MessageBubble',
+  //   });
+  // }, [getEarliestItem]);
 
   const initList = React.useCallback(() => {}, []);
 
   const addListeners = React.useCallback(() => {
-    const sub2 = DeviceEventEmitter.addListener(
-      'DataEvent' as DataEventType,
-      (event) => {
-        const { action, params } = event as {
-          eventBizType: BizEventType;
-          action: DataActionEventType;
-          senderId: string;
-          params: any;
-          timestamp?: number;
-        };
-        switch (action) {
-          case 'update_message_state':
-            {
-              const eventParams = params as {
-                localMsgId: string;
-                result: boolean;
-                reason?: any;
-                item: MessageItemType;
-              };
-              if (eventParams.result === true) {
-                updateData({
-                  type: 'update-all',
-                  list: [eventParams.item],
-                  direction: 'after',
-                });
-              } else {
-                updateData({
-                  type: 'update-part',
-                  list: [
-                    {
-                      key: eventParams.localMsgId,
-                      state: 'failed',
-                    } as MessageItemType,
-                  ],
-                  direction: 'after',
-                });
-              }
-            }
-            break;
+    // const sub2 = DeviceEventEmitter.addListener(
+    //   'DataEvent' as DataEventType,
+    //   (event) => {
+    //     const { action, params } = event as {
+    //       eventBizType: BizEventType;
+    //       action: DataActionEventType;
+    //       senderId: string;
+    //       params: any;
+    //       timestamp?: number;
+    //     };
+    //     switch (action) {
+    //       case 'update_message_state':
+    //         {
+    //           const eventParams = params as {
+    //             localMsgId: string;
+    //             result: boolean;
+    //             reason?: any;
+    //             item: MessageItemType;
+    //           };
+    //           if (eventParams.result === true) {
+    //             updateData({
+    //               type: 'update-all',
+    //               list: [eventParams.item],
+    //               direction: 'after',
+    //             });
+    //           } else {
+    //             updateData({
+    //               type: 'update-part',
+    //               list: [
+    //                 {
+    //                   key: eventParams.localMsgId,
+    //                   state: 'failed',
+    //                 } as MessageItemType,
+    //               ],
+    //               direction: 'after',
+    //             });
+    //           }
+    //         }
+    //         break;
 
-          default:
-            break;
-        }
-      }
-    );
+    //       default:
+    //         break;
+    //     }
+    //   }
+    // );
     return () => {
-      sub2.remove();
+      // sub2.remove();
     };
-  }, [updateData]);
+  }, []);
 
   React.useEffect(() => {
     const load = () => {
@@ -674,7 +718,11 @@ const MessageBubbleList = (
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
-        requestHistory();
+        if (props.onRequestHistoryMessage) {
+          const item = getEarliestItem();
+          props.onRequestHistoryMessage({ earliestId: item?.msgId ?? '' });
+        }
+        // requestHistory();
         wait(1500)
           .then(() => {
             setRefreshing(false);

@@ -7,9 +7,12 @@ import {
   Loading,
   LocalIcon,
   LocalIconName,
+} from 'react-native-chat-uikit';
+
+import type {
   MessageItemStateType,
   MessageItemType,
-} from 'react-native-chat-uikit';
+} from '../fragments/MessageBubbleList';
 
 const convertState = (state?: MessageItemStateType): LocalIconName => {
   let r = 'sent' as LocalIconName;
