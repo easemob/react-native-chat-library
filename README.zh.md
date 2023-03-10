@@ -4,7 +4,7 @@ _中文 | [English](./README.md)_
 
 # 快速开始
 
-快速带你完成项目的编译运行。
+带你快速的完成项目的编译和运行。
 
 ## 环境准备
 
@@ -21,7 +21,7 @@ _中文 | [English](./README.md)_
   - Nodejs 16.18.0 或以上版本 （推荐使用 brew 安装）
   - yarn 1.22.19 或以上版本 （推荐使用 brew 安装）
   - React-Native 0.63.5 以上， 0.69.0 以下版本 （更高版本会夸大版本兼容性未知）
-  - npm 以及相关工具 （**不推荐使用**，相关问题请自行解决）
+  - npm 以及相关工具 （**不推荐**，相关问题请自行解决）
   - expo 6.0.0 或以上版本
 
 ## 源码下载
@@ -32,20 +32,20 @@ _中文 | [English](./README.md)_
 git clone git@github.com:easemob/react-native-chat-library.git
 ```
 
-## 项目架构
+## 项目的结构
 
 这是一个多包管理项目，通过 `lerna` 和 `yarn workspace` 实现管理。
 
 - `example`: 示例项目，用于演示和测试开发的包。
 - `packages/react-native-chat-uikit`: uikit 项目
-- `packages/react-native-chat-callkit`: callkit 项目（正在开发）
+- `packages/react-native-chat-callkit`: callkit 项目（正在开发中）
 - ...
 
 **注意** 项目运行的命令一般都是在项目根目录，而不是对应的包目录或者示例目录。
 
-## 编译运行
+## 编译和运行
 
-#### 初始化
+#### 项目初始化
 
 1. 使用 `vscode` 打开项目 `react-native-chat-library`
 2. 使用 `terminal` 初始化项目 `yarn`
@@ -57,64 +57,64 @@ git clone git@github.com:easemob/react-native-chat-library.git
 
 操作步骤如下：
 
-1.  使用 `terminal` 切换到目录 `example`
-2.  执行命令 `yarn run ios` 编译运行 `iOS` 应用
-3.  执行命令 `yarn run android` 编译运行 `Android` 应用
+1.  使用 `terminal` 切换到目录到 `example`
+2.  执行命令 `yarn run ios` 命令编译并运行 `iOS` 应用
+3.  执行命令 `yarn run android` 命令编译并运行 `Android` 应用
 
-**注意** 不推荐该模式编译
-**修改命令** 请参考 `example/package.json` 相关内容
-**参考** 对应命令请参考 `expo` 相关内容
+**注意** 不推荐该模式进行编译。
+**修改命令** 请参考 `example/package.json` 相关内容。
+**参考** 编译和运行命令更多知识请参考 `expo` 相关内容。
 
 #### 通用运行
 
-在开发模式下运行应用，需要额外的本地服务，它可以动态检测到文件源码的修改，动态的调整开发页面。
+在开发模式下运行应用，需要额外的本地服务，它可以动态检测到文件源码的修改，动态的进行调试。
 
-1. 使用 `terminal` 工具，切换目录 `cd example/ios`
-2. 使用 `terminal` 工具，执行 `yarn run start` 启动服务。
+1. 使用 `terminal` 工具，切换目录到 `cd example/ios`
+2. 使用 `terminal` 工具，执行 `yarn run start` 命令启动服务。
 
 #### iOS 平台
 
-**<span style="color:orange">编译项目</span>**
+**<span style="color:orange">编译和构建该项目</span>**
 
 在编译阶段，`iOS` 平台需要执行 `pod install` 命令生成 Xcode `xcworkspace` 工程文件。
 
-1. 使用 `terminal` 工具，切换目录 `cd example/ios`
+1. 使用 `terminal` 工具，切换目录到 `cd example/ios`
 2. 使用 `terminal` 工具，执行 `pod install` 生成 `example/ios/example.xcworkspace`.
-3. 使用 `Xcode` 工具，打开工程 `example/ios/example.xcworkspace`
-4. 如果使用模拟器，则需要选择 `iOS` `12.4` 或者以下版本
-5. 如果使用真机，设备需要启用开发者模式，项目中需要设置 `singing & capabilities` 相关内容
-6. 使用 `Xcode` 工具，执行编译
+3. 使用 `Xcode` 工具，打开工程文件 `example/ios/example.xcworkspace`
+4. 如果使用模拟器，则需要选择 `iOS` 12.4 或者以下版本
+5. 如果使用真机，真机需要启用开发者模式，工程项目中需要设置 `singing & capabilities` 相关内容
+6. 使用 `Xcode` 工具，执行编译操作。
 
-**注意** 对于不想使用 `Xcode` 编译的开发者，可以使用官方推荐的方式编译，但是出现问题一般不好查找问题。
-**注意** 这时候自动运行会报错，先不用管。
-**注意** 如果弹出了 `terminal` 服务，则请关闭该服务。
+**注意** 对于不使用 `Xcode` 编译的开发者，可以使用官方推荐的方式编译，但是，出现问题一般的不好查找问题原因。
+**注意** 自动启动额外的服务，由于不是使用 `expo` 直接启动的服务可能会报错，暂时不用管，关闭服务即可。
 
-**<span style="color:orange">运行项目</span>**
+**<span style="color:orange">运行该项目</span>**
 
-启动本地服务，参考 `通用运行` 章节
+使用 `expo` 工具提供的命令，启动本地服务，参考 `通用运行` 章节。
 
-**注意** 如果运行的应用没有正确加载，需要刷新页面，或者关闭应用重新启动。
+**注意** 如果运行的应用没有正确加载，需要刷新页面，或者关闭应用重新启动。对于报错问题一般可以通过相应的提示解决。
 
 #### Android 平台
 
-**<span style="color:orange">编译项目</span>**
+**<span style="color:orange">编译和构建该项目</span>**
 
 在编译阶段，`Android` 平台需要执行 `sync` 初始化项目。
 
-1. 启动 `as` 工具, 打开工程文件 `example/android`
-2. 点击 `sync project with gradle files` 按钮执行 `初始化`
-3. 如果使用模拟器，请选择或者创建 6.0 版本或者以上的 模拟器
-4. 如果是真机需要正确开启设备的开发者模式
-5. 当初始化完成后，点击 `run app` 按钮，执行编译和运行
+1. 启动 `as` 工具, 打开工程文件 `example/android`，
+2. 点击 `sync project with gradle files` 按钮执行 `初始化` 操作，
+3. 如果使用模拟器，请选择或者创建 6.0 版本或以上版本的模拟器，
+4. 如果是真机，需要开启设备的开发者模式，
+5. 当 `sync` 成功后，点击 `run app` 按钮，执行编译和运行该项目。
 
-**注意** 如果是第一次使用 `as`, 可能需要大量的工具和数据下载，时间较长。
-**注意** 如果遇到 `timeout` 可能是使用了 `m1` arm64 版本的 MacOS 设备导致的，需要使用 `terminal` 执行 `open -a /Applications/Android\ Studio.app` 命令启动 `as`。
+**注意** 如果是第一次使用 `as`, 可能需要大量下载，等待时间较长。
+**注意** 如果遇到 `timeout` 可能是使用了 `m1/m2` arm64 版本的 MacOS 设备导致的，需要使用 `terminal` 执行 `open -a /Applications/Android\ Studio.app` 命令启动 `as`。
 
-**<span style="color:orange">运行项目</span>**
+**<span style="color:orange">运行该项目</span>**
 
-启动本地服务，参考 `通用运行` 章节
+使用 `expo` 工具提供的命令，启动本地服务，参考 `通用运行` 章节。
 
-**注意** 如果运行的应用没有正确加载，需要刷新页面，或者关闭应用重新启动。
+**注意** 如果运行的应用没有正确加载，需要刷新页面，或者关闭应用重新启动。对于报错问题一般可以通过相应的提示解决。
+**注意** `Android 平台的设备，需要数据转发，该数据转发的命令是 `adb reverse tcp:8081 tcp:8081`。但是，由于使用 `expo` 工具，所以，它帮忙做了，不需要手动操作。
 
 ## 参数设置
 
@@ -128,7 +128,7 @@ export const ps = ''; // default password or token
 export const accountType = 'agora'; // 'easemob' or 'agora'
 ```
 
-- `test`: 当为`true`的时候，页面会切换到单纯的组件测试模式，可以不用执行登录、退出等远程操作实现本地组件的演示。默认为 `false`
+- `test`: 当为`true`的时候，页面会切换到单纯的组件测试模式，可以不用执行登录、退出等远程操作,就可以完成本地组件的演示。默认为 `false`
 - `appKey`: 应用的唯一标识，一般通过网站后台获取
 - `id`: 登录用户的 id，一般通过注册或者网站后台获取
 - `ps`: 登录用户的 秘钥，一般通过注册或者网站后台获取
@@ -136,29 +136,39 @@ export const accountType = 'agora'; // 'easemob' or 'agora'
 
 ---
 
-# 已有项目集成
+# 在已有项目中集成 UIKIT
 
-如果需要将该项目的某一部分集成到现有项目，可以参考这里。
+使用 `uikit` 的方式主要有这几种：
 
-## 安装依赖到现有项目
+1. 创建全新项目，集成 `uikit`。 这种情况，需要注意开发环境的问题。可能由于版本跨度非常大导致编译和运行报错。
+2. 在现有项目中，集成 `uikit`。 这种情况，需要注意现有项目版本 和 `uikit` 项目的版本，以及依赖版本的兼容性。
+3. 修改 `example` 项目，完成产品开发。这种情况，几乎没有开发环境问题，但是需要学习和了解 `example` 的架构思维，才能更好的完成应用开发。
+
+下面进行最常见的方式，已有项目中集成 `uikit` 的介绍。
+
+## 安装 `uikit` 到现有项目中
 
 ```bash
 cd your_project_root
 yarn add react-native-chat-uikit
 ```
 
-开发和运行编译环境请参考上面章节，下面以集成聊天页面为例。
+开发、编译和运行等请参考相关章节，下面以集成聊天页面为例进行说明。
 
 ## 快速集成聊天页面
 
 聊天页面由多个组件组成。主要包括：消息气泡列表组件、输入组件。 输入组件由表情组件、语音组件、扩展组件组成。
 
-![img](https://github.com/easemob/react-native-chat-library/tree/dev/docs/typical/ui_chat_struct_1.jpg)
+<img src=https://github.com/easemob/react-native-chat-library/tree/dev/docs/typical/ui_chat_struct_1.jpg width="50%">
+
+<!-- <img src=https://img-blog.csdnimg.cn/20200822014538211.png width=60% /> -->
+
+![img](./docs/typical/ui_chat_struct_1.jpg){: width="100px" height="100px"}
 
 ## 最简单的集成方式
 
-1. 完成 `uikit` 部分初始化 （前面章节有说明）
-2. 在页面级中使用 `ChatFragment` 组件
+1. 在入口方法中，完成 `uikit` 的初始化
+2. 在目标页面中使用 `ChatFragment` 组件
 
 示例代码：
 
@@ -177,14 +187,14 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-## 自定义配置的集成方式
+## 设置个性化的聊天组件
 
-除了简单集成方式的说明之外，还提供了可以自定义的配置选项。
+聊天组件带有很多参数和配置，可以更具需要进行设置，达到需要的效果。 对于更多更高的自定义可以参考源码实现。
 
 #### 聊天组件控制器
 
-控制器可以主动的让组件执行某些行为或者命令。例如：目前提供了发送图片消息、发送语音消息的接口。
-如果想要使用控制器，需要在属性里面设置 `propsRef` 属性。
+控制器可以主动的让组件执行某些行为或者命令。例如：目前提供了发送图片消息、发送语音消息的方法。
+如果想要使用控制器，需要在聊天属性里面设置 `propsRef` 参数。
 
 ```typescript
 export type ChatFragmentRef = {
@@ -204,9 +214,9 @@ export type ChatFragmentRef = {
 };
 ```
 
-#### 聊天组件可配置选项
+#### 聊天组件属性
 
-聊天组件的配置项如下：
+源码如下：
 
 ```typescript
 type ChatFragmentProps = {
@@ -244,6 +254,12 @@ type ChatFragmentProps = {
 #### 聊天属性：控制器
 
 `propsRef` 该属性主要可以主动调用 `ChatFragment` 的相关方法。
+
+**知识点** 对于 `React-Native` 技术框架，UI 组件一般提供几种方式决定组件行为。
+
+1. 使用属性来初始化或者动态更新组件样式
+2. 使用属性回调通知上层使用者状态的变化
+3. 使用控制器（ref）控制子组件的主动行为
 
 例如：在录制语音消息之后，发送语音消息
 
@@ -317,7 +333,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-**说明** 需要在初始化的时候设置好模态组件
+**说明** 需要在初始化的时候设置好模态窗口管理组件。如果缺省该参数，可能无法收到相应的事件通知。
 
 ```typescript
 import { ModalPlaceholder } from './events';
@@ -339,9 +355,9 @@ export default function App() {
 
 #### 聊天属性：聊天气泡列表组件
 
-当默认聊天气泡不能满足自定义需求的时候，可以自行实现聊天气泡。
+当默认聊天气泡不能满足自定义需求的时候，可以自行设计聊天气泡样式。
 
-假设 `MessageBubbleList` 是你自定义的组件。
+假设 `MessageBubbleList` 是你自定义的聊天气泡列表组件。
 
 ```typescript
 import type { MessageBubbleListProps } from '../fragments/MessageBubbleList';
@@ -370,9 +386,9 @@ export default function ChatScreen(): JSX.Element {
 
 #### 聊天属性：自定义消息组件
 
-假如，你想要自定义一个订单消息，可以使用 `自定义类型` 组件 实现 `自定义消息` 的显示、发送和接收。
+假如，你想要自定义一个订单消息，可以使用 `自定义类型` 组件 实现 自定义消息（订单消息） 的显示、发送和接收。
 
-自定义消息组件的数据源需要以 `MessageItemType` 为基础类型扩展。
+自定义消息组件的数据源需要以 `MessageItemType` 为基础类型进行扩展。
 自定义消息组件的渲染部分需要遵守 `FunctionComponent` 组件规则。
 
 ```typescript
@@ -416,7 +432,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：点击聊天气泡
+#### 聊天属性：点击聊天气泡通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -435,7 +451,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：长按消息气泡
+#### 聊天属性：长按消息气泡通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -454,7 +470,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：点击扩展按钮
+#### 聊天属性：点击扩展按钮通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -473,7 +489,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：按下语音按钮
+#### 聊天属性：按下语音按钮通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -492,7 +508,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：抬起语音按钮
+#### 聊天属性：抬起语音按钮通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -530,7 +546,7 @@ export default function ChatScreen(): JSX.Element {
 }
 ```
 
-#### 聊天属性：发送消息结束通知
+#### 聊天属性：发送消息完成通知
 
 ```typescript
 export default function ChatScreen(): JSX.Element {
@@ -576,21 +592,21 @@ export default function ChatScreen(): JSX.Element {
 
 **说明** `react-native-chat-uikit` 是 `npm`包的名称，原名为 `Agora Uikit SDK`, 这里简称 `uikit`。 `Agora Uikit SDK` 依赖 `Agora Chat SDK`（包名为 `react-native-agora-chat`）.
 
-## example
+## example 项目
 
 `example` 项目主要包括 `路由和导航（页面切换相关）`、`初始化设置`、`登录和退出`、`联系人管理`、`群组管理`、`会话管理`、`我的设置模块` 的演示。
 
-## uikit
+## uikit 项目
 
 `uikit` 项目主要包括 `UI基础组件`、`国际化工具`、`主题工具`、`数据共享工具`、`媒体服务`、`存储服务` 等。
 
-## 初始化
+## 项目初始化
 
-初始化是使用 `uikit` 的第一步，并且是必须要做的。
+初始化是使用 `uikit` 的前提，并且是必须要做的。
 
-初始化部分包括了很多重要参数，决定后续运行的表现。
+初始化部分包括了很多重要参数，决定后续应用运行的行为。
 
-具体执行初始化组件是 `GlobalContainer`, 它提供了参数列表 `GlobalContainerProps`。
+初始化组件是 `GlobalContainer`, 它提供了参数列表 `GlobalContainerProps`。
 
 ```typescript
 export type GlobalContainerProps = React.PropsWithChildren<{
@@ -636,7 +652,7 @@ export type GlobalContainerProps = React.PropsWithChildren<{
 
 很多参数提供了默认选项，如果不设置则采用系统默认参数。
 
-缺省设置示例:
+缺省参数初始化示例:
 
 ```typescript
 export default function App() {
@@ -648,19 +664,25 @@ export default function App() {
 
 ## 路由和导航器
 
-页面的切花离不开导航器或者路由的使用。
+页面的切换离不开导航器或者路由的使用。
 
-它不属于 `uikit` 的一部分。它属于 `example` 的组成部分。 对于导航器的选择也有很多种，这里使用了常见的 `react-navigation` 组件库。
+它不属于 `uikit` 的一部分。属于 `example` 的组成部分。 对于导航器的选择也有很多种，这里使用了常见的 `react-navigation` 组件库。
 
 它的相关用法，可以参考 `example` 项目。 也可以参考官方文档 [skip to official website](https://reactnavigation.org/)
 
 ## 模态窗口管理
 
-模态窗口是一类特殊的窗口，之后该窗口的事物处理完成，关闭之后，才能执行后续操作。它对代码的设计和维护提出了更高要求，这里采用 `事件` + `统一管理` 的方式进行处理。降低维护成本和提高排错处理能力。
+模态窗口是一类特殊的窗口，只有该窗口的事物处理完成，关闭之后，才能执行后续操作。它对代码的设计和维护提出了更高要求，这里采用 `事件` + `统一管理` 的方式进行处理。降低维护成本和提高排开发效率。
 
-#### 模态系统
+#### 模态窗口管理系统
 
-主要对象：
+模态系统提供了统一的事件编号，提供了统一的发送接口，提供了统一的接收处理。并且提供自定义事件的扩展，支持事件冒泡顺序处理（子组件可以拦截时间处理，可以决定是否让父组件也处理）。
+
+发送事件方法：
+
+- `function sendEvent(params: sendEventProps): void`
+
+发送事件属性：
 
 ```typescript
 export type sendEventProps = {
@@ -673,22 +695,21 @@ export type sendEventProps = {
 };
 ```
 
-主要接口：
+接收事件处理：
 
-- `function sendEvent(params: sendEventProps): void`: 发送事件
-- `DeviceEventEmitter.addListener('DataEvent' as DataEventType, (event) => {})`: 接收事件
+- `DeviceEventEmitter.addListener('DataEvent' as DataEventType, (event) => {})`
 
-#### 事件
+#### 事件分类
 
 - `AlertActionEventType`: 警告窗口事件
-- `ToastActionEventType`: toast 窗口事件
-- `SheetActionEventType`: bottomsheet 窗口事件
-- `PromptActionEventType`: 提示窗口事件
-- `MenuActionEventType`: 上下文菜单窗口事件
-- `StateActionEventType`: 自定义状态窗口事件
+- `ToastActionEventType`: `toast` 窗口事件
+- `SheetActionEventType`: `bottom sheet` 窗口事件
+- `PromptActionEventType`: `prompt` 窗口事件
+- `MenuActionEventType`: `context menu` 窗口事件
+- `StateActionEventType`: `custom state` 窗口事件
 - `DataActionEventType`: 数据事件（非模态窗口事件）
 
-#### 示例: 删除联系人操作流程。
+#### 事件使用流程示例: 删除联系人操作流程。
 
 1. 页面发送显示确认对话框命令
 
@@ -700,7 +721,7 @@ sendContactInfoEvent({
 });
 ```
 
-2. 模态系统收到命令显示对话框，当用户点击确认之后，发送可以执行删除操作命令
+2. 系统收到命令显示对话框，当用户点击确认之后，发送可以执行删除操作命令
 
 ```typescript
 // The modal system receives the event processing and displays a confirmation dialog.
@@ -727,7 +748,7 @@ alert.openAlert({
 });
 ```
 
-3. 页面收到命令，开始执行删除联系人操作，操作完成之后，发送显示删除操作已完成提示
+3. 页面收到命令，开始执行删除联系人操作，操作完成之后，发送显示删除操作已完成的提示。
 
 ```typescript
 // The contact page receives the command to delete contacts.
@@ -744,14 +765,14 @@ removeContact(userId, (result) => {
 });
 ```
 
-4. 模态系统收到显示提示命令，开始显示提示内容
+4. 系统收到显示提示命令，开始显示提示内容的窗口。
 
 ```typescript
 // The modal system receives the command to display the toast prompt box.
 toast.showToast(content);
 ```
 
-5. 处理完成关闭，继续后续处理
+5. 处理完成关闭，继续后续操作。
 
 #### 示例源码
 
@@ -774,7 +795,7 @@ toast.showToast(content);
 
 登录需要用户提供必要的参数：用户 id 和 用户密码或者 token。
 
-最简化版本的示例：
+示例如下：
 
 ```typescript
 login({
@@ -823,7 +844,7 @@ autoLogin({
 退出登录主要分为两种情况：
 
 1. 用户主动退出登录
-2. 用户被服务器踢掉，原因可能有很多种。
+2. 用户被动断开服务器，原因可能有很多种，具体参考官网相关文档。
 
 #### 主动退出
 
@@ -916,7 +937,6 @@ type ConversationListFragmentProps = {
 
 会话提供的基本功能接口:
 
-- `removeConversation` 会话删除
 - `createConversation` 创建会话
 - `removeConversation` 删除会话
 - `updateConversationFromMessage` 更新会话
