@@ -22,7 +22,6 @@ import {
   Badge,
   Blank,
   createStyleSheet,
-  DataEventType,
   DefaultAvatar,
   DefaultListItemSeparator,
   DefaultListSearchHeader,
@@ -36,8 +35,6 @@ import {
   timestamp,
   useChatSdkContext,
 } from 'react-native-chat-uikit';
-
-import type { BizEventType, DataActionEventType } from '../events';
 
 export type ItemDataType = EqualHeightListItemData & {
   convId: string;
@@ -160,7 +157,17 @@ const Item: EqualHeightListItemComponent = (props) => {
   );
 };
 
+export type ConversationListFragmentRef = {
+  update: (message: ChatMessage) => void;
+  create: (params: { convId: string; convType: ChatConversationType }) => void;
+  updateRead: (params: {
+    convId: string;
+    convType: ChatConversationType;
+  }) => void;
+};
+
 type ConversationListFragmentProps = {
+  propsRef?: React.RefObject<ConversationListFragmentRef>;
   onLongPress?: (data?: ItemDataType) => void;
   onPress?: (data?: ItemDataType) => void;
   onData?: (data: ItemDataType[]) => void;
@@ -170,7 +177,7 @@ export default function ConversationListFragment(
   props: ConversationListFragmentProps
 ): JSX.Element {
   console.log('test:ConversationListFragment:', props);
-  const { onLongPress, onPress, onData, onUpdateReadCount } = props;
+  const { propsRef, onLongPress, onPress, onData, onUpdateReadCount } = props;
 
   const sf = getScaleFactor();
   const { client, getCurrentId } = useChatSdkContext();
@@ -609,6 +616,36 @@ export default function ConversationListFragment(
     [getConv, manualRefresh, standardizedData]
   );
 
+  if (propsRef?.current) {
+    propsRef.current.create = (params: {
+      convId: string;
+      convType: ChatConversationType;
+    }) => {
+      createConversation(params);
+    };
+    propsRef.current.update = (message: ChatMessage) => {
+      const conv = getConv(message.conversationId);
+      if (conv === undefined) {
+        return;
+      }
+      manualRefresh({
+        type: 'update-one',
+        items: [
+          standardizedData({
+            ...conv,
+            lastMsg: message,
+          } as ItemDataType),
+        ],
+      });
+    };
+    propsRef.current.updateRead = (params: {
+      convId: string;
+      convType: ChatConversationType;
+    }) => {
+      conversationRead(params);
+    };
+  }
+
   const addListeners = React.useCallback(() => {
     const sub2 = DeviceEventEmitter.addListener(
       MessageChatSdkEvent,
@@ -638,82 +675,73 @@ export default function ConversationListFragment(
       }
     );
 
-    const sub4 = DeviceEventEmitter.addListener(
-      'DataEvent' as DataEventType,
-      (event) => {
-        const { action, params } = event as {
-          eventBizType: BizEventType;
-          action: DataActionEventType;
-          senderId: string;
-          params: any;
-          timestamp?: number;
-        };
-        switch (action) {
-          case 'on_send_before':
-            {
-              const eventParams = params as { message: ChatMessage };
-              const conv = getConv(eventParams.message.conversationId);
-              if (conv === undefined) {
-                return;
-              }
-              manualRefresh({
-                type: 'update-one',
-                items: [
-                  standardizedData({
-                    ...conv,
-                    count: 0,
-                    lastMsg: eventParams.message,
-                  } as ItemDataType),
-                ],
-              });
-            }
-            break;
-          case 'on_send_result':
-            {
-              const eventParams = params as { message: ChatMessage };
-              const conv = getConv(eventParams.message.conversationId);
-              if (conv === undefined) {
-                return;
-              }
-              manualRefresh({
-                type: 'update-one',
-                items: [
-                  standardizedData({
-                    ...conv,
-                    count: 0,
-                    lastMsg: eventParams.message,
-                  } as ItemDataType),
-                ],
-              });
-            }
-            break;
-          case 'exec_create_conversation':
-            createConversation(params);
-            break;
+    // const sub4 = DeviceEventEmitter.addListener(
+    //   'DataEvent' as DataEventType,
+    //   (event) => {
+    //     const { action, params } = event as {
+    //       eventBizType: BizEventType;
+    //       action: DataActionEventType;
+    //       senderId: string;
+    //       params: any;
+    //       timestamp?: number;
+    //     };
+    //     switch (action) {
+    //       case 'on_send_before':
+    //         {
+    //           const eventParams = params as { message: ChatMessage };
+    //           const conv = getConv(eventParams.message.conversationId);
+    //           if (conv === undefined) {
+    //             return;
+    //           }
+    //           manualRefresh({
+    //             type: 'update-one',
+    //             items: [
+    //               standardizedData({
+    //                 ...conv,
+    //                 count: 0,
+    //                 lastMsg: eventParams.message,
+    //               } as ItemDataType),
+    //             ],
+    //           });
+    //         }
+    //         break;
+    //       case 'on_send_result':
+    //         {
+    //           const eventParams = params as { message: ChatMessage };
+    //           const conv = getConv(eventParams.message.conversationId);
+    //           if (conv === undefined) {
+    //             return;
+    //           }
+    //           manualRefresh({
+    //             type: 'update-one',
+    //             items: [
+    //               standardizedData({
+    //                 ...conv,
+    //                 count: 0,
+    //                 lastMsg: eventParams.message,
+    //               } as ItemDataType),
+    //             ],
+    //           });
+    //         }
+    //         break;
+    //       case 'exec_create_conversation':
+    //         createConversation(params);
+    //         break;
 
-          case 'update_conversation_read_state':
-            conversationRead(params);
-            break;
+    //       case 'update_conversation_read_state':
+    //         conversationRead(params);
+    //         break;
 
-          default:
-            break;
-        }
-      }
-    );
+    //       default:
+    //         break;
+    //     }
+    //   }
+    // );
 
     return () => {
       sub2.remove();
-      sub4.remove();
     };
-  }, [
-    createConversation,
-    conversationRead,
-    updateAllUnreadCount,
-    updateConversationFromMessage,
-    manualRefresh,
-    standardizedData,
-    getConv,
-  ]);
+  }, [updateAllUnreadCount, updateConversationFromMessage]);
 
   const initDirs = React.useCallback((convIds: string[]) => {
     for (const convId of convIds) {

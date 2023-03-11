@@ -14,7 +14,6 @@ import type {
 import * as React from 'react';
 import { DeviceEventEmitter, Pressable, View } from 'react-native';
 import {
-  Blank,
   DataEventType,
   getScaleFactor,
   LocalIcon,
@@ -25,6 +24,7 @@ import HomeHeaderTitle from '../components/HomeHeaderTitle';
 import type { BizEventType, DataActionEventType } from '../events';
 import { type sendEventProps, sendEvent } from '../events/sendEvent';
 import ConversationListFragment, {
+  ConversationListFragmentRef,
   ItemDataType as ConversationListItemDataType,
 } from '../fragments/ConversationList';
 import { useStyleSheet } from '../hooks/useStyleSheet';
@@ -73,7 +73,7 @@ export default function ConversationListScreen({
   const sf = getScaleFactor();
   // let data: ConversationListItemDataType[] = React.useMemo(() => [], []); // for search
   const [, setData] = React.useState([] as ConversationListItemDataType[]); // for search
-  const isEmpty = false;
+  const convRef = React.useRef<ConversationListFragmentRef>({} as any);
 
   const NavigationHeaderRight: React.FunctionComponent<HeaderButtonProps> =
     React.useCallback(
@@ -119,7 +119,7 @@ export default function ConversationListScreen({
     const sub = DeviceEventEmitter.addListener(
       'DataEvent' as DataEventType,
       (event) => {
-        const { action } = event as {
+        const { action, params } = event as {
           eventBizType: BizEventType;
           action: DataActionEventType;
           senderId: string;
@@ -153,6 +153,19 @@ export default function ConversationListScreen({
               params: { type: 'join_public_group' },
             });
             break;
+          case 'on_send_before':
+            convRef.current?.update(params.message);
+            break;
+          case 'on_send_result':
+            convRef.current?.update(params.message);
+            break;
+          case 'exec_create_conversation':
+            convRef.current?.create(params);
+            break;
+
+          case 'update_conversation_read_state':
+            convRef.current?.updateRead(params);
+            break;
 
           default:
             break;
@@ -172,39 +185,36 @@ export default function ConversationListScreen({
       style={useStyleSheet().safe}
       edges={['right', 'left']}
     >
-      {isEmpty ? (
-        <Blank />
-      ) : (
-        <ConversationListFragment
-          onLongPress={(_?: ConversationListItemDataType) => {
-            sendConversationEvent({
-              eventType: 'SheetEvent',
-              action: 'sheet_conversation_list',
-              params: {},
+      <ConversationListFragment
+        propsRef={convRef}
+        onLongPress={(_?: ConversationListItemDataType) => {
+          sendConversationEvent({
+            eventType: 'SheetEvent',
+            action: 'sheet_conversation_list',
+            params: {},
+          });
+        }}
+        onPress={(data?: ConversationListItemDataType) => {
+          if (data) {
+            const d = data as ConversationListItemDataType;
+            navigation.navigate('Chat', {
+              params: { chatId: d.convId, chatType: d.convType },
             });
-          }}
-          onPress={(data?: ConversationListItemDataType) => {
-            if (data) {
-              const d = data as ConversationListItemDataType;
-              navigation.navigate('Chat', {
-                params: { chatId: d.convId, chatType: d.convType },
-              });
-            }
-          }}
-          onData={(d) => {
-            setData(d);
-          }}
-          onUpdateReadCount={(unreadCount) => {
-            sendEvent({
-              eventType: 'DataEvent',
-              action: 'update_all_count',
-              params: { count: unreadCount },
-              eventBizType: 'conversation',
-              senderId: 'ConversationList',
-            });
-          }}
-        />
-      )}
+          }
+        }}
+        onData={(d) => {
+          setData(d);
+        }}
+        onUpdateReadCount={(unreadCount) => {
+          sendEvent({
+            eventType: 'DataEvent',
+            action: 'update_all_count',
+            params: { count: unreadCount },
+            eventBizType: 'conversation',
+            senderId: 'ConversationList',
+          });
+        }}
+      />
     </SafeAreaView>
   );
 }

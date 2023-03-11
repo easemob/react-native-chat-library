@@ -34,3 +34,6 @@
 
 ## 快速集成聊天
 [快速集成聊天](./quick-chat.md)
+
+## 快速集成会话
+[快速集成会话](./quick-conversation.md)
